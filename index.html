@@ -247,6 +247,8 @@
                     </div>
                     <button id="new-song-btn" class="btn btn-primary">New Song</button>
                     <button id="import-songs-btn" class="btn btn-secondary">Import Songs</button>
+                    <button id="export-data-btn" class="btn btn-secondary">Export Data</button>
+                    <button id="import-data-btn" class="btn btn-secondary">Import Data</button>
                 </div>
             </header>
             
@@ -421,6 +423,42 @@
                         <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Export/Import Data Modal -->
+        <div id="data-export-modal" class="modal">
+            <div class="modal-content" style="max-width: 600px;">
+                <span class="close">&times;</span>
+                <h2>Export/Import All Data</h2>
+                
+                <!-- Export Section -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">📤 Export All Data</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 15px;">
+                        Copy all your songs and set lists to transfer to another device (phone, tablet, etc.)
+                    </p>
+                    <textarea id="export-data-textarea" readonly style="width: 100%; min-height: 200px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-family: monospace; font-size: 0.85rem; background: var(--surface-light);"></textarea>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button id="copy-export-btn" class="btn btn-primary">📋 Copy to Clipboard</button>
+                        <button id="download-export-btn" class="btn btn-secondary">💾 Download as File</button>
+                    </div>
+                </div>
+                
+                <hr style="border: none; border-top: 1px solid var(--border); margin: 30px 0;">
+                
+                <!-- Import Section -->
+                <div>
+                    <h3 style="margin-bottom: 15px;">📥 Import Data</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 15px;">
+                        Paste exported data here to restore on this device. <strong style="color: var(--accent);">This will replace all existing data!</strong>
+                    </p>
+                    <textarea id="import-data-textarea" placeholder="Paste exported data here..." style="width: 100%; min-height: 200px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-family: monospace; font-size: 0.85rem;"></textarea>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button id="import-data-submit-btn" class="btn btn-danger">⚠️ Import & Replace All Data</button>
+                        <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+                    </div>
+                </div>
             </div>
         </div>
 

@@ -400,6 +400,14 @@ class PerformanceApp {
             this.openImportModal();
         });
         
+        document.getElementById('export-data-btn').addEventListener('click', () => {
+            this.openExportModal();
+        });
+        
+        document.getElementById('import-data-btn').addEventListener('click', () => {
+            this.openExportModal();
+        });
+        
         document.getElementById('load-setlist-btn').addEventListener('click', () => {
             const setListId = document.getElementById('setlist-select').value;
             if (setListId) {
@@ -617,6 +625,61 @@ class PerformanceApp {
             if (e.target === importModal) {
                 importModal.style.display = 'none';
             }
+            const dataModal = document.getElementById('data-export-modal');
+            if (e.target === dataModal) {
+                dataModal.style.display = 'none';
+            }
+        });
+        
+        // Export/Import Data Modal
+        const dataModal = document.getElementById('data-export-modal');
+        const dataModalClose = dataModal.querySelector('.close');
+        
+        dataModalClose.addEventListener('click', () => {
+            dataModal.style.display = 'none';
+        });
+        
+        document.querySelectorAll('#data-export-modal .cancel-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                dataModal.style.display = 'none';
+            });
+        });
+        
+        document.getElementById('copy-export-btn').addEventListener('click', async () => {
+            const textarea = document.getElementById('export-data-textarea');
+            const data = textarea.value;
+            
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(data);
+                    alert('✅ Data copied to clipboard!');
+                } else {
+                    // Fallback for older browsers
+                    textarea.select();
+                    document.execCommand('copy');
+                    alert('✅ Data copied to clipboard!');
+                }
+            } catch (e) {
+                // Fallback if clipboard API fails
+                textarea.select();
+                document.execCommand('copy');
+                alert('✅ Data copied to clipboard!');
+            }
+        });
+        
+        document.getElementById('download-export-btn').addEventListener('click', () => {
+            const data = this.exportAllData();
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `performance-pwa-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+        
+        document.getElementById('import-data-submit-btn').addEventListener('click', () => {
+            this.importAllData();
         });
     }
     
@@ -2096,6 +2159,72 @@ class PerformanceApp {
         
         alert(message);
         this.renderSongs();
+    }
+    
+    openExportModal() {
+        const modal = document.getElementById('data-export-modal');
+        const exportTextarea = document.getElementById('export-data-textarea');
+        const importTextarea = document.getElementById('import-data-textarea');
+        
+        // Populate export textarea with current data
+        const exportData = this.exportAllData();
+        exportTextarea.value = exportData;
+        
+        // Clear import textarea
+        importTextarea.value = '';
+        
+        modal.style.display = 'block';
+    }
+    
+    exportAllData() {
+        const allData = {
+            songs: dataStore.getAllSongs(),
+            setLists: dataStore.getAllSetLists(),
+            version: '1.0',
+            exportDate: new Date().toISOString()
+        };
+        return JSON.stringify(allData, null, 2);
+    }
+    
+    importAllData() {
+        const importTextarea = document.getElementById('import-data-textarea');
+        const importData = importTextarea.value.trim();
+        
+        if (!importData) {
+            alert('Please paste exported data');
+            return;
+        }
+        
+        if (!confirm('⚠️ This will REPLACE all your current songs and set lists. Are you sure?')) {
+            return;
+        }
+        
+        try {
+            const data = JSON.parse(importData);
+            
+            // Validate data structure
+            if (!data.songs || !data.setLists) {
+                throw new Error('Invalid data format. Expected songs and setLists.');
+            }
+            
+            // Replace all data
+            dataStore.songs = data.songs || [];
+            dataStore.setLists = data.setLists || [];
+            dataStore.save();
+            
+            // Refresh UI
+            this.renderSongs();
+            this.renderSetLists();
+            
+            // Close modal
+            document.getElementById('data-export-modal').style.display = 'none';
+            
+            alert(`✅ Successfully imported ${data.songs.length} songs and ${data.setLists.length} set lists!`);
+            
+        } catch (e) {
+            alert(`❌ Error importing data: ${e.message}`);
+            console.error('Import error:', e);
+        }
     }
     
     setupInstallPrompt() {
