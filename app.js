@@ -592,8 +592,11 @@ class PerformanceApp {
             this.saveSetList();
         });
         
-        document.querySelector('#setlist-modal .cancel-btn').addEventListener('click', () => {
-            setListModal.style.display = 'none';
+        // Fix cancel button - use event delegation to handle dynamically added buttons
+        setListModal.addEventListener('click', (e) => {
+            if (e.target.classList.contains('cancel-btn') || e.target.closest('.cancel-btn')) {
+                setListModal.style.display = 'none';
+            }
         });
         
         // Import modal
@@ -2177,12 +2180,23 @@ class PerformanceApp {
     }
     
     exportAllData() {
+        // Reload from localStorage to ensure we have latest data
+        dataStore.load();
+        const songs = dataStore.getAllSongs();
+        const setLists = dataStore.getAllSetLists();
+        
         const allData = {
-            songs: dataStore.getAllSongs(),
-            setLists: dataStore.getAllSetLists(),
+            songs: songs,
+            setLists: setLists,
             version: '1.0',
-            exportDate: new Date().toISOString()
+            exportDate: new Date().toISOString(),
+            stats: {
+                songCount: songs.length,
+                setListCount: setLists.length
+            }
         };
+        
+        console.log('Exporting data:', { songs: songs.length, setLists: setLists.length });
         return JSON.stringify(allData, null, 2);
     }
     
@@ -2203,14 +2217,23 @@ class PerformanceApp {
             const data = JSON.parse(importData);
             
             // Validate data structure
-            if (!data.songs || !data.setLists) {
-                throw new Error('Invalid data format. Expected songs and setLists.');
+            if (!Array.isArray(data.songs)) {
+                throw new Error('Invalid data format. Expected songs array.');
+            }
+            
+            if (!Array.isArray(data.setLists)) {
+                throw new Error('Invalid data format. Expected setLists array.');
             }
             
             // Replace all data
             dataStore.songs = data.songs || [];
             dataStore.setLists = data.setLists || [];
             dataStore.save();
+            
+            // Reload from storage
+            dataStore.load();
+            
+            console.log('Imported:', { songs: dataStore.songs.length, setLists: dataStore.setLists.length });
             
             // Refresh UI
             this.renderSongs();
@@ -2219,10 +2242,13 @@ class PerformanceApp {
             // Close modal
             document.getElementById('data-export-modal').style.display = 'none';
             
-            alert(`✅ Successfully imported ${data.songs.length} songs and ${data.setLists.length} set lists!`);
+            // Clear import textarea
+            importTextarea.value = '';
+            
+            alert(`✅ Successfully imported ${data.songs.length} song${data.songs.length !== 1 ? 's' : ''} and ${data.setLists.length} set list${data.setLists.length !== 1 ? 's' : ''}!`);
             
         } catch (e) {
-            alert(`❌ Error importing data: ${e.message}`);
+            alert(`❌ Error importing data: ${e.message}\n\nMake sure you copied the complete JSON data.`);
             console.error('Import error:', e);
         }
     }

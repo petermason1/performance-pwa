@@ -1202,32 +1202,269 @@ footer {
     }
 }
 
-/* Responsive */
+/* Responsive - Mobile & Tablet */
+@media (max-width: 1024px) {
+    .app-container {
+        max-width: 100%;
+    }
+    
+    .view {
+        padding: 15px;
+    }
+    
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    header > div {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .btn {
+        font-size: 0.9rem;
+        padding: 10px 16px;
+    }
+    
+    .btn-small {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+}
+
 @media (max-width: 768px) {
+    .nav-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
     .nav-tab {
         font-size: 0.85rem;
-        padding: 12px 8px;
+        padding: 14px 12px;
+        white-space: nowrap;
+        min-width: fit-content;
     }
     
     h1 {
         font-size: 1.5rem;
     }
     
+    .view {
+        padding: 12px;
+    }
+    
     .button-group {
         flex-direction: column;
+        width: 100%;
+    }
+    
+    .button-group .btn {
+        width: 100%;
     }
     
     .form-actions {
         flex-direction: column;
+        gap: 10px;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
     }
     
     .modal-content {
-        margin: 20px auto;
+        margin: 10px;
         padding: 20px;
+        max-width: calc(100% - 20px);
+        max-height: calc(100vh - 20px);
+        overflow-y: auto;
+    }
+    
+    .modal-content h2 {
+        font-size: 1.3rem;
+    }
+    
+    /* Song Cards */
+    .song-card, .setlist-card {
+        padding: 15px;
+    }
+    
+    /* Tempo Wheel */
+    .tempo-wheel-container {
+        transform: scale(0.85);
+    }
+    
+    .tempo-wheel-controls {
+        margin-top: 10px;
+    }
+    
+    /* Performance Controls */
+    .performance-controls {
+        gap: 20px;
+    }
+    
+    .current-song-display {
+        text-align: center;
+    }
+    
+    .bpm-display {
+        font-size: 1.5rem;
+    }
+    
+    /* Metronome Controls */
+    .controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .control-group {
+        width: 100%;
+    }
+    
+    /* Beat Pattern Selector */
+    .beat-pattern-selector {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .beat-btn {
+        min-width: 50px;
+        padding: 12px;
+        font-size: 1rem;
+    }
+    
+    /* Song List */
+    .song-list, .song-checkbox-list {
+        gap: 10px;
+    }
+    
+    .song-item, .sortable-song-item {
+        padding: 12px;
+        font-size: 0.9rem;
+    }
+    
+    /* Set List Controls */
+    .setlist-controls-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    /* Header buttons */
+    header > div {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    header .btn {
+        width: 100%;
+        margin: 0;
+    }
+    
+    /* Select dropdowns */
+    select {
+        width: 100%;
+    }
+    
+    /* Note Grid */
+    .note-grid {
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+        gap: 8px;
+    }
+    
+    .note-btn {
+        padding: 12px 8px;
+        font-size: 0.85rem;
+    }
+    
+    /* Lyrics Display */
+    .lyrics-display {
+        font-size: 1rem;
+        padding: 15px;
+        max-height: 40vh;
+    }
+    
+    /* Save Changes Section */
+    .save-changes-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .save-changes-section .btn {
+        width: 100%;
+    }
+    
+    /* Set List Detail */
+    .setlist-detail-info {
+        padding: 15px;
+    }
+    
+    .detail-song-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    /* MIDI Controls */
+    .midi-controls {
+        flex-direction: column;
+    }
+    
+    /* Export/Import Modal */
+    #export-data-textarea, #import-data-textarea {
+        min-height: 150px;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-tab {
+        padding: 12px 10px;
+        font-size: 0.8rem;
+    }
+    
+    h1 {
+        font-size: 1.2rem;
+    }
+    
+    .view {
+        padding: 10px;
+    }
+    
+    .tempo-wheel-container {
+        transform: scale(0.75);
+    }
+    
+    .bpm-display {
+        font-size: 1.2rem;
+    }
+    
+    .modal-content {
+        padding: 15px;
+        margin: 5px;
+        max-width: calc(100% - 10px);
+    }
+    
+    .song-card, .setlist-card {
+        padding: 12px;
+    }
+    
+    .btn {
+        padding: 10px 14px;
+        font-size: 0.85rem;
+    }
+    
+    .beat-btn {
+        min-width: 45px;
+        padding: 10px;
+        font-size: 0.9rem;
     }
     
     .note-grid {
-        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
     }
 }
 
