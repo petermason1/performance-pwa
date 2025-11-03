@@ -129,6 +129,6 @@ function formatLyrics(lyrics) {
     }).join('\n');
 }
 
-// Global data store instance
-const dataStore = new DataStore();
+// Export class for React
+export { DataStore, parseLyrics, formatLyrics };
 

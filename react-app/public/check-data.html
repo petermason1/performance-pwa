@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Metronome Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .danger {
+            background: #f44336;
+        }
+        .danger:hover {
+            background: #da190b;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+        }
+        .info {
+            color: #4CAF50;
+            margin: 10px 0;
+        }
+        .warning {
+            color: #ff9800;
+            margin: 10px 0;
+        }
+        .error {
+            color: #f44336;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Metronome App Data Checker</h1>
+    
+    <div class="section">
+        <h2>LocalStorage Data</h2>
+        <button onclick="checkData()">Check Data</button>
+        <button onclick="exportData()">Export Data</button>
+        <button onclick="backupData()">Backup Current Data</button>
+        <div id="dataInfo"></div>
+        <pre id="dataDisplay"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>Import Data</h2>
+        <p>Paste exported JSON data here to restore:</p>
+        <textarea id="importData" style="width: 100%; height: 200px; background: #1a1a1a; color: #fff; border: 1px solid #444; padding: 10px; font-family: monospace;"></textarea>
+        <br><br>
+        <button onclick="importData()">Import Data</button>
+        <div id="importStatus"></div>
+    </div>
+    
+    <div class="section">
+        <h2>All LocalStorage Keys</h2>
+        <button onclick="showAllKeys()">Show All Keys</button>
+        <pre id="allKeys"></pre>
+    </div>
+
+    <script>
+        function checkData() {
+            const key = 'performanceApp';
+            const data = localStorage.getItem(key);
+            const infoDiv = document.getElementById('dataInfo');
+            const displayDiv = document.getElementById('dataDisplay');
+            
+            if (!data) {
+                infoDiv.innerHTML = '<div class="error">No data found in localStorage under key "performanceApp"</div>';
+                displayDiv.textContent = 'No data found';
+                return;
+            }
+            
+            try {
+                const parsed = JSON.parse(data);
+                const songCount = parsed.songs ? parsed.songs.length : 0;
+                const setListCount = parsed.setLists ? parsed.setLists.length : 0;
+                
+                infoDiv.innerHTML = `
+                    <div class="info">✓ Data found!</div>
+                    <div> Songs: ${songCount}</div>
+                    <div> Set Lists: ${setListCount}</div>
+                `;
+                
+                displayDiv.textContent = JSON.stringify(parsed, null, 2);
+            } catch (e) {
+                infoDiv.innerHTML = '<div class="error">Error parsing data: ' + e.message + '</div>';
+                displayDiv.textContent = data;
+            }
+        }
+        
+        function exportData() {
+            const data = localStorage.getItem('performanceApp');
+            if (!data) {
+                alert('No data to export');
+                return;
+            }
+            
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'metronome-data-backup-' + new Date().toISOString().split('T')[0] + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function backupData() {
+            const data = localStorage.getItem('performanceApp');
+            if (!data) {
+                alert('No data to backup');
+                return;
+            }
+            
+            const backupKey = 'performanceApp_backup_' + Date.now();
+            localStorage.setItem(backupKey, data);
+            alert('Backup created: ' + backupKey);
+        }
+        
+        function importData() {
+            const textarea = document.getElementById('importData');
+            const statusDiv = document.getElementById('importStatus');
+            const data = textarea.value.trim();
+            
+            if (!data) {
+                statusDiv.innerHTML = '<div class="error">Please paste JSON data</div>';
+                return;
+            }
+            
+            try {
+                const parsed = JSON.parse(data);
+                
+                // Validate structure
+                if (!parsed.songs && !parsed.setLists) {
+                    throw new Error('Invalid data format - missing songs or setLists');
+                }
+                
+                // Create backup first
+                const existing = localStorage.getItem('performanceApp');
+                if (existing) {
+                    const backupKey = 'performanceApp_backup_before_import_' + Date.now();
+                    localStorage.setItem(backupKey, existing);
+                    console.log('Backup created:', backupKey);
+                }
+                
+                // Import
+                localStorage.setItem('performanceApp', JSON.stringify(parsed));
+                
+                // Trigger refresh event for React app
+                window.dispatchEvent(new Event('refreshData'));
+                
+                // Also trigger storage event manually (for same-window refresh)
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'performanceApp',
+                    newValue: JSON.stringify(parsed),
+                    storageArea: localStorage
+                }));
+                
+                statusDiv.innerHTML = `
+                    <div class="info">✓ Data imported successfully!</div>
+                    <div>Songs: ${parsed.songs ? parsed.songs.length : 0}</div>
+                    <div>Set Lists: ${parsed.setLists ? parsed.setLists.length : 0}</div>
+                    <div style="margin-top: 10px;">
+                        <button onclick="window.location.href='/'" style="background: #2196F3; padding: 10px 20px; border: none; border-radius: 4px; color: white; cursor: pointer;">
+                            Go to Main App
+                        </button>
+                        <button onclick="location.reload()" style="background: #4CAF50; padding: 10px 20px; border: none; border-radius: 4px; color: white; cursor: pointer; margin-left: 10px;">
+                            Refresh This Page
+                        </button>
+                    </div>
+                    <div style="margin-top: 10px; color: #ccc; font-size: 0.9rem;">
+                        The app should auto-refresh, but if songs don't appear, click "Go to Main App"
+                    </div>
+                `;
+            } catch (e) {
+                statusDiv.innerHTML = '<div class="error">Error importing data: ' + e.message + '</div>';
+            }
+        }
+        
+        function showAllKeys() {
+            const keysDiv = document.getElementById('allKeys');
+            const keys = [];
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                let value = localStorage.getItem(key);
+                
+                // Try to parse as JSON
+                try {
+                    const parsed = JSON.parse(value);
+                    if (parsed.songs || parsed.setLists) {
+                        keys.push(`✓ ${key}: ${parsed.songs ? parsed.songs.length : 0} songs, ${parsed.setLists ? parsed.setLists.length : 0} set lists`);
+                    } else {
+                        keys.push(`${key}: ${value.substring(0, 50)}...`);
+                    }
+                } catch (e) {
+                    keys.push(`${key}: ${value.substring(0, 50)}...`);
+                }
+            }
+            
+            keysDiv.textContent = keys.length > 0 ? keys.join('\n') : 'No keys found';
+        }
+        
+        // Auto-check on load
+        window.onload = function() {
+            checkData();
+            showAllKeys();
+        };
+    </script>
+</body>
+</html>
+

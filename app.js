@@ -330,13 +330,24 @@ class PerformanceApp {
         });
         
         // Play/Pause control
-        playPauseBtn.addEventListener('click', () => {
+        const toggleMetronome = () => {
             if (this.metronome.isPlaying) {
                 this.metronome.stop();
                 playPauseBtn.classList.remove('playing');
                 document.getElementById('play-icon').style.display = 'inline';
                 document.getElementById('pause-icon').style.display = 'none';
                 document.getElementById('btn-text').textContent = 'Start';
+                
+                // Update wheel button
+                const wheelBtn = document.getElementById('wheel-play-btn');
+                const wheelPlayIcon = document.getElementById('wheel-play-icon');
+                const wheelPauseIcon = document.getElementById('wheel-pause-icon');
+                if (wheelBtn) {
+                    wheelBtn.classList.remove('playing');
+                    if (wheelPlayIcon) wheelPlayIcon.style.display = 'inline';
+                    if (wheelPauseIcon) wheelPauseIcon.style.display = 'none';
+                }
+                
                 beatIndicator.classList.remove('active');
             } else {
                 this.metronome.play();
@@ -344,8 +355,40 @@ class PerformanceApp {
                 document.getElementById('play-icon').style.display = 'none';
                 document.getElementById('pause-icon').style.display = 'inline';
                 document.getElementById('btn-text').textContent = 'Stop';
+                
+                // Update wheel button
+                const wheelBtn = document.getElementById('wheel-play-btn');
+                const wheelPlayIcon = document.getElementById('wheel-play-icon');
+                const wheelPauseIcon = document.getElementById('wheel-pause-icon');
+                if (wheelBtn) {
+                    wheelBtn.classList.add('playing');
+                    if (wheelPlayIcon) wheelPlayIcon.style.display = 'none';
+                    if (wheelPauseIcon) wheelPauseIcon.style.display = 'inline';
+                }
             }
-        });
+        };
+        
+        playPauseBtn.addEventListener('click', toggleMetronome);
+        
+        // Wheel center button
+        const wheelPlayBtn = document.getElementById('wheel-play-btn');
+        if (wheelPlayBtn) {
+            wheelPlayBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Wheel button clicked!');
+                toggleMetronome();
+            });
+            
+            // Also handle mousedown/touchstart to prevent drag
+            wheelPlayBtn.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+            });
+            
+            wheelPlayBtn.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+            });
+        }
         
         // Visual beat callback - now receives accent info
         this.metronome.setOnBeatCallback((beatCount, isAccent) => {
@@ -407,6 +450,14 @@ class PerformanceApp {
         document.getElementById('import-data-btn').addEventListener('click', () => {
             this.openExportModal();
         });
+        
+        // Toggle Live View button
+        const toggleLiveViewBtn = document.getElementById('toggle-live-view-btn');
+        if (toggleLiveViewBtn) {
+            toggleLiveViewBtn.addEventListener('click', () => {
+                this.switchPerformanceMode('live');
+            });
+        }
         
         document.getElementById('load-setlist-btn').addEventListener('click', () => {
             const setListId = document.getElementById('setlist-select').value;
@@ -499,7 +550,20 @@ class PerformanceApp {
             this.testMIDILights();
         });
         
+        // Add Light Event button
+        const addLightEventBtn = document.getElementById('add-light-event-btn');
+        if (addLightEventBtn) {
+            addLightEventBtn.addEventListener('click', () => {
+                this.addLightEvent();
+            });
+        }
+        
         this.generateMIDINoteGrid();
+    }
+    
+    addLightEvent() {
+        // Placeholder for light event functionality
+        alert('Light event functionality coming soon! This will let you schedule MIDI light changes at specific times.');
     }
     
     updateMIDIOutputs() {
@@ -580,10 +644,30 @@ class PerformanceApp {
         // Song modal
         const songModal = document.getElementById('song-modal');
         const songForm = document.getElementById('song-form');
-        const songModalClose = songModal.querySelector('.close');
         
-        songModalClose.addEventListener('click', () => {
-            songModal.style.display = 'none';
+        if (!songModal) {
+            console.error('song-modal not found');
+            return;
+        }
+        
+        // Use event delegation for close button (always works even if modal is recreated)
+        songModal.addEventListener('click', (e) => {
+            // Close button (X) - check if clicked element or parent has .close class
+            const closeBtn = e.target.closest('.close');
+            if (closeBtn || e.target.classList.contains('close')) {
+                e.preventDefault();
+                e.stopPropagation();
+                songModal.style.display = 'none';
+                return;
+            }
+            // Cancel button
+            const cancelBtn = e.target.closest('.cancel-btn');
+            if (cancelBtn || e.target.classList.contains('cancel-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                songModal.style.display = 'none';
+                return;
+            }
         });
         
         songForm.addEventListener('submit', (e) => {
@@ -591,38 +675,70 @@ class PerformanceApp {
             this.saveSong();
         });
         
-        document.querySelector('#song-modal .cancel-btn').addEventListener('click', () => {
-            songModal.style.display = 'none';
-        });
-        
         // Set list modal
         const setListModal = document.getElementById('setlist-modal');
         const setListForm = document.getElementById('setlist-form');
-        const setListModalClose = setListModal.querySelector('.close');
         
-        setListModalClose.addEventListener('click', () => {
-            setListModal.style.display = 'none';
+        if (!setListModal) {
+            console.error('setlist-modal not found');
+            return;
+        }
+        
+        // Use event delegation for all buttons in set list modal
+        setListModal.addEventListener('click', (e) => {
+            // Close button (X)
+            const closeBtn = e.target.closest('.close');
+            if (closeBtn || e.target.classList.contains('close')) {
+                e.preventDefault();
+                e.stopPropagation();
+                setListModal.style.display = 'none';
+                return;
+            }
+            // Cancel button
+            const cancelBtn = e.target.closest('.cancel-btn');
+            if (cancelBtn || e.target.classList.contains('cancel-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                setListModal.style.display = 'none';
+                return;
+            }
         });
         
         setListForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            e.stopPropagation();
+            console.log('Set list form submitted');
             this.saveSetList();
-        });
-        
-        // Fix cancel button - use event delegation to handle dynamically added buttons
-        setListModal.addEventListener('click', (e) => {
-            if (e.target.classList.contains('cancel-btn') || e.target.closest('.cancel-btn')) {
-                setListModal.style.display = 'none';
-            }
+            return false;
         });
         
         // Import modal
         const importModal = document.getElementById('import-modal');
         const importForm = document.getElementById('import-form');
-        const importModalClose = importModal.querySelector('.close');
         
-        importModalClose.addEventListener('click', () => {
-            importModal.style.display = 'none';
+        if (!importModal) {
+            console.error('import-modal not found');
+            return;
+        }
+        
+        // Use event delegation for import modal
+        importModal.addEventListener('click', (e) => {
+            // Close button (X)
+            const closeBtn = e.target.closest('.close');
+            if (closeBtn || e.target.classList.contains('close')) {
+                e.preventDefault();
+                e.stopPropagation();
+                importModal.style.display = 'none';
+                return;
+            }
+            // Cancel button
+            const cancelBtn = e.target.closest('.cancel-btn');
+            if (cancelBtn || e.target.classList.contains('cancel-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                importModal.style.display = 'none';
+                return;
+            }
         });
         
         importForm.addEventListener('submit', (e) => {
@@ -630,8 +746,32 @@ class PerformanceApp {
             this.importSongs();
         });
         
-        document.querySelector('#import-modal .cancel-btn').addEventListener('click', () => {
-            importModal.style.display = 'none';
+        // Export/Import Data Modal
+        const dataModal = document.getElementById('data-export-modal');
+        
+        if (!dataModal) {
+            console.error('data-export-modal not found');
+            return;
+        }
+        
+        // Use event delegation for data export modal
+        dataModal.addEventListener('click', (e) => {
+            // Close button (X)
+            const closeBtn = e.target.closest('.close');
+            if (closeBtn || e.target.classList.contains('close')) {
+                e.preventDefault();
+                e.stopPropagation();
+                dataModal.style.display = 'none';
+                return;
+            }
+            // Cancel button
+            const cancelBtn = e.target.closest('.cancel-btn');
+            if (cancelBtn || e.target.classList.contains('cancel-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                dataModal.style.display = 'none';
+                return;
+            }
         });
         
         // Close modal on outside click
@@ -645,66 +785,91 @@ class PerformanceApp {
             if (e.target === importModal) {
                 importModal.style.display = 'none';
             }
-            const dataModal = document.getElementById('data-export-modal');
             if (e.target === dataModal) {
                 dataModal.style.display = 'none';
             }
         });
         
-        // Export/Import Data Modal
-        const dataModal = document.getElementById('data-export-modal');
-        const dataModalClose = dataModal.querySelector('.close');
-        
-        dataModalClose.addEventListener('click', () => {
-            dataModal.style.display = 'none';
-        });
-        
-        document.querySelectorAll('#data-export-modal .cancel-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                dataModal.style.display = 'none';
-            });
-        });
-        
-        document.getElementById('copy-export-btn').addEventListener('click', async () => {
-            const textarea = document.getElementById('export-data-textarea');
-            const data = textarea.value;
-            
-            try {
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(data);
-                    alert('✅ Data copied to clipboard!');
-                } else {
-                    // Fallback for older browsers
+        // Copy export button - check if exists and add handler
+        const copyExportBtn = document.getElementById('copy-export-btn');
+        if (copyExportBtn) {
+            copyExportBtn.addEventListener('click', async () => {
+                const textarea = document.getElementById('export-data-textarea');
+                if (!textarea) {
+                    alert('Export textarea not found');
+                    return;
+                }
+                const data = textarea.value;
+                
+                if (!data || data.trim() === '') {
+                    alert('No data to copy. Export data first.');
+                    return;
+                }
+                
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(data);
+                        alert('✅ Data copied to clipboard!');
+                    } else {
+                        // Fallback for older browsers
+                        textarea.select();
+                        document.execCommand('copy');
+                        alert('✅ Data copied to clipboard!');
+                    }
+                } catch (e) {
+                    console.error('Copy failed:', e);
+                    // Fallback if clipboard API fails
                     textarea.select();
                     document.execCommand('copy');
                     alert('✅ Data copied to clipboard!');
                 }
-            } catch (e) {
-                // Fallback if clipboard API fails
-                textarea.select();
-                document.execCommand('copy');
-                alert('✅ Data copied to clipboard!');
-            }
-        });
+            });
+        } else {
+            console.warn('copy-export-btn not found');
+        }
         
-        document.getElementById('download-export-btn').addEventListener('click', () => {
-            const data = this.exportAllData();
-            const blob = new Blob([data], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `performance-pwa-backup-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-        });
+        // Download export button
+        const downloadExportBtn = document.getElementById('download-export-btn');
+        if (downloadExportBtn) {
+            downloadExportBtn.addEventListener('click', () => {
+                const data = this.exportAllData();
+                if (!data || data.trim() === '') {
+                    alert('No data to download.');
+                    return;
+                }
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `performance-pwa-backup-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        } else {
+            console.warn('download-export-btn not found');
+        }
         
-        document.getElementById('import-data-replace-btn').addEventListener('click', () => {
-            this.importAllData(true);
-        });
+        // Import replace button
+        const importReplaceBtn = document.getElementById('import-data-replace-btn');
+        if (importReplaceBtn) {
+            importReplaceBtn.addEventListener('click', () => {
+                this.importAllData(true);
+            });
+        } else {
+            console.warn('import-data-replace-btn not found');
+        }
         
-        document.getElementById('import-data-merge-btn').addEventListener('click', () => {
-            this.importAllData(false);
-        });
+        // Import merge button
+        const importMergeBtn = document.getElementById('import-data-merge-btn');
+        if (importMergeBtn) {
+            importMergeBtn.addEventListener('click', () => {
+                this.importAllData(false);
+            });
+        } else {
+            console.warn('import-data-merge-btn not found');
+        }
     }
     
     openSongModal(song = null) {
@@ -1149,17 +1314,27 @@ class PerformanceApp {
                 </div>
             `;
             
-            card.querySelector('.edit-song').addEventListener('click', () => {
-                this.openSongModal(song);
-            });
+            // Edit song button
+            const editBtn = card.querySelector('.edit-song');
+            if (editBtn) {
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.openSongModal(song);
+                });
+            }
             
-            card.querySelector('.delete-song').addEventListener('click', () => {
-                if (confirm('Delete this song?')) {
-                    dataStore.deleteSong(song.id);
-                    this.renderSongs();
-                    this.renderSetLists();
-                }
-            });
+            // Delete song button
+            const deleteBtn = card.querySelector('.delete-song');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (confirm('Delete this song?')) {
+                        dataStore.deleteSong(song.id);
+                        this.renderSongs();
+                        this.renderSetLists();
+                    }
+                });
+            }
             
             container.appendChild(card);
         });
@@ -1168,7 +1343,22 @@ class PerformanceApp {
     renderSetLists() {
         const container = document.getElementById('setlists-container');
         const select = document.getElementById('setlist-select');
+        
+        if (!container) {
+            console.error('setlists-container not found!');
+            return;
+        }
+        
+        if (!select) {
+            console.error('setlist-select not found!');
+            return;
+        }
+        
+        // Reload data from storage to ensure we have latest
+        dataStore.load();
         const setLists = dataStore.getAllSetLists();
+        
+        console.log('Rendering set lists:', setLists.length, setLists);
         
         container.innerHTML = '';
         select.innerHTML = '<option value="">Select a Set List</option>';
@@ -1214,20 +1404,35 @@ class PerformanceApp {
                 </div>
             `;
             
-            card.querySelector('.edit-setlist').addEventListener('click', () => {
-                this.openSetListModal(setList);
-            });
+            // Edit set list button
+            const editSetListBtn = card.querySelector('.edit-setlist');
+            if (editSetListBtn) {
+                editSetListBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.openSetListModal(setList);
+                });
+            }
             
-            card.querySelector('.view-setlist').addEventListener('click', () => {
-                this.viewSetListDetail(setList);
-            });
+            // View set list button
+            const viewSetListBtn = card.querySelector('.view-setlist');
+            if (viewSetListBtn) {
+                viewSetListBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.viewSetListDetail(setList);
+                });
+            }
             
-            card.querySelector('.delete-setlist').addEventListener('click', () => {
-                if (confirm('Delete this set list?')) {
-                    dataStore.deleteSetList(setList.id);
-                    this.renderSetLists();
-                }
-            });
+            // Delete set list button
+            const deleteSetListBtn = card.querySelector('.delete-setlist');
+            if (deleteSetListBtn) {
+                deleteSetListBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (confirm('Delete this set list?')) {
+                        dataStore.deleteSetList(setList.id);
+                        this.renderSetLists();
+                    }
+                });
+            }
             
             container.appendChild(card);
         });
@@ -1302,15 +1507,25 @@ class PerformanceApp {
             songsList.appendChild(item);
         });
         
-        // Setup print button
-        document.getElementById('print-setlist-btn').onclick = () => {
-            window.print();
-        };
+        // Setup print button - remove old listener first
+        const printBtn = document.getElementById('print-setlist-btn');
+        if (printBtn) {
+            const newPrintBtn = printBtn.cloneNode(true);
+            printBtn.parentNode.replaceChild(newPrintBtn, printBtn);
+            newPrintBtn.addEventListener('click', () => {
+                window.print();
+            });
+        }
         
-        // Setup close button
-        document.getElementById('close-detail-btn').onclick = () => {
-            this.switchView('setlists');
-        };
+        // Setup close button - remove old listener first
+        const closeBtn = document.getElementById('close-detail-btn');
+        if (closeBtn) {
+            const newCloseBtn = closeBtn.cloneNode(true);
+            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+            newCloseBtn.addEventListener('click', () => {
+                this.switchView('setlists');
+            });
+        }
         
         // Store current set list ID for reference
         this.currentDetailSetListId = setList.id;
@@ -1608,6 +1823,16 @@ class PerformanceApp {
             document.getElementById('play-icon').style.display = 'inline';
             document.getElementById('pause-icon').style.display = 'none';
             document.getElementById('btn-text').textContent = 'Start';
+            
+            // Update wheel button
+            const wheelBtn = document.getElementById('wheel-play-btn');
+            const wheelPlayIcon = document.getElementById('wheel-play-icon');
+            const wheelPauseIcon = document.getElementById('wheel-pause-icon');
+            if (wheelBtn) {
+                wheelBtn.classList.remove('playing');
+                if (wheelPlayIcon) wheelPlayIcon.style.display = 'inline';
+                if (wheelPauseIcon) wheelPauseIcon.style.display = 'none';
+            }
         }
     }
     
@@ -1858,7 +2083,10 @@ class PerformanceApp {
         bpm = Math.max(40, Math.min(300, bpm));
         this.metronome.setBPM(bpm);
         document.getElementById('bpm-value').textContent = bpm;
-        document.getElementById('wheel-bpm-value').textContent = bpm;
+        const wheelBpmValue = document.getElementById('wheel-bpm-value');
+        if (wheelBpmValue) {
+            wheelBpmValue.textContent = bpm;
+        }
         document.getElementById('bpm-slider').value = bpm;
         
         // Update quick tempo display (live view)
@@ -1955,6 +2183,12 @@ class PerformanceApp {
         }, 100);
         
         const startDrag = (e) => {
+            // Don't start drag if clicking on the play button
+            const target = e.target;
+            if (target.closest && target.closest('#wheel-play-btn')) {
+                return; // Let the button handle its own click
+            }
+            
             e.preventDefault();
             isDragging = true;
             wheel.classList.add('active');
@@ -2227,12 +2461,28 @@ class PerformanceApp {
     
     openExportModal() {
         const modal = document.getElementById('data-export-modal');
+        if (!modal) {
+            console.error('data-export-modal not found');
+            return;
+        }
+        
         const exportTextarea = document.getElementById('export-data-textarea');
         const importTextarea = document.getElementById('import-data-textarea');
         
+        if (!exportTextarea || !importTextarea) {
+            console.error('Export/import textareas not found');
+            return;
+        }
+        
         // Populate export textarea with current data
-        const exportData = this.exportAllData();
-        exportTextarea.value = exportData;
+        try {
+            const exportData = this.exportAllData();
+            exportTextarea.value = exportData;
+        } catch (e) {
+            console.error('Error exporting data:', e);
+            alert('Error exporting data. Check console for details.');
+            return;
+        }
         
         // Clear import textarea
         importTextarea.value = '';
@@ -2308,9 +2558,25 @@ class PerformanceApp {
             }
             
             if (replace) {
-                // Replace all data
-                dataStore.songs = data.songs || [];
-                dataStore.setLists = data.setLists || [];
+            // Replace all data - but check if we have backups first
+            const backupKeys = Object.keys(localStorage).filter(k => k.startsWith('backup_')).sort().reverse();
+            if (backupKeys.length > 0 && replace) {
+                console.log('Found backups:', backupKeys);
+                // Latest backup is first (reverse sorted)
+                const latestBackup = localStorage.getItem(backupKeys[0]);
+                if (latestBackup) {
+                    try {
+                        const backupData = JSON.parse(latestBackup);
+                        console.log('Latest backup has:', { songs: backupData.songs?.length, setLists: backupData.setLists?.length });
+                    } catch (e) {
+                        console.error('Could not parse backup:', e);
+                    }
+                }
+            }
+            
+            // Replace all data
+            dataStore.songs = data.songs || [];
+            dataStore.setLists = data.setLists || [];
             } else {
                 // Merge data - add new songs/set lists without duplicates
                 const existingSongNames = new Set(dataStore.songs.map(s => `${s.name}|${s.artist || ''}`.toLowerCase()));

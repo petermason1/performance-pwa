@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recover Set List Data</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e2e;
+            color: #fff;
+        }
+        .backup {
+            background: #27293d;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #6366f1;
+        }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+        pre {
+            background: #1e1e2e;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Set List Data Recovery</h1>
+    <p>This page helps you recover lost set lists from localStorage backups.</p>
+    
+    <div id="current-data">
+        <h2>Current Data in localStorage</h2>
+        <div id="current-info"></div>
+    </div>
+    
+    <div id="backups">
+        <h2>Available Backups</h2>
+        <div id="backup-list"></div>
+    </div>
+    
+    <script>
+        // Get current data
+        const currentData = localStorage.getItem('performanceApp');
+        const currentInfo = document.getElementById('current-info');
+        
+        if (currentData) {
+            try {
+                const data = JSON.parse(currentData);
+                currentInfo.innerHTML = `
+                    <p><strong>Songs:</strong> ${data.songs?.length || 0}</p>
+                    <p><strong>Set Lists:</strong> ${data.setLists?.length || 0}</p>
+                    ${data.setLists?.length > 0 ? `
+                        <p><strong>Set List Names:</strong></p>
+                        <ul>
+                            ${data.setLists.map(sl => `<li>${sl.name} (${sl.songIds?.length || 0} songs)</li>`).join('')}
+                        </ul>
+                    ` : '<p style="color: #ef4444;">⚠️ No set lists found!</p>'}
+                `;
+            } catch (e) {
+                currentInfo.innerHTML = `<p style="color: #ef4444;">Error reading data: ${e.message}</p>`;
+            }
+        } else {
+            currentInfo.innerHTML = '<p style="color: #ef4444;">⚠️ No data found in localStorage!</p>';
+        }
+        
+        // Get backups
+        const backupKeys = Object.keys(localStorage).filter(k => k.startsWith('backup_')).sort().reverse();
+        const backupList = document.getElementById('backup-list');
+        
+        if (backupKeys.length === 0) {
+            backupList.innerHTML = '<p style="color: #ef4444;">No backups found.</p>';
+        } else {
+            backupKeys.forEach(key => {
+                const backupData = localStorage.getItem(key);
+                if (backupData) {
+                    try {
+                        const data = JSON.parse(backupData);
+                        const timestamp = key.replace('backup_', '');
+                        const date = new Date(parseInt(timestamp));
+                        
+                        const backupDiv = document.createElement('div');
+                        backupDiv.className = 'backup';
+                        backupDiv.innerHTML = `
+                            <h3>Backup from ${date.toLocaleString()}</h3>
+                            <p><strong>Songs:</strong> ${data.songs?.length || 0}</p>
+                            <p><strong>Set Lists:</strong> ${data.setLists?.length || 0}</p>
+                            ${data.setLists?.length > 0 ? `
+                                <p><strong>Set List Names:</strong></p>
+                                <ul>
+                                    ${data.setLists.map(sl => `<li>${sl.name} (${sl.songIds?.length || 0} songs)</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                            <button onclick="restoreBackup('${key}')">Restore This Backup</button>
+                            <button onclick="copyBackup('${key}')">Copy to Clipboard</button>
+                            <details>
+                                <summary>View Raw Data</summary>
+                                <pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
+                            </details>
+                        `;
+                        backupList.appendChild(backupDiv);
+                    } catch (e) {
+                        console.error('Error parsing backup:', e);
+                    }
+                }
+            });
+        }
+        
+        function restoreBackup(key) {
+            if (!confirm('This will REPLACE your current data with this backup. Continue?')) {
+                return;
+            }
+            
+            const backupData = localStorage.getItem(key);
+            if (backupData) {
+                localStorage.setItem('performanceApp', backupData);
+                alert('Backup restored! Refresh the app to see your data.');
+            }
+        }
+        
+        function copyBackup(key) {
+            const backupData = localStorage.getItem(key);
+            if (backupData) {
+                navigator.clipboard.writeText(backupData).then(() => {
+                    alert('Backup copied to clipboard!');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+

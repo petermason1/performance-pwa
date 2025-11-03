@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Metronome Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .danger {
+            background: #f44336;
+        }
+        .danger:hover {
+            background: #da190b;
+        }
+        .info {
+            background: #2196F3;
+        }
+        .info:hover {
+            background: #0b7dda;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #444;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #4CAF50;
+            color: white;
+        }
+        .error {
+            background: #f44336;
+            color: white;
+        }
+        .warning {
+            background: #ff9800;
+            color: white;
+        }
+        .data-preview {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        h2 {
+            color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <h1>📤 Export Metronome App Data</h1>
+    <p style="color: #ccc;">Use this page to export your data from the old app and import it into the new React app.</p>
+    
+    <div class="section">
+        <h2>Current Data Status</h2>
+        <div id="statusArea"></div>
+        <button onclick="checkData()">🔍 Check for Data</button>
+        <div id="dataInfo"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Export Options</h2>
+        <button onclick="exportToFile()">💾 Export to File</button>
+        <button onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+        <button onclick="showJSON()" class="info">👁️ Show JSON</button>
+        <div id="exportStatus"></div>
+        <pre id="jsonDisplay" style="display: none;"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>Import Instructions</h2>
+        <ol style="line-height: 1.8;">
+            <li>Export your data using one of the buttons above</li>
+            <li>If you copied to clipboard, save it to a text file</li>
+            <li>Open the React app: <code>http://localhost:5173</code></li>
+            <li>Navigate to: <code>http://localhost:5173/check-data.html</code></li>
+            <li>Paste your exported JSON into the import section</li>
+            <li>Click "Import Data"</li>
+            <li>Refresh the main app - your songs should appear!</li>
+        </ol>
+    </div>
+
+    <script>
+        let currentData = null;
+        
+        function checkData() {
+            const key = 'performanceApp';
+            const data = localStorage.getItem(key);
+            const statusArea = document.getElementById('statusArea');
+            const dataInfo = document.getElementById('dataInfo');
+            
+            if (!data) {
+                statusArea.innerHTML = '<div class="status error">❌ No data found in localStorage under key "performanceApp"</div>';
+                dataInfo.innerHTML = '<p style="color: #ccc;">The old app data may have been cleared, or you\'re on a different domain/port.</p>';
+                currentData = null;
+                return;
+            }
+            
+            try {
+                const parsed = JSON.parse(data);
+                currentData = parsed;
+                const songCount = parsed.songs ? parsed.songs.length : 0;
+                const setListCount = parsed.setLists ? parsed.setLists.length : 0;
+                
+                statusArea.innerHTML = '<div class="status success">✅ Data found!</div>';
+                
+                let songsPreview = '';
+                if (songCount > 0) {
+                    songsPreview = '<h3>Your Songs:</h3><ul style="max-height: 200px; overflow-y: auto;">';
+                    parsed.songs.slice(0, 10).forEach(song => {
+                        songsPreview += `<li>${song.name || 'Unnamed'}${song.artist ? ' - ' + song.artist : ''} (${song.bpm || '?'} BPM)</li>`;
+                    });
+                    if (songCount > 10) {
+                        songsPreview += `<li><em>... and ${songCount - 10} more</em></li>`;
+                    }
+                    songsPreview += '</ul>';
+                }
+                
+                let setListsPreview = '';
+                if (setListCount > 0) {
+                    setListsPreview = '<h3>Your Set Lists:</h3><ul>';
+                    parsed.setLists.forEach(setList => {
+                        setListsPreview += `<li>${setList.name || 'Unnamed'} (${setList.songIds ? setList.songIds.length : 0} songs)</li>`;
+                    });
+                    setListsPreview += '</ul>';
+                }
+                
+                dataInfo.innerHTML = `
+                    <div style="margin-top: 15px;">
+                        <p><strong>📊 Statistics:</strong></p>
+                        <ul>
+                            <li>Songs: <strong>${songCount}</strong></li>
+                            <li>Set Lists: <strong>${setListCount}</strong></li>
+                        </ul>
+                        ${songsPreview}
+                        ${setListsPreview}
+                    </div>
+                `;
+            } catch (e) {
+                statusArea.innerHTML = '<div class="status error">❌ Error parsing data: ' + e.message + '</div>';
+                dataInfo.innerHTML = '<pre>' + data.substring(0, 500) + '</pre>';
+                currentData = null;
+            }
+        }
+        
+        function exportToFile() {
+            if (!currentData) {
+                alert('Please check for data first!');
+                return;
+            }
+            
+            const json = JSON.stringify(currentData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'metronome-data-export-' + new Date().toISOString().split('T')[0] + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            document.getElementById('exportStatus').innerHTML = 
+                '<div class="status success">✅ Data exported to file! Check your Downloads folder.</div>';
+        }
+        
+        function copyToClipboard() {
+            if (!currentData) {
+                alert('Please check for data first!');
+                return;
+            }
+            
+            const json = JSON.stringify(currentData, null, 2);
+            navigator.clipboard.writeText(json).then(() => {
+                document.getElementById('exportStatus').innerHTML = 
+                    '<div class="status success">✅ Data copied to clipboard! You can now paste it in the React app.</div>';
+            }).catch(err => {
+                document.getElementById('exportStatus').innerHTML = 
+                    '<div class="status error">❌ Failed to copy: ' + err.message + '</div>';
+            });
+        }
+        
+        function showJSON() {
+            if (!currentData) {
+                alert('Please check for data first!');
+                return;
+            }
+            
+            const jsonDisplay = document.getElementById('jsonDisplay');
+            jsonDisplay.textContent = JSON.stringify(currentData, null, 2);
+            jsonDisplay.style.display = jsonDisplay.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Auto-check on load
+        window.onload = function() {
+            checkData();
+        };
+    </script>
+</body>
+</html>
+
