@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetch Lyrics with Timestamps - LRCLIB</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        input, button {
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        input {
+            width: 300px;
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #444;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .info {
+            color: #4CAF50;
+            margin: 10px 0;
+        }
+        .error {
+            color: #f44336;
+            margin: 10px 0;
+        }
+        .success {
+            color: #4CAF50;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 Fetch Lyrics with Timestamps</h1>
+    
+    <div class="section">
+        <h2>Search & Fetch from LRCLIB (Free API)</h2>
+        <p style="color: #ccc; font-size: 0.9rem;">
+            LRCLIB is a free, community-powered API for synchronized lyrics. 
+            Coverage varies - popular songs are more likely to have timestamps.
+        </p>
+        
+        <div style="margin: 20px 0;">
+            <input type="text" id="trackName" placeholder="Song Name" value="Bet You Look Good on the Dancefloor">
+            <br>
+            <input type="text" id="artistName" placeholder="Artist Name" value="Arctic Monkeys" style="margin-top: 10px;">
+            <br>
+            <button onclick="fetchFromLRCLIB()" id="fetchBtn">Fetch Lyrics</button>
+        </div>
+        
+        <div id="lrclibStatus"></div>
+        <pre id="lrclibLyrics" style="display: none;"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>Manual Sync Tool (Most Accurate)</h2>
+        <p style="color: #ccc; font-size: 0.9rem;">
+            If automatic fetching doesn't work or timestamps are inaccurate, 
+            use a manual sync tool for perfect timing.
+        </p>
+        
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+            <button onclick="window.open('https://quicklrc.com/sync-lyrics', '_blank')">
+                🎯 QuickLRC (Recommended)
+            </button>
+            <button onclick="window.open('https://www.lrcgenerator.app/manual-alignment', '_blank')">
+                🎵 LRC Generator
+            </button>
+        </div>
+        
+        <div style="margin-top: 15px; padding: 15px; background: rgba(255, 193, 7, 0.1); border-radius: 4px;">
+            <strong style="color: #ffc107;">How to use:</strong>
+            <ol style="color: #ccc; line-height: 1.8;">
+                <li>Open QuickLRC in the button above</li>
+                <li>Upload your audio file or use YouTube URL</li>
+                <li>Paste the lyrics (without timestamps)</li>
+                <li>Click "Sync" and mark timestamps as the song plays</li>
+                <li>Export as LRC format</li>
+                <li>Copy the exported text and paste it into your song editor</li>
+            </ol>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Add to App</h2>
+        <div id="appStatus"></div>
+        <button onclick="addToApp()" id="addBtn" disabled style="background: #666;">
+            Add Lyrics to App
+        </button>
+        <button onclick="window.location.href='/'" style="background: #2196F3; margin-left: 10px;">
+            Go to Main App
+        </button>
+    </div>
+
+    <script>
+        let fetchedLyrics = null;
+        let trackName = '';
+        let artistName = '';
+
+        function convertLRCToAppFormat(lrcText) {
+            // LRC format is already compatible: [MM:SS.CC] Text
+            // Just ensure it matches our format exactly
+            const lines = lrcText.split('\n');
+            const formatted = [];
+            
+            lines.forEach(line => {
+                line = line.trim();
+                // Match LRC timestamp format: [MM:SS.CC] or [MM:SS]
+                const match = line.match(/\[(\d{1,2}):(\d{2})(?:\.(\d{2}))?\]\s*(.+)/);
+                if (match) {
+                    const minutes = parseInt(match[1]);
+                    const seconds = parseInt(match[2]);
+                    const centiseconds = match[3] ? parseInt(match[3]) : 0;
+                    const text = match[4].trim();
+                    
+                    if (text) {
+                        formatted.push(`[${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(centiseconds).padStart(2, '0')}] ${text}`);
+                    }
+                }
+            });
+            
+            return formatted.join('\n');
+        }
+
+        async function fetchFromLRCLIB() {
+            const track = document.getElementById('trackName').value.trim();
+            const artist = document.getElementById('artistName').value.trim();
+            const statusDiv = document.getElementById('lrclibStatus');
+            const lyricsDiv = document.getElementById('lrclibLyrics');
+            const fetchBtn = document.getElementById('fetchBtn');
+            
+            if (!track || !artist) {
+                statusDiv.innerHTML = '<div class="error">Please enter both song name and artist</div>';
+                return;
+            }
+            
+            trackName = track;
+            artistName = artist;
+            
+            fetchBtn.disabled = true;
+            fetchBtn.textContent = 'Fetching...';
+            statusDiv.innerHTML = '<div class="info">🔍 Searching LRCLIB database...</div>';
+            lyricsDiv.style.display = 'none';
+            
+            try {
+                // LRCLIB API endpoint
+                const url = `https://lrclib.net/api/search?track_name=${encodeURIComponent(track)}&artist_name=${encodeURIComponent(artist)}`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (!response.ok || !data || !data.lyrics) {
+                    throw new Error(data.error || 'No lyrics found');
+                }
+                
+                // Check if we have synchronized lyrics (with timestamps)
+                if (!data.syncedLyrics && !data.lyrics.includes('[')) {
+                    statusDiv.innerHTML = `
+                        <div class="error">
+                            ⚠️ Found lyrics but no timestamps available for this song.<br>
+                            <strong>Solutions:</strong><br>
+                            1. Use the manual sync tools above for accurate timestamps<br>
+                            2. Add lyrics manually and sync them in your app
+                        </div>
+                    `;
+                    fetchBtn.disabled = false;
+                    fetchBtn.textContent = 'Fetch Lyrics';
+                    return;
+                }
+                
+                // Use synced lyrics if available, otherwise try to parse regular lyrics
+                const lyricsText = data.syncedLyrics || data.lyrics;
+                
+                if (!lyricsText) {
+                    throw new Error('No lyrics content found');
+                }
+                
+                // Convert to app format
+                const formatted = convertLRCToAppFormat(lyricsText);
+                fetchedLyrics = formatted;
+                
+                lyricsDiv.textContent = formatted;
+                lyricsDiv.style.display = 'block';
+                
+                statusDiv.innerHTML = `
+                    <div class="success">
+                        ✅ Found synchronized lyrics! (${formatted.split('\n').filter(l => l.trim()).length} lines)<br>
+                        Preview below. Click "Add Lyrics to App" to import.
+                    </div>
+                `;
+                
+                document.getElementById('addBtn').disabled = false;
+                document.getElementById('addBtn').style.background = '#4CAF50';
+                
+            } catch (e) {
+                statusDiv.innerHTML = `
+                    <div class="error">
+                        ❌ ${e.message}<br><br>
+                        <strong>Alternatives:</strong><br>
+                        1. Try a different song name/artist spelling<br>
+                        2. Use manual sync tools (more accurate anyway)<br>
+                        3. Add lyrics manually and sync them yourself
+                    </div>
+                `;
+            } finally {
+                fetchBtn.disabled = false;
+                fetchBtn.textContent = 'Fetch Lyrics';
+            }
+        }
+
+        function parseLyrics(lyricsText) {
+            if (!lyricsText) return [];
+            
+            const lines = lyricsText.split('\n');
+            const parsed = [];
+            
+            lines.forEach(line => {
+                const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2})\]\s*(.+)/);
+                if (match) {
+                    const minutes = parseInt(match[1]);
+                    const seconds = parseInt(match[2]);
+                    const centiseconds = parseInt(match[3]);
+                    const text = match[4].trim();
+                    
+                    if (text) {
+                        const timeInSeconds = minutes * 60 + seconds + centiseconds / 100;
+                        parsed.push({ time: timeInSeconds, text });
+                    }
+                }
+            });
+            
+            return parsed.sort((a, b) => a.time - b.time);
+        }
+
+        function addToApp() {
+            if (!fetchedLyrics) {
+                document.getElementById('appStatus').innerHTML = '<div class="error">No lyrics to add. Fetch lyrics first.</div>';
+                return;
+            }
+            
+            const statusDiv = document.getElementById('appStatus');
+            statusDiv.innerHTML = '<div class="info">Searching for song in app...</div>';
+            
+            try {
+                const dataKey = 'performanceApp';
+                const dataStr = localStorage.getItem(dataKey);
+                
+                if (!dataStr) {
+                    throw new Error('No app data found');
+                }
+                
+                const data = JSON.parse(dataStr);
+                
+                if (!data.songs || !Array.isArray(data.songs)) {
+                    throw new Error('No songs found');
+                }
+                
+                // Find song (flexible search)
+                const song = data.songs.find(s => {
+                    const sName = (s.name || '').toLowerCase();
+                    const sArtist = (s.artist || '').toLowerCase();
+                    const searchName = trackName.toLowerCase();
+                    const searchArtist = artistName.toLowerCase();
+                    
+                    return sName.includes(searchName) || searchName.includes(sName) &&
+                           (sArtist.includes(searchArtist) || searchArtist.includes(sArtist));
+                });
+                
+                if (!song) {
+                    statusDiv.innerHTML = `
+                        <div class="error">
+                            ❌ Song "${trackName}" by "${artistName}" not found in app.<br>
+                            Make sure the song exists in your Songs library first.
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Parse lyrics
+                const lyrics = parseLyrics(fetchedLyrics);
+                
+                if (lyrics.length === 0) {
+                    throw new Error('Failed to parse lyrics');
+                }
+                
+                // Update song
+                song.lyrics = lyrics;
+                
+                // Save
+                localStorage.setItem(dataKey, JSON.stringify(data));
+                
+                // Trigger refresh
+                window.dispatchEvent(new Event('refreshData'));
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: dataKey,
+                    newValue: JSON.stringify(data),
+                    storageArea: localStorage
+                }));
+                
+                statusDiv.innerHTML = `
+                    <div class="success">
+                        ✅ Successfully added ${lyrics.length} lyric lines with timestamps to:<br>
+                        <strong>${song.name}</strong> by <strong>${song.artist || 'Unknown'}</strong><br><br>
+                        The app should refresh automatically. If not, click "Go to Main App" above.
+                    </div>
+                `;
+                
+                document.getElementById('addBtn').disabled = true;
+                document.getElementById('addBtn').style.background = '#666';
+                
+            } catch (e) {
+                statusDiv.innerHTML = `<div class="error">❌ Error: ${e.message}</div>`;
+                console.error('Error:', e);
+            }
+        }
+    </script>
+</body>
+</html>

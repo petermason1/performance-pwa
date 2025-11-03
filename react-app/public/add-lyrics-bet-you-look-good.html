@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Lyrics - Bet You Look Good on the Dancefloor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        pre {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .info {
+            color: #4CAF50;
+            margin: 10px 0;
+            padding: 10px;
+            background: #2a2a2a;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Add Lyrics to "Bet You Look Good on the Dancefloor"</h1>
+    
+    <div class="info">
+        This will find the song and add the lyrics with timestamps.
+    </div>
+    
+    <button onclick="addLyrics()">Add Lyrics</button>
+    <button onclick="window.location.href='/'" style="background: #2196F3;">Go to Main App</button>
+    
+    <h2>Lyrics to Add:</h2>
+    <pre id="lyricsPreview"></pre>
+    
+    <div id="status"></div>
+
+    <script>
+        // Lyrics with timestamps (approximate timings based on song structure)
+        const lyricsText = `[00:00.00] Stop making the eyes at me
+[00:03.50] I'll stop making the eyes at you
+[00:07.00] What it is that surprises me is that I don't really want you to
+[00:14.00] 
+[00:15.00] Your name isn't Rio, but I don't care for sand
+[00:19.00] And I'll tell you tales of when I was young
+[00:23.00] I'll bet that you look good on the dancefloor
+[00:27.00] I don't know if you're looking for romance or
+[00:31.00] I don't know what you're looking for
+[00:35.00] 
+[00:40.00] I said, I bet that you look good on the dancefloor
+[00:44.00] Dancing to electro-pop like a robot from 1984
+[00:48.00] Yeah, from 1984
+[00:52.00] 
+[00:54.00] There isn't no love, no Montagues or Capulets
+[00:58.00] Just banging tunes in DJ sets
+[01:02.00] And dirty dancefloors and dreams of naughtiness
+[01:06.00] Well, it's not like I've fallen in love
+[01:09.00] I just think you could do with someone new
+[01:13.00] 
+[01:17.00] And I bet that you look good on the dancefloor
+[01:21.00] I don't know if you're looking for romance or
+[01:25.00] I don't know what you're looking for
+[01:29.00] 
+[01:34.00] I said, I bet that you look good on the dancefloor
+[01:38.00] Dancing to electro-pop like a robot from 1984
+[01:42.00] Yeah, from 1984
+[01:46.00] 
+[01:48.00] Yeah, the boys a slag, the best you ever had
+[01:52.00] The best you ever had is just a memory
+[01:56.00] And those dreams, they aren't as daft as they seem
+[02:00.00] Not as daft as they seem, my love
+[02:04.00] 
+[02:08.00] So I bet that you look good on the dancefloor
+[02:12.00] I don't know if you're looking for romance or
+[02:16.00] I don't know what you're looking for
+[02:20.00] 
+[02:24.00] I bet that you look good on the dancefloor
+[02:28.00] Dancing to electro-pop like a robot from 1984
+[02:32.00] Yeah, from 1984
+[02:36.00] 
+[02:40.00] Yeah, from 1984
+[02:44.00] Yeah, from 1984`;
+
+        document.getElementById('lyricsPreview').textContent = lyricsText;
+
+        function parseLyrics(lyricsText) {
+            if (!lyricsText) return [];
+            
+            const lines = lyricsText.split('\n');
+            const parsed = [];
+            
+            lines.forEach(line => {
+                const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2})\]\s*(.+)/);
+                if (match) {
+                    const minutes = parseInt(match[1]);
+                    const seconds = parseInt(match[2]);
+                    const centiseconds = parseInt(match[3]);
+                    const text = match[4].trim();
+                    
+                    if (text) { // Only add non-empty lines
+                        const timeInSeconds = minutes * 60 + seconds + centiseconds / 100;
+                        parsed.push({ time: timeInSeconds, text });
+                    }
+                }
+            });
+            
+            return parsed.sort((a, b) => a.time - b.time);
+        }
+
+        function addLyrics() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<div style="color: #ff9800;">Searching for song...</div>';
+            
+            try {
+                // Get data from localStorage
+                const dataKey = 'performanceApp';
+                const dataStr = localStorage.getItem(dataKey);
+                
+                if (!dataStr) {
+                    statusDiv.innerHTML = '<div style="color: #f44336;">❌ No data found in localStorage</div>';
+                    return;
+                }
+                
+                const data = JSON.parse(dataStr);
+                
+                if (!data.songs || !Array.isArray(data.songs)) {
+                    statusDiv.innerHTML = '<div style="color: #f44336;">❌ No songs found in data</div>';
+                    return;
+                }
+                
+                // Find the song
+                const songName = 'Bet You Look Good on the Dance Floor';
+                const artistName = 'Arctic Monkeys';
+                
+                const song = data.songs.find(s => 
+                    (s.name && s.name.toLowerCase().includes('bet you look good')) &&
+                    (s.artist && s.artist.toLowerCase().includes('arctic'))
+                );
+                
+                if (!song) {
+                    statusDiv.innerHTML = `<div style="color: #f44336;">❌ Song not found. Looking for songs containing "bet you look good" and artist "arctic"</div>
+                    <div style="margin-top: 10px; font-size: 0.9rem;">
+                    Found songs:<br>
+                    ${data.songs.filter(s => s.name && s.name.toLowerCase().includes('bet')).map(s => `- ${s.name} (${s.artist || 'no artist'})`).join('<br>') || 'None'}
+                    </div>`;
+                    return;
+                }
+                
+                // Parse lyrics
+                const lyrics = parseLyrics(lyricsText);
+                
+                if (lyrics.length === 0) {
+                    statusDiv.innerHTML = '<div style="color: #f44336;">❌ Failed to parse lyrics</div>';
+                    return;
+                }
+                
+                // Update song
+                song.lyrics = lyrics;
+                
+                // Save back to localStorage
+                localStorage.setItem(dataKey, JSON.stringify(data));
+                
+                // Trigger refresh event
+                window.dispatchEvent(new Event('refreshData'));
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: dataKey,
+                    newValue: JSON.stringify(data),
+                    storageArea: localStorage
+                }));
+                
+                statusDiv.innerHTML = `<div style="color: #4CAF50;">
+                    ✅ Successfully added ${lyrics.length} lyric lines to:<br>
+                    <strong>${song.name}</strong> by <strong>${song.artist || 'Unknown'}</strong><br><br>
+                    The app should refresh automatically. If not, click "Go to Main App" above.
+                </div>`;
+                
+            } catch (e) {
+                statusDiv.innerHTML = `<div style="color: #f44336;">❌ Error: ${e.message}</div>`;
+                console.error('Error:', e);
+            }
+        }
+        
+        // Auto-run on load if user wants
+        // addLyrics();
+    </script>
+</body>
+</html>

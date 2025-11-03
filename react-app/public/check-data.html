@@ -72,8 +72,31 @@
     
     <div class="section">
         <h2>Import Data</h2>
-        <p>Paste exported JSON data here to restore:</p>
-        <textarea id="importData" style="width: 100%; height: 200px; background: #1a1a1a; color: #fff; border: 1px solid #444; padding: 10px; font-family: monospace;"></textarea>
+        <p>Upload a JSON file from your device or paste exported JSON data here to restore:</p>
+        
+        <!-- File Upload -->
+        <div style="margin-bottom: 15px;">
+            <input
+                type="file"
+                id="importFileInput"
+                accept=".json,application/json"
+                style="display: none;"
+                onchange="handleFileUpload(event)"
+            />
+            <label for="importFileInput" style="display: inline-block; background: #4CAF50; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-bottom: 10px;">
+                📁 Choose File from Device
+            </label>
+            <div id="fileInfo" style="margin-top: 10px; padding: 8px; background: #2a2a2a; border-radius: 4px; font-size: 0.9rem; display: none;"></div>
+            <div style="margin-top: 10px; padding: 10px; background: #2a2a2a; border-radius: 4px; font-size: 0.85rem; color: #ccc;">
+                <strong>📱 Mobile Tip:</strong> Use "Choose File" to select a JSON backup from your phone's storage.
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 15px 0; color: #ccc; font-size: 0.9rem;">
+            <strong>OR</strong>
+        </div>
+        
+        <textarea id="importData" placeholder="Paste exported data here (or use file upload above)..." style="width: 100%; height: 200px; background: #1a1a1a; color: #fff; border: 1px solid #444; padding: 10px; font-family: monospace; box-sizing: border-box;"></textarea>
         <br><br>
         <button onclick="importData()">Import Data</button>
         <div id="importStatus"></div>
@@ -144,6 +167,45 @@
             alert('Backup created: ' + backupKey);
         }
         
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const fileInfo = document.getElementById('fileInfo');
+            const textarea = document.getElementById('importData');
+            
+            // Validate file type
+            if (file.type && !file.type.includes('json') && !file.name.endsWith('.json')) {
+                if (!confirm('File does not appear to be JSON. Continue anyway?')) {
+                    event.target.value = '';
+                    return;
+                }
+            }
+            
+            fileInfo.innerHTML = '✓ Selected: <strong>' + file.name + '</strong>';
+            fileInfo.style.display = 'block';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    // Validate JSON
+                    JSON.parse(content);
+                    textarea.value = content;
+                } catch (err) {
+                    alert('❌ Error reading file: ' + err.message + '\n\nPlease make sure the file contains valid JSON data.');
+                    fileInfo.style.display = 'none';
+                    event.target.value = '';
+                }
+            };
+            reader.onerror = function() {
+                alert('❌ Error reading file. Please try again.');
+                fileInfo.style.display = 'none';
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+        
         function importData() {
             const textarea = document.getElementById('importData');
             const statusDiv = document.getElementById('importStatus');
@@ -182,6 +244,13 @@
                     newValue: JSON.stringify(parsed),
                     storageArea: localStorage
                 }));
+                
+                // Clear file input and file info
+                const fileInput = document.getElementById('importFileInput');
+                if (fileInput) fileInput.value = '';
+                const fileInfo = document.getElementById('fileInfo');
+                if (fileInfo) fileInfo.style.display = 'none';
+                textarea.value = '';
                 
                 statusDiv.innerHTML = `
                     <div class="info">✓ Data imported successfully!</div>

@@ -6,6 +6,7 @@ export default function ExportImportModal({ onClose }) {
   const [exportData, setExportData] = useState('')
   const [importData, setImportData] = useState('')
   const [isImporting, setIsImporting] = useState(false)
+  const [selectedFileName, setSelectedFileName] = useState('')
 
   // Generate export data when modal opens
   useEffect(() => {
@@ -91,11 +92,46 @@ export default function ExportImportModal({ onClose }) {
     importAllData(false)
   }
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    // Validate file type (optional, but helpful)
+    if (file.type && !file.type.includes('json') && !file.name.endsWith('.json')) {
+      if (!confirm('File does not appear to be JSON. Continue anyway?')) {
+        e.target.value = '' // Reset file input
+        return
+      }
+    }
+
+    setSelectedFileName(file.name)
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const content = event.target.result
+        // Validate JSON before setting
+        JSON.parse(content)
+        setImportData(content)
+      } catch (e) {
+        alert(`❌ Error reading file: ${e.message}\n\nPlease make sure the file contains valid JSON data.`)
+        setSelectedFileName('')
+        e.target.value = '' // Reset file input
+      }
+    }
+    reader.onerror = () => {
+      alert('❌ Error reading file. Please try again.')
+      setSelectedFileName('')
+      e.target.value = '' // Reset file input
+    }
+    reader.readAsText(file)
+  }
+
   const importAllData = async (replace = true) => {
     const importText = importData.trim()
     
     if (!importText) {
-      alert('Please paste exported data')
+      alert('Please upload a file or paste exported data first.')
       return
     }
 
@@ -207,6 +243,13 @@ export default function ExportImportModal({ onClose }) {
       
       // Close modal and clear import textarea
       setImportData('')
+      setSelectedFileName('')
+      
+      // Reset file input if it exists
+      const fileInput = document.getElementById('import-file-input')
+      if (fileInput) {
+        fileInput.value = ''
+      }
       
       if (replace) {
         alert(`✅ Successfully imported ${data.songs.length} song${data.songs.length !== 1 ? 's' : ''} and ${data.setLists.length} set list${data.setLists.length !== 1 ? 's' : ''}!\n\n💾 Your previous data was automatically backed up.`)
@@ -271,13 +314,99 @@ export default function ExportImportModal({ onClose }) {
         <div>
           <h3 style={{ marginBottom: '15px' }}>📥 Import Data</h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '15px' }}>
-            Paste exported data here to add to this device. Choose "Replace" to wipe existing data, or "Merge" to add new items.
+            Upload a JSON file from your device or paste exported data here. Choose "Replace" to wipe existing data, or "Merge" to add new items.
           </p>
+          
+          {/* File Upload Section */}
+          <div style={{ marginBottom: '15px' }}>
+            <input
+              type="file"
+              id="import-file-input"
+              accept=".json,application/json"
+              onChange={handleFileSelect}
+              disabled={isImporting}
+              style={{ display: 'none' }}
+            />
+            <label
+              htmlFor="import-file-input"
+              className="btn btn-secondary"
+              style={{
+                display: 'inline-block',
+                cursor: isImporting ? 'not-allowed' : 'pointer',
+                opacity: isImporting ? 0.6 : 1,
+                marginBottom: '10px'
+              }}
+            >
+              📁 Choose File from Device
+            </label>
+            {selectedFileName && (
+              <div style={{
+                marginTop: '8px',
+                padding: '8px 12px',
+                background: 'var(--surface-light)',
+                borderRadius: '6px',
+                fontSize: '0.85rem',
+                color: 'var(--text-secondary)',
+                display: 'inline-block'
+              }}>
+                ✓ Selected: <strong>{selectedFileName}</strong>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedFileName('')
+                    setImportData('')
+                    const fileInput = document.getElementById('import-file-input')
+                    if (fileInput) fileInput.value = ''
+                  }}
+                  style={{
+                    marginLeft: '10px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    padding: '0 4px'
+                  }}
+                  title="Clear file"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            <div style={{
+              marginTop: '10px',
+              padding: '10px',
+              background: 'var(--surface-light)',
+              borderRadius: '6px',
+              fontSize: '0.85rem',
+              color: 'var(--text-secondary)'
+            }}>
+              <strong>📱 Mobile Tip:</strong> Use "Choose File" to select a JSON backup from your phone's storage (Downloads, Files app, etc.)
+            </div>
+          </div>
+
+          <div style={{
+            textAlign: 'center',
+            margin: '15px 0',
+            color: 'var(--text-secondary)',
+            fontSize: '0.9rem'
+          }}>
+            <strong>OR</strong>
+          </div>
+
           <textarea
             id="import-data-textarea"
-            placeholder="Paste exported data here..."
+            placeholder="Paste exported data here (or use file upload above)..."
             value={importData}
-            onChange={(e) => setImportData(e.target.value)}
+            onChange={(e) => {
+              setImportData(e.target.value)
+              // Clear file name if user is typing
+              if (selectedFileName) {
+                setSelectedFileName('')
+                const fileInput = document.getElementById('import-file-input')
+                if (fileInput) fileInput.value = ''
+              }
+            }}
             disabled={isImporting}
             style={{
               width: '100%',

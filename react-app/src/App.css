@@ -589,8 +589,8 @@ h2, h3 {
 }
 
 .tempo-wheel {
-    width: 180px;
-    height: 180px;
+    width: 240px;
+    height: 240px;
     position: relative;
     cursor: grab;
     user-select: none;
@@ -765,7 +765,7 @@ h2, h3 {
 }
 
 .tempo-wheel-controls {
-    margin-top: 20px;
+    margin-top: 16px;
     width: 100%;
     max-width: 100%;
     display: flex;
@@ -775,17 +775,30 @@ h2, h3 {
     box-sizing: border-box;
 }
 
+/* Ensure song navigation appears first, directly below wheel */
 .song-navigation-container {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    justify-content: center;
+    order: 1;
+    margin-bottom: 0;
+}
+
+.tap-tempo-container {
+    order: 2;
+}
+
+.song-navigation-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
     width: 100%;
     max-width: 100%;
     margin-bottom: 0;
     box-sizing: border-box;
-    flex-wrap: wrap;
     padding: 0;
+}
+
+/* Hide current song title on small screens - buttons take full width */
+.song-navigation-container .current-song-title {
+    display: none;
 }
 
 .current-song-title {
@@ -854,8 +867,8 @@ h2, h3 {
 
 @media (max-width: 768px) {
     .tempo-wheel {
-        width: 180px;
-        height: 180px;
+        width: 240px;
+        height: 240px;
     }
     
     .wheel-value {
@@ -1246,48 +1259,53 @@ h2, h3 {
     }
     
     .tempo-wheel {
-        width: 160px;
-        height: 160px;
+        width: 220px;
+        height: 220px;
     }
     
     .tempo-wheel-controls {
-        margin-top: 16px;
+        margin-top: 12px;
         width: 100%;
-        gap: 10px;
+        gap: 12px;
+        align-items: center;
     }
     
-    /* Stack song navigation on very small screens */
+    /* Keep buttons side-by-side in 2 columns on all screens */
     .song-navigation-container {
-        flex-direction: column;
-        gap: 8px;
-        align-items: stretch;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
         width: 100%;
         max-width: 100%;
+        padding: 0;
     }
     
     .song-navigation-container button {
         width: 100%;
         min-width: auto;
-        max-width: 100%;
+        padding: 12px 16px;
+        font-size: 0.9rem;
+        min-height: 44px;
     }
     
     .current-song-title {
-        min-width: auto;
-        max-width: 100%;
-        font-size: 0.85rem;
-        padding: 8px;
-        background: var(--surface-light);
-        border-radius: 8px;
-        white-space: normal;
-        text-overflow: clip;
-        overflow: visible;
+        display: none; /* Hidden on small screens, buttons take full width */
+    }
+    
+    .tap-tempo-container {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
     }
     
     .tap-tempo-btn {
         width: 100%;
         min-width: auto;
+        max-width: 100%;
         padding: 12px 16px;
         font-size: 0.9rem;
+        min-height: 44px;
     }
     
     .tempo-wheel-controls .btn {
@@ -1295,6 +1313,7 @@ h2, h3 {
         width: 100%;
         padding: 12px 16px;
         font-size: 0.9rem;
+        min-height: 44px;
     }
     
     .btn {
@@ -1387,52 +1406,52 @@ h2, h3 {
     }
     
     .tempo-wheel {
-        width: 180px;
-        height: 180px;
+        width: 240px;
+        height: 240px;
     }
     
     .tempo-wheel-controls {
-        margin-top: 18px;
-        gap: 10px;
+        margin-top: 12px;
+        gap: 12px;
     }
     
-    /* Switch to horizontal layout on larger phones */
+    /* Keep 2-column layout - can show song title above if needed */
     .song-navigation-container {
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
         width: 100%;
         max-width: 100%;
-        flex-wrap: wrap;
     }
     
     .song-navigation-container button {
-        width: auto;
-        min-width: 110px;
-        flex: 0 0 auto;
+        width: 100%;
+        min-width: auto;
+        padding: 12px 18px;
+        font-size: 0.9rem;
     }
     
     .current-song-title {
-        min-width: 120px;
-        max-width: 180px;
-        font-size: 0.88rem;
-        padding: 4px 8px;
-        background: transparent;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        flex: 0 1 auto;
+        display: none; /* Still hidden, buttons stay side-by-side */
+    }
+    
+    .tap-tempo-container {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
     }
     
     .tap-tempo-btn {
         width: 100%;
         min-width: 110px;
-        max-width: 280px;
+        max-width: 300px;
+        padding: 12px 20px;
+        font-size: 0.95rem;
     }
     
     .tempo-wheel-controls .btn {
         min-width: 110px;
         width: auto;
+        padding: 12px 18px;
     }
     
     .range-labels {
@@ -1537,12 +1556,39 @@ h2, h3 {
     }
     
     .tempo-wheel {
-        width: 200px;
-        height: 200px;
+        width: 260px;
+        height: 260px;
     }
     
     .tempo-wheel-controls {
-        margin-top: 20px;
+        margin-top: 14px;
+        gap: 12px;
+    }
+    
+    .song-navigation-container {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    
+    .song-navigation-container button {
+        width: 100%;
+        min-width: auto;
+        padding: 12px 20px;
+        font-size: 0.95rem;
+    }
+    
+    .current-song-title {
+        display: none;
+    }
+    
+    .tap-tempo-container {
+        max-width: 320px;
+    }
+    
+    .tap-tempo-btn {
+        max-width: 320px;
+        padding: 12px 24px;
+        font-size: 1rem;
     }
     
     .tempo-wheel-controls .btn {
@@ -1611,8 +1657,39 @@ h2, h3 {
     }
     
     .tempo-wheel {
-        width: 220px;
-        height: 220px;
+        width: 300px;
+        height: 300px;
+    }
+    
+    .tempo-wheel-controls {
+        margin-top: 16px;
+        gap: 14px;
+    }
+    
+    .song-navigation-container {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    
+    .song-navigation-container button {
+        width: 100%;
+        min-width: auto;
+        padding: 13px 22px;
+        font-size: 1rem;
+    }
+    
+    .current-song-title {
+        display: none;
+    }
+    
+    .tap-tempo-container {
+        max-width: 340px;
+    }
+    
+    .tap-tempo-btn {
+        max-width: 340px;
+        padding: 13px 26px;
+        font-size: 1rem;
     }
     
     .current-song-display h2 {
@@ -1643,8 +1720,39 @@ h2, h3 {
     }
     
     .tempo-wheel {
-        width: 240px;
-        height: 240px;
+        width: 320px;
+        height: 320px;
+    }
+    
+    .tempo-wheel-controls {
+        margin-top: 18px;
+        gap: 16px;
+    }
+    
+    .song-navigation-container {
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+    
+    .song-navigation-container button {
+        width: 100%;
+        min-width: auto;
+        padding: 14px 24px;
+        font-size: 1rem;
+    }
+    
+    .current-song-title {
+        display: none;
+    }
+    
+    .tap-tempo-container {
+        max-width: 360px;
+    }
+    
+    .tap-tempo-btn {
+        max-width: 360px;
+        padding: 14px 28px;
+        font-size: 1.05rem;
     }
     
     .performance-controls {
@@ -1678,6 +1786,11 @@ h2, h3 {
     
     .tempo-wheel-container {
         margin: 30px auto;
+    }
+    
+    .tempo-wheel {
+        width: 340px;
+        height: 340px;
     }
     
     .live-song-grid {
@@ -2574,13 +2687,9 @@ footer {
         padding: 15px;
     }
     
-    /* Tempo Wheel */
-    .tempo-wheel-container {
-        transform: scale(0.85);
-    }
-    
+    /* Tempo Wheel - sizes set directly in responsive queries above */
     .tempo-wheel-controls {
-        margin-top: 10px;
+        margin-top: 12px;
     }
     
     /* Performance Controls */
@@ -2716,9 +2825,7 @@ footer {
         padding: 10px;
     }
     
-    .tempo-wheel-container {
-        transform: scale(0.75);
-    }
+    /* Tempo Wheel - sizes set directly in responsive queries above */
     
     .bpm-display {
         font-size: 1.2rem;

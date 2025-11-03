@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update exampleSongs.js with Current Tempos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .download-btn {
+            background: #2196F3;
+        }
+        .download-btn:hover {
+            background: #1976D2;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+            max-height: 600px;
+            overflow-y: auto;
+            border: 2px solid #444;
+        }
+        .info {
+            color: #4CAF50;
+            margin: 10px 0;
+            padding: 15px;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 4px;
+            line-height: 1.6;
+        }
+        .warning {
+            color: #ff9800;
+            margin: 10px 0;
+            padding: 15px;
+            background: rgba(255, 152, 0, 0.1);
+            border-radius: 4px;
+        }
+        h2 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔄 Update exampleSongs.js with Current App Tempos</h1>
+    
+    <div class="section">
+        <h2>Step 1: Load Current Songs</h2>
+        <p style="color: #ccc;">This will read all songs from your app's localStorage and show what will be updated.</p>
+        <button onclick="loadAndGenerate()">Load Songs & Generate Update</button>
+        <button onclick="window.location.href='/'" style="background: #666;">← Back to App</button>
+        
+        <div id="status"></div>
+    </div>
+    
+    <div class="section" id="previewSection" style="display: none;">
+        <h2>Step 2: Review & Download Updated File</h2>
+        <div class="info">
+            ✅ Generated updated <code>exampleSongs.js</code> with current tempos from your app.<br>
+            <strong>Next steps:</strong><br>
+            1. Copy the code below<br>
+            2. Replace the content in: <code>react-app/src/utils/exampleSongs.js</code><br>
+            3. Save the file
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <button class="download-btn" onclick="downloadFile()">📥 Download as exampleSongs.js</button>
+            <button onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+        </div>
+        
+        <pre id="generatedCode"></pre>
+    </div>
+
+    <script>
+        let generatedContent = '';
+
+        function loadAndGenerate() {
+            const statusDiv = document.getElementById('status');
+            const previewSection = document.getElementById('previewSection');
+            
+            statusDiv.innerHTML = '<div class="info">⏳ Loading songs from app...</div>';
+            
+            try {
+                const dataKey = 'performanceApp';
+                const dataStr = localStorage.getItem(dataKey);
+                
+                if (!dataStr) {
+                    statusDiv.innerHTML = '<div class="warning">❌ No data found. Make sure you have songs in your app.</div>';
+                    return;
+                }
+                
+                const data = JSON.parse(dataStr);
+                const songs = data.songs || [];
+                
+                if (songs.length === 0) {
+                    statusDiv.innerHTML = '<div class="warning">❌ No songs found in app.</div>';
+                    return;
+                }
+                
+                // Sort by artist, then name (matching exampleSongs.js order)
+                songs.sort((a, b) => {
+                    const artistA = (a.artist || '').toLowerCase();
+                    const artistB = (b.artist || '').toLowerCase();
+                    if (artistA !== artistB) return artistA.localeCompare(artistB);
+                    return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+                });
+                
+                // Generate the exampleSongsData string
+                let songsDataString = 'export const exampleSongsData = `';
+                
+                songs.forEach(song => {
+                    let line = '';
+                    
+                    // Format: Artist - Song Name [TAB] BPM [TAB] Key (optional)
+                    if (song.artist) {
+                        line = `${song.artist} - ${song.name}`;
+                    } else {
+                        line = song.name;
+                    }
+                    
+                    line += `\t${song.bpm || 120}`;
+                    
+                    if (song.helixPreset) {
+                        line += `\t${song.helixPreset}`;
+                    }
+                    
+                    songsDataString += line + '\n';
+                });
+                
+                songsDataString += '`\n\n';
+                
+                // Add the parseExampleSongs function (keep it as is)
+                songsDataString += `export function parseExampleSongs(songsData) {
+  const lines = songsData.split('\\n').filter(line => line.trim())
+  const songs = []
+  
+  lines.forEach((line) => {
+    const parts = line.split(/\\t|\\s{2,}/).filter(p => p.trim())
+    
+    if (parts.length < 2) {
+      const spaceParts = line.trim().split(/\\s+/)
+      if (spaceParts.length >= 2) {
+        const bpmMatch = spaceParts[spaceParts.length - 1].match(/\\d+/)
+        if (bpmMatch) {
+          const bpm = parseInt(bpmMatch[0])
+          const songName = spaceParts.slice(0, -1).join(' ')
+          parseSong(songName, bpm, line, songs)
+          return
+        }
+      }
+      return
+    }
+    
+    let songName = parts[0].trim()
+    let bpm = null
+    let key = ''
+    
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const num = parseInt(parts[i])
+      if (!isNaN(num) && num >= 40 && num <= 300) {
+        bpm = num
+        songName = parts.slice(0, i).join(' ').trim()
+        if (i + 1 < parts.length) {
+          const keyCandidate = parts[i + 1].trim()
+          if (/^[A-G](?:major|minor|maj|min)?$/i.test(keyCandidate)) {
+            key = keyCandidate
+          }
+        }
+        break
+      }
+    }
+    
+    if (songName && bpm) {
+      parseSong(songName, bpm, key || '', songs)
+    }
+  })
+  
+  return songs
+}
+
+function parseSong(songName, bpm, keyOrLine, songs) {
+  let artist = ''
+  let title = songName
+  
+  if (songName.includes(' - ')) {
+    const artistParts = songName.split(' - ')
+    artist = artistParts[0].trim()
+    title = artistParts.slice(1).join(' - ').trim()
+  }
+  
+  let key = ''
+  if (typeof keyOrLine === 'string') {
+    const keyMatch = keyOrLine.match(/\\b([A-G](?:\\s*(?:major|minor|maj|min))?)\\b/i)
+    if (keyMatch) {
+      key = keyMatch[1]
+    }
+  }
+  
+  if (title.includes('Sixties Medley') && bpm.toString().includes(',')) {
+    bpm = 137
+  }
+  
+  songs.push({
+    name: title,
+    artist: artist,
+    bpm: bpm,
+    timeSignature: 4,
+    helixPreset: key,
+    lyrics: [],
+    midiNotes: [],
+    accentPattern: null
+  })
+}
+
+`;
+                
+                generatedContent = songsDataString;
+                
+                document.getElementById('generatedCode').textContent = generatedContent;
+                previewSection.style.display = 'block';
+                
+                statusDiv.innerHTML = `
+                    <div class="info">
+                        ✅ Successfully loaded <strong>${songs.length} songs</strong> with current tempos!<br>
+                        Generated updated exampleSongs.js below.
+                    </div>
+                `;
+                
+                // Scroll to preview
+                previewSection.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (e) {
+                statusDiv.innerHTML = `<div class="warning">❌ Error: ${e.message}</div>`;
+                console.error('Error:', e);
+            }
+        }
+
+        function downloadFile() {
+            if (!generatedContent) {
+                alert('Please generate the content first');
+                return;
+            }
+            
+            const blob = new Blob([generatedContent], { type: 'application/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'exampleSongs.js';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        async function copyToClipboard() {
+            if (!generatedContent) {
+                alert('Please generate the content first');
+                return;
+            }
+            
+            try {
+                await navigator.clipboard.writeText(generatedContent);
+                alert('✅ Copied to clipboard! Now paste it into react-app/src/utils/exampleSongs.js');
+            } catch (e) {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = generatedContent;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('✅ Copied to clipboard! Now paste it into react-app/src/utils/exampleSongs.js');
+            }
+        }
+    </script>
+</body>
+</html>

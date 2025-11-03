@@ -3,9 +3,10 @@ import { useApp } from '../hooks/useApp'
 import SongModal from '../components/SongModal'
 import ImportSongsModal from '../components/ImportSongsModal'
 import ExportImportModal from '../components/ExportImportModal'
+import { exampleSongsData, parseExampleSongs } from '../utils/exampleSongs'
 
 export default function SongsView() {
-  const { songs, deleteSong } = useApp()
+  const { songs, deleteSong, addSong, refreshData } = useApp()
   const [showSongModal, setShowSongModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
@@ -32,6 +33,42 @@ export default function SongsView() {
     const newSort = e.target.value
     setSortBy(newSort)
     localStorage.setItem('songSortBy', newSort)
+  }
+
+  const handleImportExamples = () => {
+    if (!confirm('Import example songs? This will add 85+ example songs to your library.\n\nDuplicates (by name) will be skipped.')) {
+      return
+    }
+    
+    try {
+      const exampleSongs = parseExampleSongs(exampleSongsData)
+      const existingNames = new Set(songs.map(s => `${s.name}|${s.artist || ''}`.toLowerCase()))
+      
+      let added = 0
+      let skipped = 0
+      
+      exampleSongs.forEach(song => {
+        const key = `${song.name}|${song.artist || ''}`.toLowerCase()
+        if (!existingNames.has(key)) {
+          addSong(song)
+          existingNames.add(key)
+          added++
+        } else {
+          skipped++
+        }
+      })
+      
+      refreshData()
+      
+      let message = `✅ Imported ${added} example song${added !== 1 ? 's' : ''}!`
+      if (skipped > 0) {
+        message += `\n(${skipped} duplicate${skipped !== 1 ? 's' : ''} skipped)`
+      }
+      alert(message)
+    } catch (e) {
+      console.error('Error importing examples:', e)
+      alert('❌ Error importing example songs. Please try again.')
+    }
   }
 
   return (
@@ -69,7 +106,17 @@ export default function SongsView() {
       
       <div className="songs-container" id="songs-container">
         {sortedSongs.length === 0 ? (
-          <p className="empty-state">No songs yet. Create your first song!</p>
+          <div className="empty-state" style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <p style={{ marginBottom: '20px', fontSize: '1.1rem' }}>No songs yet.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', maxWidth: '400px', margin: '0 auto' }}>
+              <button className="btn btn-primary" onClick={handleImportExamples}>
+                📥 Import Example Songs (85+ songs)
+              </button>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '10px' }}>
+                Or create your first song manually
+              </p>
+            </div>
+          </div>
         ) : (
           sortedSongs.map(song => (
             <div key={song.id} className="song-card">

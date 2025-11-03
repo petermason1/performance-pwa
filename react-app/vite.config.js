@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'promptUpdate',
       manifest: {
         name: 'Performance PWA',
         short_name: 'Performance',
@@ -21,6 +21,9 @@ export default defineConfig({
         icons: []
       },
       workbox: {
+        cleanupOutdatedCaches: true,
+        skipWaiting: false, // Don't auto-skip, show prompt
+        clientsClaim: false, // Don't auto-claim, show prompt
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {

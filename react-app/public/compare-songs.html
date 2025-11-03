@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare Songs - Check if All 86 Included</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .info {
+            color: #4CAF50;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 4px;
+            line-height: 1.8;
+        }
+        .warning {
+            color: #ff9800;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255, 152, 0, 0.1);
+            border-radius: 4px;
+        }
+        .error {
+            color: #f44336;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(244, 67, 54, 0.1);
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #444;
+        }
+        th {
+            background: #333;
+            font-weight: bold;
+        }
+        tr:hover {
+            background: #333;
+        }
+        .missing {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .present {
+            color: #4CAF50;
+        }
+        .extra {
+            color: #2196F3;
+        }
+        h2 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 Compare Songs - Check All 86 Included</h1>
+    
+    <div class="section">
+        <h2>Check Songs in Your App</h2>
+        <button onclick="compareSongs()">Compare with Example Songs List</button>
+        <button onclick="window.location.href='/'" style="background: #666;">← Back to App</button>
+        
+        <div id="status"></div>
+    </div>
+    
+    <div class="section" id="resultsSection" style="display: none;">
+        <h2>Comparison Results</h2>
+        <div id="summary"></div>
+        <div id="details"></div>
+    </div>
+
+    <script>
+        // List of all 86 example songs (extracted from exampleSongs.js)
+        const exampleSongsList = [
+            { artist: 'Arctic Monkeys', name: 'Bet You Look Good on the Dance Floor', bpm: 204 },
+            { artist: 'Arctic Monkeys', name: 'Mardy Bum', bpm: 112 },
+            { artist: 'Ben E. King', name: 'Stand By Me', bpm: 118 },
+            { artist: 'Blink 182', name: 'All The Small Things', bpm: 152 },
+            { artist: 'Blur', name: 'Country House', bpm: 175, key: 'A' },
+            { artist: 'Blur', name: 'Parklife', bpm: 139 },
+            { artist: 'Bruno Mars', name: 'Uptown Funk', bpm: 115, key: 'C' },
+            { artist: 'Bryan Adams', name: 'Summer of 69', bpm: 139, key: 'D' },
+            { artist: 'Buzzcocks', name: 'Ever Fallen In Love', bpm: 176 },
+            { artist: 'Ed Sheeran', name: 'Castle on the Hill', bpm: 135, key: 'D' },
+            { artist: 'Ed Sheeran', name: 'Thinking Out Loud', bpm: 79, key: 'D' },
+            { artist: 'Elvis Presley', name: 'Burning Love', bpm: 144, key: 'D' },
+            { artist: 'Elvis Presley', name: 'Suspicious Minds', bpm: 117, key: 'G' },
+            { artist: 'Erasure', name: 'A Little Respect', bpm: 115, key: 'C' },
+            { artist: 'Feeder', name: 'Buck Rogers', bpm: 121, key: 'F' },
+            { artist: 'Fountains Of Wayne', name: "Stacey's Mom", bpm: 118, key: 'B' },
+            { artist: 'Frankie Valli', name: "Can't Take My Eyes Off You", bpm: 124 },
+            { artist: 'Franz Ferdinand', name: 'Take Me Out', bpm: 104 },
+            { artist: 'George Ezra', name: 'Shotgun', bpm: 116 },
+            { artist: 'Gerry Cinnamon', name: 'Belter', bpm: 127, key: 'A' },
+            { artist: 'Gloria Jones', name: 'Tainted Love', bpm: 166 },
+            { artist: 'Green Day', name: 'Basket Case', bpm: 170 },
+            { artist: 'Green Day', name: "Good Riddance (Time of Your Life)", bpm: 95, key: 'G' },
+            { artist: 'James', name: 'Sit Down', bpm: 126 },
+            { artist: 'Jason Mraz', name: "I'm Yours", bpm: 151, key: 'B major' },
+            { artist: 'John Legend (Acoustic)', name: 'All of Me', bpm: 120 },
+            { artist: 'Kaiser Chiefs', name: 'I Predict a Riot', bpm: 159 },
+            { artist: 'Kings of Leon', name: 'Sex on Fire', bpm: 153, key: 'A' },
+            { artist: 'Kings of Leon', name: 'Use Somebody', bpm: 137, key: 'C' },
+            { artist: 'Madness', name: 'It Must Be Love', bpm: 146, key: 'G' },
+            { artist: 'Mark Ronson/Amy Winehouse', name: 'Valerie', bpm: 212 },
+            { artist: 'Mumford and Sons', name: 'Little Lion Man', bpm: 139, key: 'F' },
+            { artist: 'Neil Diamond', name: 'Sweet Caroline', bpm: 126, key: 'B' },
+            { artist: 'Oasis', name: 'Cigarettes and Alcohol', bpm: 115, key: 'D' },
+            { artist: 'Oasis', name: "Don't Look Back In Anger", bpm: 82 },
+            { artist: 'Oasis', name: "She's Electric", bpm: 125 },
+            { artist: 'Oasis', name: 'Wonderwall', bpm: 88 },
+            { artist: 'Ocean Colour Scene', name: 'The Day We Caught The Train', bpm: 89 },
+            { artist: 'Pulp', name: 'Common People', bpm: 145, key: 'C' },
+            { artist: 'Pulp', name: 'Disco 2000', bpm: 133 },
+            { artist: 'Queen', name: 'Crazy Little Thing Called Love', bpm: 154 },
+            { artist: 'Razorlight', name: 'In The Morning', bpm: 124, key: 'E' },
+            { artist: 'Reef', name: 'Place Your Hands', bpm: 109, key: 'D' },
+            { artist: 'Sam Fender', name: 'Hypersonic Missiles', bpm: 131, key: 'E' },
+            { artist: 'Sam Fender', name: 'Seventeen Going Under', bpm: 162 },
+            { artist: 'Sam Fender', name: 'Will We Talk?', bpm: 204 },
+            { artist: '', name: 'Sixties Medley', bpm: 137 },
+            { artist: 'Snow Patrol', name: 'Chasing Cars', bpm: 104, key: 'A' },
+            { artist: 'Stealers Wheels', name: 'Stuck in The Middle with You', bpm: 124 },
+            { artist: 'Stereophonics', name: 'Dakota', bpm: 147 },
+            { artist: 'Stevie Wonder', name: 'Superstition', bpm: 101 },
+            { artist: 'The Stone Roses', name: 'She Bangs the Drums', bpm: 145, key: 'A' },
+            { artist: 'The Beatles', name: 'Eight Days a Week', bpm: 138 },
+            { artist: 'The Beatles', name: 'Saw Her Standing There', bpm: 160 },
+            { artist: 'The Clash', name: 'I Fought The Law', bpm: 151, key: 'D' },
+            { artist: 'The Clash', name: 'Should I Stay or Should I Go', bpm: 113, key: 'D' },
+            { artist: 'The Coral', name: 'Dreaming of You', bpm: 199, key: 'A' },
+            { artist: 'The Courteeners', name: 'Not Nineteen Forever', bpm: 140, key: 'D' },
+            { artist: 'The Cure', name: 'Love Cats', bpm: 92 },
+            { artist: 'The Fratellis', name: 'Chelsea Dagger', bpm: 155, key: 'G' },
+            { artist: 'The Jam', name: 'Going Underground', bpm: 181, key: 'B' },
+            { artist: 'The Jam', name: 'Town Called Malice', bpm: 204 },
+            { artist: 'The Killers', name: 'All These Things I Have Done', bpm: 118 },
+            { artist: 'The Killers', name: 'Human', bpm: 135 },
+            { artist: 'The Killers', name: 'Mr. Brightside', bpm: 148 },
+            { artist: 'The Kinks', name: 'You Really Got Me', bpm: 137 },
+            { artist: 'The Kooks', name: 'Naïve', bpm: 103 },
+            { artist: 'The Lumineers', name: "Ho, Hey!", bpm: 80 },
+            { artist: 'The Police', name: 'Message In a Bottle', bpm: 151 },
+            { artist: 'The Proclaimers', name: '500 Miles', bpm: 132, key: 'E' },
+            { artist: 'The Rolling Stones', name: "(I Can't Get No) Satisfaction", bpm: 136 },
+            { artist: 'The Smiths', name: 'This Charming Man', bpm: 208 },
+            { artist: 'The Stone Roses', name: 'Waterfall', bpm: 104, key: 'B' },
+            { artist: 'The Strokes', name: 'Last Night', bpm: 208 },
+            { artist: 'The Undertones', name: 'Teenage Kicks', bpm: 135 },
+            { artist: 'Tina/Ike Turner', name: 'Proud Mary', bpm: 171 },
+            { artist: 'Walk the Moon', name: 'Shut Up and Dance', bpm: 128 },
+            { artist: 'Wheatus', name: 'Teenage Dirtbag', bpm: 95, key: 'E' },
+            { artist: 'CCR', name: 'Bad Moon Rising', bpm: 179 },
+            { artist: 'Wizard', name: 'Wish It Could Be Xmas', bpm: 140 },
+            { artist: 'Lizzo', name: 'About Damn Time', bpm: 109 },
+            { artist: 'Slade', name: 'Merry Xmas Everybody', bpm: 130 },
+            { artist: 'Shakin Stevens', name: 'Merry Xmas Everyone', bpm: 204 },
+            { artist: 'Kenny Loggins', name: 'Footloose', bpm: 174 },
+            { artist: 'Dua Lipa', name: "Don't Start Now", bpm: 124 },
+            { artist: 'Miley Cyrus', name: 'Flowers', bpm: 116 }
+        ];
+
+        function normalizeName(name) {
+            return (name || '').toLowerCase().trim().replace(/\s+/g, ' ');
+        }
+
+        function normalizeArtist(artist) {
+            return (artist || '').toLowerCase().trim();
+        }
+
+        function compareSongs() {
+            const statusDiv = document.getElementById('status');
+            const resultsSection = document.getElementById('resultsSection');
+            const summaryDiv = document.getElementById('summary');
+            const detailsDiv = document.getElementById('details');
+            
+            statusDiv.innerHTML = '<div class="info">⏳ Loading songs from your app...</div>';
+            
+            try {
+                const dataKey = 'performanceApp';
+                const dataStr = localStorage.getItem(dataKey);
+                
+                if (!dataStr) {
+                    statusDiv.innerHTML = '<div class="error">❌ No data found. Make sure you have songs in your app.</div>';
+                    return;
+                }
+                
+                const data = JSON.parse(dataStr);
+                const appSongs = data.songs || [];
+                
+                if (appSongs.length === 0) {
+                    statusDiv.innerHTML = '<div class="error">❌ No songs found in your app.</div>';
+                    return;
+                }
+                
+                // Create a map of app songs for quick lookup
+                const appSongsMap = new Map();
+                appSongs.forEach(song => {
+                    const key = `${normalizeArtist(song.artist)}|${normalizeName(song.name)}`;
+                    appSongsMap.set(key, song);
+                });
+                
+                // Check which example songs are in the app
+                const missing = [];
+                const found = [];
+                const foundWithDifferentBPM = [];
+                
+                exampleSongsList.forEach(example => {
+                    const key = `${normalizeArtist(example.artist)}|${normalizeName(example.name)}`;
+                    const foundSong = appSongsMap.get(key);
+                    
+                    if (!foundSong) {
+                        missing.push(example);
+                    } else {
+                        if (foundSong.bpm !== example.bpm) {
+                            foundWithDifferentBPM.push({
+                                example: example,
+                                app: foundSong
+                            });
+                        } else {
+                            found.push({ example: example, app: foundSong });
+                        }
+                    }
+                });
+                
+                // Find songs in app that aren't in example list
+                const extra = [];
+                appSongs.forEach(appSong => {
+                    const key = `${normalizeArtist(appSong.artist)}|${normalizeName(appSong.name)}`;
+                    const inExampleList = exampleSongsList.some(ex => 
+                        normalizeArtist(ex.artist) === normalizeArtist(appSong.artist) &&
+                        normalizeName(ex.name) === normalizeName(appSong.name)
+                    );
+                    if (!inExampleList) {
+                        extra.push(appSong);
+                    }
+                });
+                
+                // Generate summary
+                let summaryHTML = `
+                    <div class="info">
+                        <strong>Summary:</strong><br>
+                        ✅ Found: <strong>${found.length}</strong> songs matching example list<br>
+                        ⚠️ Found with different BPM: <strong>${foundWithDifferentBPM.length}</strong> songs<br>
+                        ❌ Missing: <strong>${missing.length}</strong> songs from example list<br>
+                        🔵 Extra: <strong>${extra.length}</strong> songs in app not in example list<br><br>
+                        <strong>Total in app:</strong> ${appSongs.length} songs<br>
+                        <strong>Total in example list:</strong> ${exampleSongsList.length} songs
+                    </div>
+                `;
+                
+                if (missing.length === 0 && foundWithDifferentBPM.length === 0) {
+                    summaryHTML += '<div class="info" style="margin-top: 15px;">✅ All 86 example songs are present in your app!</div>';
+                }
+                
+                summaryDiv.innerHTML = summaryHTML;
+                
+                // Generate details
+                let detailsHTML = '';
+                
+                if (missing.length > 0) {
+                    detailsHTML += `
+                        <h3 style="color: #ff9800;">Missing Songs (${missing.length})</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Artist</th>
+                                    <th>Song Name</th>
+                                    <th>Expected BPM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    missing.forEach(song => {
+                        detailsHTML += `
+                            <tr>
+                                <td>${song.artist || ''}</td>
+                                <td>${song.name}</td>
+                                <td>${song.bpm}</td>
+                            </tr>
+                        `;
+                    });
+                    detailsHTML += '</tbody></table>';
+                }
+                
+                if (foundWithDifferentBPM.length > 0) {
+                    detailsHTML += `
+                        <h3 style="color: #ff9800; margin-top: 30px;">Songs with Different BPM (${foundWithDifferentBPM.length})</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Artist</th>
+                                    <th>Song Name</th>
+                                    <th>Example BPM</th>
+                                    <th>Your App BPM</th>
+                                    <th>Difference</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    foundWithDifferentBPM.forEach(({ example, app }) => {
+                        const diff = app.bpm - example.bpm;
+                        detailsHTML += `
+                            <tr>
+                                <td>${example.artist || ''}</td>
+                                <td>${example.name}</td>
+                                <td>${example.bpm}</td>
+                                <td><strong>${app.bpm}</strong></td>
+                                <td style="color: ${diff > 0 ? '#4CAF50' : '#f44336'};">
+                                    ${diff > 0 ? '+' : ''}${diff}
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    detailsHTML += '</tbody></table>';
+                }
+                
+                if (extra.length > 0) {
+                    detailsHTML += `
+                        <h3 style="color: #2196F3; margin-top: 30px;">Extra Songs in Your App (${extra.length})</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Artist</th>
+                                    <th>Song Name</th>
+                                    <th>BPM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    extra.forEach(song => {
+                        detailsHTML += `
+                            <tr>
+                                <td>${song.artist || ''}</td>
+                                <td>${song.name}</td>
+                                <td>${song.bpm}</td>
+                            </tr>
+                        `;
+                    });
+                    detailsHTML += '</tbody></table>';
+                }
+                
+                detailsDiv.innerHTML = detailsHTML;
+                resultsSection.style.display = 'block';
+                
+                statusDiv.innerHTML = '<div class="info">✅ Comparison complete! See results below.</div>';
+                
+                // Scroll to results
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (e) {
+                statusDiv.innerHTML = `<div class="error">❌ Error: ${e.message}</div>`;
+                console.error('Error:', e);
+            }
+        }
+    </script>
+</body>
+</html>
