@@ -1043,12 +1043,20 @@ class PerformanceApp {
     
     saveSetList() {
         const id = document.getElementById('setlist-id').value;
-        const name = document.getElementById('setlist-name').value;
+        const name = document.getElementById('setlist-name').value.trim();
         const songsList = document.getElementById('available-songs-list');
+        
+        // Validate name
+        if (!name) {
+            alert('Please enter a set list name');
+            return;
+        }
         
         // Get song IDs in the order they appear (drag and drop order)
         const selectedItems = Array.from(songsList.querySelectorAll('.sortable-song-item.selected'));
-        const songIds = selectedItems.map(item => item.dataset.songId);
+        const songIds = selectedItems.map(item => item.dataset.songId).filter(id => id);
+        
+        console.log('Saving set list:', { id, name, songCount: songIds.length });
         
         const setListData = {
             name,
@@ -1056,13 +1064,25 @@ class PerformanceApp {
         };
         
         if (id) {
-            dataStore.updateSetList(id, setListData);
+            const updated = dataStore.updateSetList(id, setListData);
+            console.log('Updated set list:', updated);
         } else {
-            dataStore.addSetList(setListData);
+            const added = dataStore.addSetList(setListData);
+            console.log('Added set list:', added);
         }
+        
+        // Verify it was saved
+        const allSetLists = dataStore.getAllSetLists();
+        console.log('All set lists after save:', allSetLists.length);
         
         document.getElementById('setlist-modal').style.display = 'none';
         this.renderSetLists();
+        
+        // Verify render worked
+        setTimeout(() => {
+            const rendered = document.querySelectorAll('.setlist-card');
+            console.log('Rendered set list cards:', rendered.length);
+        }, 100);
     }
     
     renderSongs() {
@@ -1840,6 +1860,12 @@ class PerformanceApp {
         document.getElementById('bpm-value').textContent = bpm;
         document.getElementById('wheel-bpm-value').textContent = bpm;
         document.getElementById('bpm-slider').value = bpm;
+        
+        // Update quick tempo display (live view)
+        const quickTempoValue = document.getElementById('quick-tempo-value');
+        if (quickTempoValue) {
+            quickTempoValue.textContent = bpm;
+        }
         
         // Update wheel rotation if function exists
         if (this.updateTempoWheel) {
