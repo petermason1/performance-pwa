@@ -1,5 +1,4 @@
 {
-  "version": 2,
   "headers": [
     {
       "source": "/sw.js",
@@ -13,21 +12,6 @@
           "value": "/"
         }
       ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        }
-      ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
     }
   ]
 }
