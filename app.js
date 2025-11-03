@@ -415,6 +415,23 @@ class PerformanceApp {
             }
         });
         
+        // Performance mode toggle
+        document.getElementById('setup-mode-btn').addEventListener('click', () => {
+            this.switchPerformanceMode('setup');
+        });
+        
+        document.getElementById('live-mode-btn').addEventListener('click', () => {
+            this.switchPerformanceMode('live');
+        });
+        
+        // Quick tempo controls
+        document.getElementById('tempo-down-10').addEventListener('click', () => this.adjustTempo(-10));
+        document.getElementById('tempo-down-5').addEventListener('click', () => this.adjustTempo(-5));
+        document.getElementById('tempo-down-1').addEventListener('click', () => this.adjustTempo(-1));
+        document.getElementById('tempo-up-1').addEventListener('click', () => this.adjustTempo(1));
+        document.getElementById('tempo-up-5').addEventListener('click', () => this.adjustTempo(5));
+        document.getElementById('tempo-up-10').addEventListener('click', () => this.adjustTempo(10));
+        
         // Song sort selector
         const songSortSelect = document.getElementById('song-sort-select');
         if (songSortSelect) {
@@ -1390,6 +1407,9 @@ class PerformanceApp {
             songsList.appendChild(item);
         });
         
+        // Render live view grid
+        this.renderLiveSongGrid();
+        
         if (songs.length > 0) {
             this.selectSong(0);
         }
@@ -1488,10 +1508,21 @@ class PerformanceApp {
             item.classList.toggle('active', i === index);
         });
         
+        // Update live view buttons
+        document.querySelectorAll('.live-song-button').forEach((button, i) => {
+            button.classList.toggle('active', i === index);
+        });
+        
         document.getElementById('current-song-name').textContent = this.currentSong.name;
         document.getElementById('bpm-value').textContent = this.currentSong.bpm;
         document.getElementById('bpm-slider').value = this.currentSong.bpm;
         document.getElementById('helix-preset-name').textContent = this.currentSong.helixPreset || 'None';
+        
+        // Update quick tempo display
+        const quickTempoValue = document.getElementById('quick-tempo-value');
+        if (quickTempoValue) {
+            quickTempoValue.textContent = this.currentSong.bpm;
+        }
         
         // Send Helix program change if preset number is set
         if (this.currentSong.helixPresetNumber !== undefined && this.currentSong.helixPresetNumber !== null) {
@@ -2322,6 +2353,75 @@ class PerformanceApp {
         } catch (e) {
             alert(`❌ Error importing data: ${e.message}\n\nMake sure you copied the complete JSON data.`);
             console.error('Import error:', e);
+        }
+    }
+    
+    switchPerformanceMode(mode) {
+        const setupMode = document.getElementById('setup-mode');
+        const liveMode = document.getElementById('live-mode');
+        const setupBtn = document.getElementById('setup-mode-btn');
+        const liveBtn = document.getElementById('live-mode-btn');
+        
+        if (mode === 'live') {
+            setupMode.classList.remove('active');
+            liveMode.classList.add('active');
+            setupBtn.classList.remove('active');
+            liveBtn.classList.add('active');
+        } else {
+            setupMode.classList.add('active');
+            liveMode.classList.remove('active');
+            setupBtn.classList.add('active');
+            liveBtn.classList.remove('active');
+        }
+    }
+    
+    renderLiveSongGrid() {
+        const grid = document.getElementById('live-song-grid');
+        grid.innerHTML = '';
+        
+        if (!this.currentSetList) {
+            grid.innerHTML = '<div class="live-no-songs"><p>Load a set list to see songs</p></div>';
+            return;
+        }
+        
+        const songs = this.currentSetList.songIds.map(id => dataStore.getSong(id)).filter(s => s);
+        
+        if (songs.length === 0) {
+            grid.innerHTML = '<div class="live-no-songs"><p>No songs in this set list</p></div>';
+            return;
+        }
+        
+        songs.forEach((song, index) => {
+            const button = document.createElement('div');
+            button.className = `live-song-button ${index === this.currentSongIndex ? 'active' : ''}`;
+            button.dataset.index = index;
+            button.dataset.songId = song.id;
+            
+            button.innerHTML = `
+                <div class="live-song-number">${index + 1}</div>
+                <div class="live-song-name">${song.name}</div>
+                ${song.artist ? `<div class="live-song-artist">${song.artist}</div>` : ''}
+                <div class="live-song-bpm">${song.bpm} BPM</div>
+            `;
+            
+            button.addEventListener('click', () => {
+                this.selectSong(index);
+            });
+            
+            grid.appendChild(button);
+        });
+    }
+    
+    adjustTempo(delta) {
+        const currentBPM = this.metronome.bpm;
+        const newBPM = Math.max(40, Math.min(300, currentBPM + delta));
+        this.updateBPM(newBPM);
+        this.updateTempoWheel(newBPM);
+        
+        // Update quick tempo display if visible
+        const quickTempoValue = document.getElementById('quick-tempo-value');
+        if (quickTempoValue) {
+            quickTempoValue.textContent = newBPM;
         }
     }
     

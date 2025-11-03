@@ -33,25 +33,59 @@
         <div id="performance-view" class="view">
             <header>
                 <h1>Performance</h1>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="toggle-live-view-btn" class="btn btn-primary">🎤 Live View</button>
+                </div>
             </header>
             
-            <div class="current-setlist-section">
-                <select id="setlist-select" class="setlist-select">
-                    <option value="">Select a Set List</option>
-                </select>
-                <button id="load-setlist-btn" class="btn btn-secondary">Load</button>
+            <div class="performance-mode-selector">
+                <button id="setup-mode-btn" class="mode-btn active">⚙️ Setup</button>
+                <button id="live-mode-btn" class="mode-btn">🎤 Live</button>
             </div>
 
-            <div class="song-list-container" style="margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h3 style="margin: 0;">Set List Songs</h3>
-                    <button id="toggle-reorder-btn" class="btn btn-secondary btn-small">🔒 Lock Order</button>
+            <!-- Setup Mode -->
+            <div id="setup-mode" class="performance-mode active">
+                <div class="current-setlist-section">
+                    <select id="setlist-select" class="setlist-select">
+                        <option value="">Select a Set List</option>
+                    </select>
+                    <button id="load-setlist-btn" class="btn btn-secondary">Load</button>
                 </div>
-                <div id="reorder-hint" style="display: none; background: var(--surface-light); padding: 10px; border-radius: 8px; margin-bottom: 10px; color: var(--text-secondary); font-size: 0.9rem;">
-                    💡 Drag songs by the ☰ handle to reorder
+
+                <div class="song-list-container" style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="margin: 0;">Set List Songs</h3>
+                        <button id="toggle-reorder-btn" class="btn btn-secondary btn-small">🔒 Lock Order</button>
+                    </div>
+                    <div id="reorder-hint" style="display: none; background: var(--surface-light); padding: 10px; border-radius: 8px; margin-bottom: 10px; color: var(--text-secondary); font-size: 0.9rem;">
+                        💡 Drag songs by the ☰ handle to reorder
+                    </div>
+                    <div class="song-list" id="current-songs-list">
+                        <!-- Songs will be dynamically added here -->
+                    </div>
                 </div>
-                <div class="song-list" id="current-songs-list">
-                    <!-- Songs will be dynamically added here -->
+            </div>
+
+            <!-- Live Mode -->
+            <div id="live-mode" class="performance-mode">
+                <div class="live-song-grid" id="live-song-grid">
+                    <!-- Songs will be rendered as large buttons here -->
+                    <div class="live-no-songs">
+                        <p>Load a set list to see songs</p>
+                    </div>
+                </div>
+                
+                <div class="live-quick-tempo">
+                    <div class="quick-tempo-label">Quick Tempo</div>
+                    <div class="quick-tempo-controls">
+                        <button id="tempo-down-10" class="btn btn-secondary tempo-btn">-10</button>
+                        <button id="tempo-down-5" class="btn btn-secondary tempo-btn">-5</button>
+                        <button id="tempo-down-1" class="btn btn-secondary tempo-btn">-1</button>
+                        <span class="quick-tempo-value" id="quick-tempo-value">120</span>
+                        <button id="tempo-up-1" class="btn btn-secondary tempo-btn">+1</button>
+                        <button id="tempo-up-5" class="btn btn-secondary tempo-btn">+5</button>
+                        <button id="tempo-up-10" class="btn btn-secondary tempo-btn">+10</button>
+                    </div>
                 </div>
             </div>
 
