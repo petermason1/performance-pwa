@@ -2213,8 +2213,27 @@ class PerformanceApp {
             return;
         }
         
+        // Always create backup before import
+        const backupData = this.exportAllData();
+        const backupKey = `backup_${Date.now()}`;
+        localStorage.setItem(backupKey, backupData);
+        
+        // Keep only last 5 backups
+        const backupKeys = Object.keys(localStorage).filter(k => k.startsWith('backup_')).sort();
+        if (backupKeys.length > 5) {
+            backupKeys.slice(0, backupKeys.length - 5).forEach(k => localStorage.removeItem(k));
+        }
+        
         if (replace) {
-            if (!confirm('⚠️ This will REPLACE all your current songs and set lists. Are you sure?')) {
+            const currentSongs = dataStore.songs.length;
+            const currentSetLists = dataStore.setLists.length;
+            
+            const message = `⚠️ This will REPLACE all your current data!\n\n` +
+                          `Current: ${currentSongs} songs, ${currentSetLists} set lists\n` +
+                          `Will be replaced with imported data.\n\n` +
+                          `A backup has been saved. Continue?`;
+            
+            if (!confirm(message)) {
                 return;
             }
         }
@@ -2297,7 +2316,7 @@ class PerformanceApp {
             importTextarea.value = '';
             
             if (replace) {
-                alert(`✅ Successfully imported ${data.songs.length} song${data.songs.length !== 1 ? 's' : ''} and ${data.setLists.length} set list${data.setLists.length !== 1 ? 's' : ''}!`);
+                alert(`✅ Successfully imported ${data.songs.length} song${data.songs.length !== 1 ? 's' : ''} and ${data.setLists.length} set list${data.setLists.length !== 1 ? 's' : ''}!\n\n💾 Your previous data was automatically backed up.`);
             }
             
         } catch (e) {
