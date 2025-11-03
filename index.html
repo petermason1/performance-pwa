@@ -451,12 +451,17 @@
                 <div>
                     <h3 style="margin-bottom: 15px;">📥 Import Data</h3>
                     <p style="color: var(--text-secondary); margin-bottom: 15px;">
-                        Paste exported data here to restore on this device. <strong style="color: var(--accent);">This will replace all existing data!</strong>
+                        Paste exported data here to add to this device. Choose "Replace" to wipe existing data, or "Merge" to add new items.
                     </p>
                     <textarea id="import-data-textarea" placeholder="Paste exported data here..." style="width: 100%; min-height: 200px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-family: monospace; font-size: 0.85rem;"></textarea>
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button id="import-data-submit-btn" class="btn btn-danger">⚠️ Import & Replace All Data</button>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                        <button id="import-data-replace-btn" class="btn btn-danger">⚠️ Replace All Data</button>
+                        <button id="import-data-merge-btn" class="btn btn-primary">➕ Merge Data</button>
                         <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+                    </div>
+                    <div style="margin-top: 10px; padding: 10px; background: var(--surface-light); border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                        <strong>Replace:</strong> Removes all current data and imports new data.<br>
+                        <strong>Merge:</strong> Adds new songs/set lists without deleting existing ones. Duplicates (by name) are skipped.
                     </div>
                 </div>
             </div>

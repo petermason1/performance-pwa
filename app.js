@@ -681,8 +681,12 @@ class PerformanceApp {
             URL.revokeObjectURL(url);
         });
         
-        document.getElementById('import-data-submit-btn').addEventListener('click', () => {
-            this.importAllData();
+        document.getElementById('import-data-replace-btn').addEventListener('click', () => {
+            this.importAllData(true);
+        });
+        
+        document.getElementById('import-data-merge-btn').addEventListener('click', () => {
+            this.importAllData(false);
         });
     }
     
@@ -2200,7 +2204,7 @@ class PerformanceApp {
         return JSON.stringify(allData, null, 2);
     }
     
-    importAllData() {
+    importAllData(replace = true) {
         const importTextarea = document.getElementById('import-data-textarea');
         const importData = importTextarea.value.trim();
         
@@ -2209,8 +2213,10 @@ class PerformanceApp {
             return;
         }
         
-        if (!confirm('⚠️ This will REPLACE all your current songs and set lists. Are you sure?')) {
-            return;
+        if (replace) {
+            if (!confirm('⚠️ This will REPLACE all your current songs and set lists. Are you sure?')) {
+                return;
+            }
         }
         
         try {
@@ -2225,9 +2231,54 @@ class PerformanceApp {
                 throw new Error('Invalid data format. Expected setLists array.');
             }
             
-            // Replace all data
-            dataStore.songs = data.songs || [];
-            dataStore.setLists = data.setLists || [];
+            if (replace) {
+                // Replace all data
+                dataStore.songs = data.songs || [];
+                dataStore.setLists = data.setLists || [];
+            } else {
+                // Merge data - add new songs/set lists without duplicates
+                const existingSongNames = new Set(dataStore.songs.map(s => `${s.name}|${s.artist || ''}`.toLowerCase()));
+                const existingSetListNames = new Set(dataStore.setLists.map(sl => sl.name.toLowerCase()));
+                
+                let newSongs = 0;
+                let skippedSongs = 0;
+                
+                data.songs.forEach(song => {
+                    const key = `${song.name}|${song.artist || ''}`.toLowerCase();
+                    if (!existingSongNames.has(key)) {
+                        dataStore.songs.push(song);
+                        existingSongNames.add(key);
+                        newSongs++;
+                    } else {
+                        skippedSongs++;
+                    }
+                });
+                
+                let newSetLists = 0;
+                let skippedSetLists = 0;
+                
+                data.setLists.forEach(setList => {
+                    if (!existingSetListNames.has(setList.name.toLowerCase())) {
+                        dataStore.setLists.push(setList);
+                        existingSetListNames.add(setList.name.toLowerCase());
+                        newSetLists++;
+                    } else {
+                        skippedSetLists++;
+                    }
+                });
+                
+                dataStore.save();
+                
+                // Show merge results
+                let message = `✅ Merged successfully!\n\n`;
+                message += `Songs: +${newSongs} new`;
+                if (skippedSongs > 0) message += `, ${skippedSongs} duplicates skipped`;
+                message += `\nSet Lists: +${newSetLists} new`;
+                if (skippedSetLists > 0) message += `, ${skippedSetLists} duplicates skipped`;
+                
+                alert(message);
+            }
+            
             dataStore.save();
             
             // Reload from storage
@@ -2245,7 +2296,9 @@ class PerformanceApp {
             // Clear import textarea
             importTextarea.value = '';
             
-            alert(`✅ Successfully imported ${data.songs.length} song${data.songs.length !== 1 ? 's' : ''} and ${data.setLists.length} set list${data.setLists.length !== 1 ? 's' : ''}!`);
+            if (replace) {
+                alert(`✅ Successfully imported ${data.songs.length} song${data.songs.length !== 1 ? 's' : ''} and ${data.setLists.length} set list${data.setLists.length !== 1 ? 's' : ''}!`);
+            }
             
         } catch (e) {
             alert(`❌ Error importing data: ${e.message}\n\nMake sure you copied the complete JSON data.`);
