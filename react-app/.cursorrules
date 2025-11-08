@@ -1,0 +1,283 @@
+# Performance Metronome PWA - Cursor AI Rules
+
+## Project Overview
+Cross-platform Progressive Web App for live music performance with metronome, set list management, and MIDI control. Built with React + Vite, local-first with IndexedDB, optional Firebase sync.
+
+## Architecture Principles
+
+### Storage
+- **Primary:** IndexedDB via Dexie.js for all songs, set lists, and user data
+- **Backup:** localStorage only for small flags (<1KB)
+- **Migrations:** Versioned schema with rollback capability
+- **Validation:** Always validate data before writes
+
+### State Management
+- Global state in `AppContext.jsx` using React Context
+- Custom hooks in `hooks/` for complex logic (metronome, tempo wheel, MIDI)
+- Local component state for UI-only concerns
+- No Redux/MobX - keep it simple
+
+### Performance
+- Metronome timing: WebAudio with scheduler (lookahead 25ms, schedule-ahead 100ms)
+- Offline-first: all features work without network
+- Code splitting: lazy load views
+- Asset optimization: pre-cache critical resources
+
+### Accessibility
+- Touch targets minimum 44x44px
+- ARIA labels on all interactive elements
+- Keyboard navigation support
+- High contrast mode available
+- Haptic feedback optional
+
+## Code Style
+
+### React Components
+- Functional components with hooks (no class components)
+- PropTypes or TypeScript for type checking
+- Extract complex logic into custom hooks
+- Keep components under 300 lines (split if larger)
+- Co-locate styles in `App.css` with BEM-like naming
+
+### File Organization
+```
+src/
+  components/     # Reusable UI components
+  views/          # Page-level components
+  hooks/          # Custom React hooks
+  utils/          # Pure utility functions
+  context/        # React Context providers
+```
+
+### Naming Conventions
+- Components: PascalCase (`PerformanceView.jsx`)
+- Hooks: camelCase with `use` prefix (`useMetronome.js`)
+- Utilities: camelCase (`db.js`, `audio.js`)
+- CSS classes: kebab-case (`tempo-wheel-container`)
+- Constants: UPPER_SNAKE_CASE (`MAX_BPM`)
+
+### CSS
+- Mobile-first responsive design
+- Breakpoints: 320px, 375px, 768px, 1024px
+- Use CSS Grid for layouts, Flexbox for component alignment
+- CSS custom properties for theming
+- Single `App.css` file (already large, keep consolidated)
+
+## Key Files & Responsibilities
+
+### State & Data
+- `src/AppContext.jsx` - Global app state provider
+- `src/hooks/useApp.js` - App state hook
+- `src/utils/db.js` - IndexedDB interface (Dexie)
+- `src/utils/migrations.js` - Schema migrations
+- `src/models.js` - Legacy localStorage (migrate away)
+
+### Metronome
+- `src/hooks/useMetronome.js` - Metronome engine with WebAudio
+- `src/hooks/useTempoWheel.js` - Tempo wheel drag/rotation logic
+- `src/utils/audio.js` - Audio utilities (click sounds, scheduler)
+
+### UI Components
+- `src/views/PerformanceView.jsx` - Main stage view
+- `src/views/SongsView.jsx` - Song library
+- `src/views/SetListsView.jsx` - Set list management
+- `src/components/SetListModal.jsx` - Set list editor
+- `src/components/SongModal.jsx` - Song editor
+- `src/components/ExportImportModal.jsx` - Data import/export
+- `src/components/PWAUpdatePrompt.jsx` - Update notifications
+
+### MIDI
+- `src/hooks/useMIDI.js` - Web MIDI detection and handling
+- `src/components/MIDISettings.jsx` - MIDI mapping UI
+- `src/midi.js` - Legacy MIDI code (refactor to hook)
+
+### PWA
+- `vite.config.js` - Vite + PWA plugin config
+- `public/manifest.json` - PWA manifest
+- `public/sw.js` - Service worker (auto-generated)
+
+## Best Practices
+
+### Metronome Timing
+- **NEVER** use `setTimeout` or `setInterval` for beat timing (too imprecise)
+- Always use WebAudio `AudioContext.currentTime` for scheduling
+- Lookahead scheduling: schedule notes 100ms in advance
+- Check timer every 25ms to schedule upcoming notes
+- User gesture required to start AudioContext (iOS requirement)
+
+### Data Persistence
+- Always validate before saving to IndexedDB
+- Use transactions for multi-table operations
+- Batch operations with `bulkAdd/bulkPut`
+- Handle quota errors gracefully
+- Backup before migrations
+
+### PWA Updates
+- Use `promptUpdate` mode (user confirms)
+- Show version number in UI
+- Manual "Check for Updates" button
+- `SKIP_WAITING` on user action
+- Reload after service worker activation
+
+### Cross-Platform Compatibility
+- Test on iOS Safari (most restrictive)
+- WebAudio: require user gesture
+- Web MIDI: graceful fallback (not on iOS)
+- Wake Lock: fallback to video element hack
+- Touch events: support both touch and mouse
+
+### Error Handling
+- Try/catch for all async operations
+- Log errors to console (later: analytics)
+- User-friendly error messages
+- Offer recovery actions (retry, rollback)
+- Never lose user data on error
+
+## Common Patterns
+
+### Adding a New Feature
+1. Update data model in `DATA_MODEL.md`
+2. Add migration if needed in `MIGRATIONS.md`
+3. Update `db.js` schema
+4. Create/update hook in `hooks/`
+5. Create/update component
+6. Add styles in `App.css`
+7. Update tests
+8. Update `PRODUCT_SPEC.md`
+
+### Custom Hook Template
+```javascript
+import { useState, useEffect, useCallback } from 'react';
+
+export function useFeatureName(initialValue) {
+  const [state, setState] = useState(initialValue);
+  
+  useEffect(() => {
+    // Setup
+    return () => {
+      // Cleanup
+    };
+  }, []);
+  
+  const action = useCallback(() => {
+    // Do something
+  }, []);
+  
+  return {
+    state,
+    action
+  };
+}
+```
+
+### Component Template
+```javascript
+import { useState } from 'react';
+import { useApp } from '../hooks/useApp';
+
+export function ComponentName({ prop1, prop2 }) {
+  const { globalState } = useApp();
+  const [localState, setLocalState] = useState(null);
+  
+  const handleAction = () => {
+    // Handle user action
+  };
+  
+  return (
+    <div className="component-name">
+      {/* JSX */}
+    </div>
+  );
+}
+```
+
+## Testing
+
+### What to Test
+- Metronome scheduler accuracy
+- Data migrations (localStorage → IndexedDB)
+- Import/export round-trip
+- Song/set list CRUD operations
+- MIDI mapping and triggering
+- PWA install and update flows
+
+### Testing Tools
+- Vitest for unit tests
+- React Testing Library for component tests
+- Manual testing on real devices (iOS/Android)
+
+### Test Files
+- Co-located: `ComponentName.test.jsx` next to `ComponentName.jsx`
+- Test utilities: `src/test/setup.js`
+
+## Performance Targets
+- First load: <3s on 3G
+- Time to interactive: <5s
+- Metronome start latency: <100ms
+- UI response: <16ms (60fps)
+- Bundle size: <500KB (gzipped)
+
+## Security Considerations
+- No sensitive data stored (no passwords in localStorage)
+- Validate all imported data
+- Sanitize user input (song names, notes)
+- HTTPS required for PWA
+- CSP headers in production
+
+## Future Enhancements
+- Firebase sync (optional, toggle-gated)
+- Polyrhythm support
+- Bluetooth MIDI pedals
+- Multi-language support
+- Dark mode
+- Analytics
+
+## Common Issues & Solutions
+
+### iOS Safari
+**Problem:** AudioContext won't start
+**Solution:** Require user tap/click before initializing
+
+**Problem:** Web MIDI not available
+**Solution:** Show message, suggest BLE MIDI app
+
+**Problem:** App suspended in background
+**Solution:** Detect suspension, warn user, resume on foreground
+
+### Android Chrome
+**Problem:** Notification shown when audio playing
+**Solution:** Expected behavior, keep for user awareness
+
+### Desktop
+**Problem:** Keyboard shortcuts conflict
+**Solution:** Use non-standard keys or Cmd/Ctrl modifiers
+
+## When Making Changes
+1. Read relevant docs (`PRODUCT_SPEC.md`, `DATA_MODEL.md`)
+2. Check existing patterns in codebase
+3. Update tests
+4. Update documentation if needed
+5. Test on mobile (iOS/Android)
+6. Verify offline functionality
+7. Check PWA install still works
+
+## Don't
+- ❌ Use `setTimeout` for metronome timing
+- ❌ Store large data in localStorage
+- ❌ Make breaking changes to data model without migration
+- ❌ Add dependencies without consideration (bundle size!)
+- ❌ Use class components (functional only)
+- ❌ Inline styles (use App.css)
+- ❌ Skip error handling on async operations
+- ❌ Forget about iOS Safari compatibility
+
+## Do
+- ✅ Use WebAudio scheduler for timing
+- ✅ Store data in IndexedDB via Dexie
+- ✅ Write migrations for schema changes
+- ✅ Keep bundle size small
+- ✅ Use functional components + hooks
+- ✅ Follow BEM-like CSS naming
+- ✅ Handle errors gracefully
+- ✅ Test on real devices regularly
+

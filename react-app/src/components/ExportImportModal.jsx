@@ -2,42 +2,33 @@ import { useState, useEffect } from 'react'
 import { useApp } from '../hooks/useApp'
 
 export default function ExportImportModal({ onClose }) {
-  const { songs, setLists, dataStore, refreshData } = useApp()
+  const { songs, setLists, exportData: exportAppData, importData: importAppData, refreshSongs } = useApp()
   const [exportData, setExportData] = useState('')
   const [importData, setImportData] = useState('')
   const [isImporting, setIsImporting] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const [selectedFileName, setSelectedFileName] = useState('')
+  const [shareLink, setShareLink] = useState('')
 
   // Generate export data when modal opens
   useEffect(() => {
-    const generateExportData = () => {
+    const generateExportData = async () => {
+      setIsExporting(true)
       try {
-        // Reload from localStorage to ensure we have latest data
-        dataStore.load()
-        const allSongs = dataStore.getAllSongs()
-        const allSetLists = dataStore.getAllSetLists()
-        
-        const allData = {
-          songs: allSongs,
-          setLists: allSetLists,
-          version: '1.0',
-          exportDate: new Date().toISOString(),
-          stats: {
-            songCount: allSongs.length,
-            setListCount: allSetLists.length
-          }
-        }
-        
-        return JSON.stringify(allData, null, 2)
+        const data = await exportAppData()
+        const jsonString = JSON.stringify(data, null, 2)
+        setExportData(jsonString)
       } catch (e) {
         console.error('Error exporting data:', e)
-        return ''
+        setExportData('')
+        alert('Failed to export data: ' + e.message)
+      } finally {
+        setIsExporting(false)
       }
     }
 
-    const data = generateExportData()
-    setExportData(data)
-  }, [dataStore, songs, setLists])
+    generateExportData()
+  }, [exportAppData])
 
   const handleCopyExport = async () => {
     if (!exportData || exportData.trim() === '') {
@@ -77,19 +68,67 @@ export default function ExportImportModal({ onClose }) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `performance-pwa-backup-${new Date().toISOString().split('T')[0]}.json`
+    a.download = `metronome-backup-${new Date().toISOString().split('T')[0]}.metronome.json`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+    alert('✅ File downloaded!')
+  }
+
+  const handleGenerateShareLink = () => {
+    if (!exportData || exportData.trim() === '') {
+      alert('No data to share.')
+      return
+    }
+
+    try {
+      // Compress and encode data for URL
+      const compressed = btoa(encodeURIComponent(exportData))
+      const url = `${window.location.origin}${window.location.pathname}?import=${compressed}`
+      
+      // Check URL length (browsers have limits ~2048 chars for IE, ~8000+ for modern)
+      if (url.length > 8000) {
+        alert('⚠️ Data too large for share link (over 8000 characters).\n\nPlease use "Download as File" instead and share the file.')
+        return
+      }
+      
+      setShareLink(url)
+    } catch (e) {
+      console.error('Error generating share link:', e)
+      alert('Failed to generate share link. Data may be too large.')
+    }
+  }
+
+  const handleCopyShareLink = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareLink)
+        alert('✅ Share link copied to clipboard!')
+      } else {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea')
+        textarea.value = shareLink
+        textarea.style.position = 'fixed'
+        textarea.style.opacity = '0'
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+        alert('✅ Share link copied to clipboard!')
+      }
+    } catch (e) {
+      console.error('Copy failed:', e)
+      alert('Failed to copy. Please copy manually.')
+    }
   }
 
   const handleImportReplace = () => {
-    importAllData(true)
+    importAllData('replace')
   }
 
   const handleImportMerge = () => {
-    importAllData(false)
+    importAllData('merge')
   }
 
   const handleFileSelect = (e) => {
@@ -127,7 +166,7 @@ export default function ExportImportModal({ onClose }) {
     reader.readAsText(file)
   }
 
-  const importAllData = async (replace = true) => {
+  const importAllData = async (mode = 'merge') => {
     const importText = importData.trim()
     
     if (!importText) {
@@ -138,31 +177,28 @@ export default function ExportImportModal({ onClose }) {
     setIsImporting(true)
 
     try {
-      // Always create backup before import
-      const backupData = exportData || JSON.stringify({
-        songs: dataStore.getAllSongs(),
-        setLists: dataStore.getAllSetLists(),
-        version: '1.0',
-        exportDate: new Date().toISOString()
-      }, null, 2)
+      // Parse and validate data
+      const data = JSON.parse(importText)
       
-      const backupKey = `backup_${Date.now()}`
-      localStorage.setItem(backupKey, backupData)
+      // Validate data structure
+      if (!data.songs || !Array.isArray(data.songs)) {
+        throw new Error('Invalid data format. Expected songs array.')
+      }
       
-      // Keep only last 5 backups
-      const backupKeys = Object.keys(localStorage).filter(k => k.startsWith('backup_')).sort()
-      if (backupKeys.length > 5) {
-        backupKeys.slice(0, backupKeys.length - 5).forEach(k => localStorage.removeItem(k))
+      if (!data.setlists && !data.setLists) {
+        throw new Error('Invalid data format. Expected setlists array.')
       }
 
-      if (replace) {
-        const currentSongs = dataStore.getAllSongs().length
-        const currentSetLists = dataStore.getAllSetLists().length
-        
+      // Normalize setlists key (handle both old and new formats)
+      if (data.setLists && !data.setlists) {
+        data.setlists = data.setLists
+      }
+
+      if (mode === 'replace') {
         const message = `⚠️ This will REPLACE all your current data!\n\n` +
-                      `Current: ${currentSongs} songs, ${currentSetLists} set lists\n` +
-                      `Will be replaced with imported data.\n\n` +
-                      `A backup has been saved. Continue?`
+                      `Current: ${songs.length} songs, ${setLists.length} set lists\n` +
+                      `Will be replaced with: ${data.songs.length} songs, ${data.setlists.length} set lists\n\n` +
+                      `Continue?`
         
         if (!confirm(message)) {
           setIsImporting(false)
@@ -170,95 +206,44 @@ export default function ExportImportModal({ onClose }) {
         }
       }
 
-      const data = JSON.parse(importText)
+      // Import data using IndexedDB
+      const result = await importAppData(data, mode)
       
-      // Validate data structure
-      if (!Array.isArray(data.songs)) {
-        throw new Error('Invalid data format. Expected songs array.')
-      }
+      console.log('Import result:', result)
       
-      if (!Array.isArray(data.setLists)) {
-        throw new Error('Invalid data format. Expected setLists array.')
-      }
-
-      if (replace) {
-        // Replace all data
-        dataStore.songs = data.songs || []
-        dataStore.setLists = data.setLists || []
+      // Build result message
+      let message = ''
+      if (mode === 'replace') {
+        message = `✅ Successfully replaced all data!\n\n` +
+                 `Imported: ${result.songs.added} songs, ${result.setlists.added} set lists`
       } else {
-        // Merge data - add new songs/set lists without duplicates
-        const existingSongNames = new Set(
-          dataStore.getAllSongs().map(s => `${s.name}|${s.artist || ''}`.toLowerCase())
-        )
-        const existingSetListNames = new Set(
-          dataStore.getAllSetLists().map(sl => sl.name.toLowerCase())
-        )
-        
-        let newSongs = 0
-        let skippedSongs = 0
-        
-        data.songs.forEach(song => {
-          const key = `${song.name}|${song.artist || ''}`.toLowerCase()
-          if (!existingSongNames.has(key)) {
-            dataStore.songs.push(song)
-            existingSongNames.add(key)
-            newSongs++
-          } else {
-            skippedSongs++
-          }
-        })
-        
-        let newSetLists = 0
-        let skippedSetLists = 0
-        
-        data.setLists.forEach(setList => {
-          if (!existingSetListNames.has(setList.name.toLowerCase())) {
-            dataStore.setLists.push(setList)
-            existingSetListNames.add(setList.name.toLowerCase())
-            newSetLists++
-          } else {
-            skippedSetLists++
-          }
-        })
-        
-        // Show merge results
-        let message = `✅ Merged successfully!\n\n`
-        message += `Songs: +${newSongs} new`
-        if (skippedSongs > 0) message += `, ${skippedSongs} duplicates skipped`
-        message += `\nSet Lists: +${newSetLists} new`
-        if (skippedSetLists > 0) message += `, ${skippedSetLists} duplicates skipped`
-        
-        alert(message)
+        message = `✅ Merge complete!\n\n` +
+                 `Songs: +${result.songs.added} new`
+        if (result.songs.skipped > 0) message += `, ${result.songs.skipped} skipped (already exist)`
+        message += `\nSet Lists: +${result.setlists.added} new`
+        if (result.setlists.skipped > 0) message += `, ${result.setlists.skipped} skipped (already exist)`
       }
       
-      dataStore.save()
+      if (result.songs.errors.length > 0 || result.setlists.errors.length > 0) {
+        message += `\n\n⚠️ Some items had errors and were not imported.`
+        console.error('Import errors:', result)
+      }
       
-      // Reload from storage
-      dataStore.load()
+      alert(message)
       
-      console.log('Imported:', { songs: dataStore.getAllSongs().length, setLists: dataStore.getAllSetLists().length })
-      
-      // Refresh UI
-      refreshData()
-      
-      // Close modal and clear import textarea
+      // Clear import textarea and file
       setImportData('')
       setSelectedFileName('')
       
-      // Reset file input if it exists
       const fileInput = document.getElementById('import-file-input')
       if (fileInput) {
         fileInput.value = ''
       }
       
-      if (replace) {
-        alert(`✅ Successfully imported ${data.songs.length} song${data.songs.length !== 1 ? 's' : ''} and ${data.setLists.length} set list${data.setLists.length !== 1 ? 's' : ''}!\n\n💾 Your previous data was automatically backed up.`)
-      }
-      
       onClose()
       
     } catch (e) {
-      alert(`❌ Error importing data: ${e.message}\n\nMake sure you copied the complete JSON data.`)
+      alert(`❌ Error importing data: ${e.message}\n\nMake sure you have valid JSON data.`)
       console.error('Import error:', e)
     } finally {
       setIsImporting(false)
@@ -298,14 +283,56 @@ export default function ExportImportModal({ onClose }) {
               background: 'var(--surface-light)'
             }}
           />
-          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-            <button id="copy-export-btn" className="btn btn-primary" onClick={handleCopyExport}>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+            <button id="copy-export-btn" className="btn btn-primary" onClick={handleCopyExport} disabled={isExporting}>
               📋 Copy to Clipboard
             </button>
-            <button id="download-export-btn" className="btn btn-secondary" onClick={handleDownloadExport}>
+            <button id="download-export-btn" className="btn btn-secondary" onClick={handleDownloadExport} disabled={isExporting}>
               💾 Download as File
             </button>
+            <button id="share-link-btn" className="btn btn-secondary" onClick={handleGenerateShareLink} disabled={isExporting}>
+              🔗 Generate Share Link
+            </button>
           </div>
+          
+          {shareLink && (
+            <div style={{
+              marginTop: '15px',
+              padding: '15px',
+              background: 'var(--surface-light)',
+              borderRadius: '8px',
+              border: '1px solid var(--border)'
+            }}>
+              <div style={{ marginBottom: '10px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                📤 Share Link Generated
+              </div>
+              <textarea
+                readOnly
+                value={shareLink}
+                style={{
+                  width: '100%',
+                  minHeight: '60px',
+                  padding: '8px',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  fontFamily: 'monospace',
+                  fontSize: '0.75rem',
+                  background: 'white',
+                  marginBottom: '10px'
+                }}
+              />
+              <button className="btn btn-primary" onClick={handleCopyShareLink}>
+                📋 Copy Share Link
+              </button>
+              <div style={{
+                marginTop: '10px',
+                fontSize: '0.85rem',
+                color: 'var(--text-secondary)'
+              }}>
+                💡 Anyone with this link can import your songs and set lists.
+              </div>
+            </div>
+          )}
         </div>
         
         <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '30px 0' }} />

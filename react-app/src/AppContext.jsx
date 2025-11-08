@@ -1,144 +1,241 @@
-import { useState, useEffect } from 'react';
-import { DataStore } from './models.js';
+import { useState, useEffect, useCallback } from 'react';
 import { useMetronome } from './hooks/useMetronome';
 import { AppContext } from './context/AppContext';
+import {
+  initializeDB,
+  getAllSongs,
+  getAllSetLists,
+  addSong as dbAddSong,
+  updateSong as dbUpdateSong,
+  deleteSong as dbDeleteSong,
+  getSong as dbGetSong,
+  addSetList as dbAddSetList,
+  updateSetList as dbUpdateSetList,
+  deleteSetList as dbDeleteSetList,
+  getSetList as dbGetSetList,
+  exportAllData,
+  importData as dbImportData
+} from './utils/db.js';
+import { runAllMigrations, getMigrationStatus } from './utils/migrations.js';
 
 export function AppProvider({ children }) {
-  const [dataStore] = useState(() => new DataStore());
   const [songs, setSongs] = useState([]);
   const [setLists, setSetLists] = useState([]);
   const [currentView, setCurrentView] = useState(() => {
     return localStorage.getItem('lastView') || 'performance';
   });
+  const [dbInitialized, setDbInitialized] = useState(false);
+  const [migrationStatus, setMigrationStatus] = useState(null);
+  const [migrationProgress, setMigrationProgress] = useState(null);
 
   // Global metronome that persists across views
   const metronomeHook = useMetronome(120);
 
-  // Load data on mount
+  // Initialize database and run migrations
   useEffect(() => {
-    const loadData = () => {
-      dataStore.load();
-      const loadedSongs = dataStore.getAllSongs();
-      const loadedSetLists = dataStore.getAllSetLists();
+    const initDB = async () => {
+      try {
+        console.log('Initializing database...');
+        
+        // Check if migration is needed
+        const status = await getMigrationStatus();
+        console.log('Migration status:', status);
+        setMigrationStatus(status);
+        
+        if (status.needsMigration) {
+          console.log('Running migration from localStorage to IndexedDB...');
+          setMigrationProgress({ step: 'starting', message: 'Starting migration...' });
+          
+          const result = await runAllMigrations((progress) => {
+            console.log('Migration progress:', progress);
+            setMigrationProgress(progress);
+          });
+          
+          console.log('Migration result:', result);
+          setMigrationProgress({ step: 'complete', message: 'Migration complete!' });
+          
+          // Refresh migration status
+          const newStatus = await getMigrationStatus();
+          setMigrationStatus(newStatus);
+        }
+        
+        // Initialize IndexedDB
+        await initializeDB();
+        console.log('Database initialized');
+        
+        // Load initial data
+        await loadData();
+        
+        setDbInitialized(true);
+      } catch (error) {
+        console.error('Failed to initialize database:', error);
+        setMigrationProgress({
+          step: 'error',
+          message: `Error: ${error.message}`
+        });
+      }
+    };
+    
+    initDB();
+  }, []);
+
+  // Load data from IndexedDB
+  const loadData = useCallback(async () => {
+    try {
+      const [loadedSongs, loadedSetLists] = await Promise.all([
+        getAllSongs(),
+        getAllSetLists()
+      ]);
       
-      // Log for debugging
-      console.log('Loading data from localStorage:', {
+      console.log('Loaded data from IndexedDB:', {
         songs: loadedSongs.length,
-        setLists: loadedSetLists.length,
-        rawData: localStorage.getItem('performanceApp')
+        setLists: loadedSetLists.length
       });
       
       setSongs(loadedSongs);
       setSetLists(loadedSetLists);
-      
-      // If no data found, try to recover from any backup or old format
-      if (loadedSongs.length === 0 && loadedSetLists.length === 0) {
-        console.warn('No data found in localStorage. Checking for backup...');
-        // Check if there's any other localStorage keys with data
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.includes('performance') || key.includes('song')) {
-            console.log('Found potential data key:', key);
-            try {
-              const data = JSON.parse(localStorage.getItem(key));
-              if (data && (data.songs || data.setLists)) {
-                console.log('Found data in key:', key, data);
-              }
-            } catch {
-              // Not JSON, skip
-            }
-          }
-        }
-      }
-    };
-    loadData();
-    
-    // Listen for storage changes (when data is imported)
-    const handleStorageChange = (e) => {
-      if (e.key === 'performanceApp' || e.key === null) {
-        console.log('Storage changed, reloading data...');
-        loadData();
-      }
-    };
-    
-    // Listen for custom refresh event
-    const handleRefreshEvent = () => {
-      console.log('Refresh event received, reloading data...');
-      loadData();
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('refreshData', handleRefreshEvent);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('refreshData', handleRefreshEvent);
-    };
-  }, [dataStore]);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+    }
+  }, []);
 
   // Save current view
   useEffect(() => {
     localStorage.setItem('lastView', currentView);
   }, [currentView]);
 
-  // Note: Metronome cleanup is handled by useMetronome hook's cleanup
-  // It will only stop when the component unmounts (app closes)
+  // Refresh songs and set lists
+  const refreshSongs = useCallback(async () => {
+    await loadData();
+  }, [loadData]);
 
-  const refreshSongs = () => {
-    dataStore.load();
-    setSongs(dataStore.getAllSongs());
-    setSetLists(dataStore.getAllSetLists());
-  };
+  // Song operations
+  const addSong = useCallback(async (song) => {
+    try {
+      const newSong = await dbAddSong(song);
+      await refreshSongs();
+      return newSong;
+    } catch (error) {
+      console.error('Failed to add song:', error);
+      throw error;
+    }
+  }, [refreshSongs]);
 
-  const addSong = (song) => {
-    const newSong = dataStore.addSong(song);
-    refreshSongs();
-    return newSong;
-  };
+  const updateSong = useCallback(async (id, updates) => {
+    try {
+      const updated = await dbUpdateSong(id, updates);
+      await refreshSongs();
+      return updated;
+    } catch (error) {
+      console.error('Failed to update song:', error);
+      throw error;
+    }
+  }, [refreshSongs]);
 
-  const updateSong = (id, updates) => {
-    const updated = dataStore.updateSong(id, updates);
-    refreshSongs();
-    return updated;
-  };
+  const deleteSong = useCallback(async (id) => {
+    try {
+      await dbDeleteSong(id);
+      await refreshSongs();
+    } catch (error) {
+      console.error('Failed to delete song:', error);
+      throw error;
+    }
+  }, [refreshSongs]);
 
-  const deleteSong = (id) => {
-    dataStore.deleteSong(id);
-    refreshSongs();
-  };
+  const getSong = useCallback(async (id) => {
+    try {
+      return await dbGetSong(id);
+    } catch (error) {
+      console.error('Failed to get song:', error);
+      return null;
+    }
+  }, []);
 
-  const addSetList = (setList) => {
-    const newSetList = dataStore.addSetList(setList);
-    refreshSongs();
-    return newSetList;
-  };
+  // Set list operations
+  const addSetList = useCallback(async (setList) => {
+    try {
+      const newSetList = await dbAddSetList(setList);
+      await refreshSongs();
+      return newSetList;
+    } catch (error) {
+      console.error('Failed to add set list:', error);
+      throw error;
+    }
+  }, [refreshSongs]);
 
-  const updateSetList = (id, updates) => {
-    const updated = dataStore.updateSetList(id, updates);
-    refreshSongs();
-    return updated;
-  };
+  const updateSetList = useCallback(async (id, updates) => {
+    try {
+      const updated = await dbUpdateSetList(id, updates);
+      await refreshSongs();
+      return updated;
+    } catch (error) {
+      console.error('Failed to update set list:', error);
+      throw error;
+    }
+  }, [refreshSongs]);
 
-  const deleteSetList = (id) => {
-    dataStore.deleteSetList(id);
-    refreshSongs();
-  };
+  const deleteSetList = useCallback(async (id) => {
+    try {
+      await dbDeleteSetList(id);
+      await refreshSongs();
+    } catch (error) {
+      console.error('Failed to delete set list:', error);
+      throw error;
+    }
+  }, [refreshSongs]);
+
+  const getSetList = useCallback(async (id) => {
+    try {
+      return await dbGetSetList(id);
+    } catch (error) {
+      console.error('Failed to get set list:', error);
+      return null;
+    }
+  }, []);
+
+  // Export/Import operations
+  const exportData = useCallback(async () => {
+    try {
+      return await exportAllData();
+    } catch (error) {
+      console.error('Failed to export data:', error);
+      throw error;
+    }
+  }, []);
+
+  const importDataFromFile = useCallback(async (data, mode = 'merge') => {
+    try {
+      const result = await dbImportData(data, mode);
+      await refreshSongs();
+      return result;
+    } catch (error) {
+      console.error('Failed to import data:', error);
+      throw error;
+    }
+  }, [refreshSongs]);
 
   const contextValue = {
     songs,
     setLists,
-    dataStore,
     currentView,
     setCurrentView,
+    dbInitialized,
+    migrationStatus,
+    migrationProgress,
+    // Song operations
     addSong,
     updateSong,
     deleteSong,
+    getSong,
+    // Set list operations
     addSetList,
     updateSetList,
     deleteSetList,
+    getSetList,
+    // Data operations
     refreshSongs,
-    getSetList: (id) => dataStore.getSetList(id),
-    getSong: (id) => dataStore.getSong(id),
+    exportData,
+    importData: importDataFromFile,
     // Global metronome that persists across views
     metronome: metronomeHook
   };
