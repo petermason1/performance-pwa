@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../hooks/useApp'
-import { parseLyrics, formatLyrics } from '../models.js'
+import { parseLyrics, formatLyrics } from '../models'
 
 export default function SongModal({ song, onClose }) {
   const { addSong, updateSong } = useApp()

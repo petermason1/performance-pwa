@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Metronome } from '../metronome.js';
+import { Metronome } from '../metronome';
 
-export function useMetronome(initialBPM = 120) {
+export function useMetronome(initialBPM: number = 120) {
   const [bpm, setBPM] = useState(initialBPM);
   const [isPlaying, setIsPlaying] = useState(false);
   const [beatCount, setBeatCount] = useState(0);
-  const metronomeRef = useRef(null);
+  const metronomeRef = useRef<Metronome | null>(null);
 
   useEffect(() => {
     metronomeRef.current = new Metronome();
@@ -22,7 +22,8 @@ export function useMetronome(initialBPM = 120) {
         setIsPlaying(false);
       }
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only create metronome once - BPM updates are handled separately
   
   // Sync isPlaying state periodically to catch any state mismatches
   useEffect(() => {
@@ -92,29 +93,29 @@ export function useMetronome(initialBPM = 120) {
     }
   }, [isPlaying, play, stop]);
 
-  const updateBPM = useCallback((newBPM) => {
+  const updateBPM = useCallback((newBPM: number) => {
     setBPM(Math.max(40, Math.min(300, newBPM)));
   }, []);
 
-  const setTimeSignature = useCallback((sig) => {
+  const setTimeSignature = useCallback((sig: number) => {
     if (metronomeRef.current) {
       metronomeRef.current.setTimeSignature(sig);
     }
   }, []);
 
-  const setAccentPattern = useCallback((pattern) => {
+  const setAccentPattern = useCallback((pattern: (boolean | number)[] | null) => {
     if (metronomeRef.current) {
       metronomeRef.current.setAccentPattern(pattern);
     }
   }, []);
 
-  const setPolyrhythm = useCallback((pattern, name) => {
+  const setPolyrhythm = useCallback((pattern: number[] | null, name?: string) => {
     if (metronomeRef.current) {
       metronomeRef.current.setPolyrhythm(pattern, name);
     }
   }, []);
 
-  const setSoundEnabled = useCallback((enabled) => {
+  const setSoundEnabled = useCallback((enabled: boolean) => {
     if (metronomeRef.current) {
       metronomeRef.current.setSoundEnabled(enabled);
     }

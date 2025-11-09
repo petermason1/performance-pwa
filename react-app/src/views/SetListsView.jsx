@@ -135,7 +135,7 @@ export default function SetListsView() {
                       <li key={s.id}>{s.name}</li>
                     ))}
                     {songs.length > 5 && (
-                      <li><em>...and {songs.length - 5} more</em></li>
+                      <li key="more"><em>...and {songs.length - 5} more</em></li>
                     )}
                   </ul>
                 </div>

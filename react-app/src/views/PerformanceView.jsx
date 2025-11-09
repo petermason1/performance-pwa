@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useApp } from '../hooks/useApp'
 import { useTempoWheel } from '../hooks/useTempoWheel'
-import { midiController } from '../midi.js'
+import { midiController } from '../midi'
+import ModeToggle from '../components/Performance/ModeToggle'
+import LiveView from '../components/Performance/LiveView'
 
 export default function PerformanceView() {
   const { setLists, getSetList, getSong, updateSong, metronome: metronomeHook, setCurrentView } = useApp()
@@ -30,6 +32,7 @@ export default function PerformanceView() {
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('metronomeSoundEnabled') !== 'false')
   const [visualEnabled, setVisualEnabled] = useState(() => localStorage.getItem('metronomeVisualEnabled') !== 'false')
   const [showBeatNumber, setShowBeatNumber] = useState(() => localStorage.getItem('metronomeShowBeatNumber') !== 'false')
+  const pendingAccentPatternRef = useRef(undefined)
   
   // Use global metronome from context
   const {
@@ -46,10 +49,10 @@ export default function PerformanceView() {
   
   // Get songs from current set list
   const setListSongs = useMemo(() => {
-    return currentSetList ? 
-      currentSetList.songIds
-        .map(id => getSong(id))
-        .filter(s => s !== undefined) : []
+    if (!currentSetList || !currentSetList.songIds) return []
+    return currentSetList.songIds
+      .map(id => getSong(id))
+      .filter(s => s !== undefined)
   }, [currentSetList, getSong])
 
   const updateBeatPatternSelector = useCallback((sig, pattern = null) => {
@@ -60,6 +63,7 @@ export default function PerformanceView() {
     } else {
       setMetronomeAccentPattern(null)
     }
+    pendingAccentPatternRef.current = undefined
   }, [setMetronomeAccentPattern])
 
   const handleBPMChange = useCallback((newBPM) => {
@@ -174,16 +178,23 @@ export default function PerformanceView() {
   useEffect(() => {
     if (!metronome) return
     
-    metronome.setOnBeatCallback((beatInMeasure, isAccent) => {
-      // Update visual beat indicator - beatInMeasure is 0-indexed, convert to 1-indexed
-      const beatNumber = beatInMeasure + 1
+    metronome.setOnBeatCallback((beatNumber, isAccent) => {
+      // Apply any pending accent pattern at the next downbeat
+      if (beatNumber === 1 && pendingAccentPatternRef.current !== undefined) {
+        const pending = pendingAccentPatternRef.current
+        if (pending === null) {
+          setMetronomeAccentPattern(null)
+        } else if (Array.isArray(pending)) {
+          setMetronomeAccentPattern(pending)
+        }
+        pendingAccentPatternRef.current = undefined
+      }
+
       setCurrentBeatInMeasure(beatNumber)
       
-      // Flash the visual indicator
       if (visualEnabled) {
         setIsBeatFlashing(true)
         setIsAccentBeat(isAccent)
-        // Reset flash after animation
         setTimeout(() => {
           setIsBeatFlashing(false)
         }, 150)
@@ -205,7 +216,7 @@ export default function PerformanceView() {
       metronome.setOnBeatCallback(null)
       metronome.setOnTimeUpdateCallback(null)
     }
-  }, [metronome, currentSong, visualEnabled])
+  }, [metronome, currentSong, visualEnabled, setMetronomeAccentPattern])
   
   // Save settings to localStorage
   useEffect(() => {
@@ -260,7 +271,7 @@ export default function PerformanceView() {
         setSelectedSetListId(savedSetListId)
         
         // Restore current song if available
-        if (setList.songIds.length > 0) {
+        if (setList.songIds && setList.songIds.length > 0) {
           const savedSongIndex = parseInt(localStorage.getItem('currentSongIndex') || '0')
           const songIndex = Math.min(savedSongIndex, setList.songIds.length - 1)
           const song = getSong(setList.songIds[songIndex])
@@ -351,10 +362,20 @@ export default function PerformanceView() {
     newPattern[index] = !newPattern[index]
     setAccentPatternState(newPattern)
     
-    if (newPattern.some(p => p)) {
-      setMetronomeAccentPattern(newPattern)
+    const hasAccents = newPattern.some(p => p)
+    if (!metronome || !isPlaying) {
+      setMetronomeAccentPattern(hasAccents ? newPattern : null)
+      pendingAccentPatternRef.current = undefined
     } else {
-      setMetronomeAccentPattern(null)
+      const currentBeat = metronome.getCurrentBeatInMeasure() || 1
+      const targetBeat = index + 1
+      if (targetBeat <= currentBeat) {
+        // Beat already passed this measure – apply on next downbeat
+        pendingAccentPatternRef.current = hasAccents ? newPattern : null
+      } else {
+        setMetronomeAccentPattern(hasAccents ? newPattern : null)
+        pendingAccentPatternRef.current = undefined
+      }
     }
     
     if (currentSong) {
@@ -366,6 +387,7 @@ export default function PerformanceView() {
     const pattern = new Array(timeSignature).fill(false)
     setAccentPatternState(pattern)
     setMetronomeAccentPattern(null)
+    pendingAccentPatternRef.current = undefined
     if (currentSong) setSongHasChanges(true)
   }
 
@@ -373,6 +395,7 @@ export default function PerformanceView() {
     const pattern = new Array(timeSignature).fill(false)
     setAccentPatternState(pattern)
     setMetronomeAccentPattern(null) // null means no accents
+    pendingAccentPatternRef.current = undefined
     if (currentSong) setSongHasChanges(true)
   }
 
@@ -486,20 +509,7 @@ export default function PerformanceView() {
         <h1>Performance</h1>
       </header>
 
-      <div className="performance-mode-selector">
-        <button 
-          className={`mode-btn ${performanceMode === 'setup' ? 'active' : ''}`}
-          onClick={() => setPerformanceMode('setup')}
-        >
-          ⚙️ Setup
-        </button>
-        <button 
-          className={`mode-btn ${performanceMode === 'live' ? 'active' : ''}`}
-          onClick={() => setPerformanceMode('live')}
-        >
-          🎤 Live
-        </button>
-      </div>
+      <ModeToggle mode={performanceMode} onChange={setPerformanceMode} />
 
       {performanceMode === 'setup' && (
         <div className="performance-mode active">
@@ -598,46 +608,30 @@ export default function PerformanceView() {
       )}
 
       {performanceMode === 'live' && (
-        <div className="performance-mode active">
-          <div className={`live-song-grid ${setListSongs.length > 12 ? 'has-more' : ''}`}>
-            {setListSongs.length === 0 ? (
-              <div className="live-no-songs">
-                <p>Load a set list to see songs</p>
-              </div>
-            ) : (
-              <>
-                {setListSongs.map((song, index) => (
-                  <button
-                    key={song.id}
-                    className={`live-song-button ${index === currentSongIndex ? 'active' : ''}`}
-                    onClick={() => selectSong(index)}
-                  >
-                    <div className="live-song-number">{index + 1}</div>
-                    <div className="live-song-name">{song.name}</div>
-                    {song.artist && <div className="live-song-artist">{song.artist}</div>}
-                    <div className="live-song-bpm">{song.bpm} BPM</div>
-                  </button>
-                ))}
-                {setListSongs.length > 12 && (
-                  <div className="live-more-indicator" style={{
-                    gridColumn: '1 / -1',
-                    textAlign: 'center',
-                    padding: '10px',
-                    color: 'var(--text-secondary)',
-                    fontSize: '0.85rem',
-                    fontStyle: 'italic'
-                  }}>
-                    Scroll to see {setListSongs.length - 12} more song{setListSongs.length - 12 > 1 ? 's' : ''}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-        </div>
+        <LiveView 
+          bpm={bpm}
+          timeSignature={timeSignature}
+          isPlaying={isPlaying}
+          soundEnabled={soundEnabled}
+          visualEnabled={visualEnabled}
+          rotation={rotation}
+          wheelRef={wheelRef}
+          tapTempoMessage={tapTempoMessage}
+          currentSong={currentSong}
+          setListSongs={setListSongs}
+          currentSongIndex={currentSongIndex}
+          onToggleMetronome={toggle}
+          onSoundToggle={setSoundEnabled}
+          onVisualToggle={setVisualEnabled}
+          onTimeSignatureChange={handleTimeSignatureChange}
+          onTapTempo={tapTempo}
+          onPreviousSong={previousSong}
+          onNextSong={nextSong}
+        />
       )}
 
-      <div className="performance-controls">
+      {performanceMode === 'setup' && (
+        <div className="performance-controls">
         <div className="current-song-display">
           <h2>{currentSong ? currentSong.name : '--'}</h2>
           <div className="bpm-display">
@@ -982,6 +976,7 @@ export default function PerformanceView() {
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }

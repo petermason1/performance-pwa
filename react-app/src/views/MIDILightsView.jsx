@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { midiController } from '../midi.js'
+import { midiController } from '../midi'
 
 export default function MIDILightsView() {
   const [outputs, setOutputs] = useState([])

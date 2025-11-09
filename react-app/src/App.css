@@ -5,27 +5,57 @@
 }
 
 :root {
-    --primary-color: #6366f1;
-    --primary-dark: #4f46e5;
-    --secondary-color: #8b5cf6;
-    --background: #1e1e2e;
-    --surface: #27293d;
-    --surface-light: #2d3142;
-    --text: #ffffff;
-    --text-secondary: #a0a0b8;
-    --accent: #ec4899;
-    --success: #10b981;
-    --danger: #ef4444;
+    /* Dark Futuristic Palette */
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #121827;
+    --bg-tertiary: #1a2332;
+    
+    /* Neon Accents */
+    --accent-cyan: #00d9ff;
+    --accent-purple: #6366f1;
+    --accent-green: #00ff88;
+    --accent-danger: #ff0055;
+    --accent-warning: #ffaa00;
+    
+    /* Text */
+    --text-primary: #e8eef5;
+    --text-secondary: #8b92a8;
+    --text-tertiary: #4a5264;
+    
+    /* Glass Effects */
+    --glass-bg: rgba(26, 35, 50, 0.6);
+    --glass-border: rgba(0, 217, 255, 0.2);
+    --glass-border-strong: rgba(0, 217, 255, 0.4);
+    
+    /* Glows */
+    --glow-cyan: 0 0 20px rgba(0, 217, 255, 0.4);
+    --glow-cyan-strong: 0 0 30px rgba(0, 217, 255, 0.6);
+    --glow-purple: 0 0 20px rgba(99, 102, 241, 0.4);
+    --glow-green: 0 0 20px rgba(0, 255, 136, 0.4);
+    
+    /* Legacy Support (for gradual migration) */
+    --primary-color: var(--accent-cyan);
+    --background: var(--bg-primary);
+    --surface: var(--bg-secondary);
+    --surface-light: var(--bg-tertiary);
+    --text: var(--text-primary);
+    --text-secondary: var(--text-secondary);
+    --accent: var(--accent-cyan);
+    --success: var(--accent-green);
+    --danger: var(--accent-danger);
+    --border: var(--glass-border);
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, var(--background) 0%, #2a2d3f 100%);
-    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: radial-gradient(ellipse at top, #121827 0%, #0a0e1a 50%, #050710 100%);
+    background-attachment: fixed;
+    color: var(--text-primary);
     min-height: 100vh;
     padding: 0;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+    font-weight: 400;
 }
 
 .app-container {
@@ -37,61 +67,6 @@ body {
     flex-direction: column;
     padding: 0;
     overflow-x: hidden;
-}
-
-/* Navigation Tabs */
-.nav-tabs {
-    display: flex;
-    background: var(--surface);
-    border-bottom: 2px solid var(--surface-light);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    width: 100%;
-    max-width: 100%;
-}
-
-.nav-tab {
-    flex: 1;
-    padding: 14px 8px;
-    min-height: 48px;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-bottom: 3px solid transparent;
-    touch-action: manipulation;
-}
-
-.nav-tab:hover {
-    background: var(--surface-light);
-    color: var(--text);
-}
-
-.nav-tab.active {
-    color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
-    background: var(--surface-light);
-}
-
-/* Views */
-.view {
-    display: none;
-    flex: 1;
-    padding: 12px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    width: 100%;
-    max-width: 100%;
-}
-
-.view.active {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
 }
 
 header {

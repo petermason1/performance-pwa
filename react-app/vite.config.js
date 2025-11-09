@@ -8,6 +8,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'promptUpdate',
+      devOptions: {
+        // Disable service worker during Vite dev to avoid HMR conflicts
+        enabled: false
+      },
       manifest: {
         name: 'Performance PWA',
         short_name: 'Performance',
@@ -56,10 +60,6 @@ export default defineConfig({
           }
         ]
       },
-      devOptions: {
-        enabled: true,
-        type: 'module'
-      }
     })
   ],
   build: {

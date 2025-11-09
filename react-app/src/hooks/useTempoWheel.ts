@@ -1,20 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 
 // Convert BPM to rotation angle - Map BPM (40-300) to angle (0-360)
-function angleFromBPM(bpm) {
+function angleFromBPM(bpm: number): number {
   const normalized = (Math.max(40, Math.min(300, bpm)) - 40) / 260
   return normalized * 360
 }
 
 // Convert angle to BPM
-function bpmFromAngle(angle) {
+function bpmFromAngle(angle: number): number {
   const normalized = ((angle % 360) + 360) % 360 / 360
   const bpm = Math.round(40 + (normalized * 260))
   return Math.max(40, Math.min(300, bpm))
 }
 
-export function useTempoWheel(initialBPM, onBPMChange) {
-  const wheelRef = useRef(null)
+export function useTempoWheel(initialBPM: number, onBPMChange: (bpm: number) => void) {
+  const wheelRef = useRef<HTMLDivElement | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [rotation, setRotation] = useState(angleFromBPM(initialBPM))
 
@@ -24,15 +24,15 @@ export function useTempoWheel(initialBPM, onBPMChange) {
     setRotation(Math.max(0, Math.min(360, angle)))
   }, [initialBPM])
 
-  const getAngle = useCallback((e) => {
+  const getAngle = useCallback((e: MouseEvent | TouchEvent) => {
     if (!wheelRef.current) return 0
     
     const rect = wheelRef.current.getBoundingClientRect()
     const centerX = rect.left + rect.width / 2
     const centerY = rect.top + rect.height / 2
     
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    const clientX = 'touches' in e ? e.touches[0]!.clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0]!.clientY : e.clientY
     
     const dx = clientX - centerX
     const dy = clientY - centerY
@@ -46,9 +46,10 @@ export function useTempoWheel(initialBPM, onBPMChange) {
   const startBPMRef = useRef(initialBPM)
   const lastAngleRef = useRef(0)
 
-  const startDrag = useCallback((e) => {
+  const startDrag = useCallback((e: MouseEvent | TouchEvent) => {
     // Don't start drag if clicking the play button
-    if (e.target.closest && e.target.closest('.wheel-play-btn')) {
+    const target = e.target as HTMLElement
+    if (target.closest && target.closest('.wheel-play-btn')) {
       return
     }
     
@@ -64,7 +65,7 @@ export function useTempoWheel(initialBPM, onBPMChange) {
     lastAngleRef.current = mouseAngle
   }, [getAngle, initialBPM])
 
-  const drag = useCallback((e) => {
+  const drag = useCallback((e: MouseEvent | TouchEvent) => {
     if (!isDragging || !wheelRef.current) return
     
     e.preventDefault()
@@ -98,8 +99,6 @@ export function useTempoWheel(initialBPM, onBPMChange) {
     let newAngle = startAngleForBPM + angleDelta
     
     // Clamp to 0-360 range (prevent multiple spins)
-    // This ensures one full rotation = 40-300 BPM
-    // If user tries to spin past limits, stop at 0° (40 BPM) or 360° (300 BPM)
     if (newAngle < 0) {
       newAngle = 0
     } else if (newAngle > 360) {
@@ -109,10 +108,10 @@ export function useTempoWheel(initialBPM, onBPMChange) {
     // Calculate BPM from angle
     const newBPM = bpmFromAngle(newAngle)
     
-    // Only update if BPM changed significantly (reduce sensitivity)
+    // Only update if BPM changed significantly
     if (Math.abs(newBPM - initialBPM) >= 1) {
       onBPMChange(newBPM)
-      setRotation(newAngle) // Use clamped angle directly
+      setRotation(newAngle)
     }
     
     lastAngleRef.current = currentAngle
@@ -130,21 +129,28 @@ export function useTempoWheel(initialBPM, onBPMChange) {
     const wheel = wheelRef.current
     if (!wheel) return
 
-    wheel.addEventListener('mousedown', startDrag)
-    document.addEventListener('mousemove', drag)
-    document.addEventListener('mouseup', endDrag)
+    const handleMouseDown = (e: MouseEvent) => startDrag(e)
+    const handleMouseMove = (e: MouseEvent) => drag(e)
+    const handleMouseUp = () => endDrag()
+    const handleTouchStart = (e: TouchEvent) => startDrag(e)
+    const handleTouchMove = (e: TouchEvent) => drag(e)
+    const handleTouchEnd = () => endDrag()
+
+    wheel.addEventListener('mousedown', handleMouseDown)
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
     
-    wheel.addEventListener('touchstart', startDrag, { passive: false })
-    document.addEventListener('touchmove', drag, { passive: false })
-    document.addEventListener('touchend', endDrag)
+    wheel.addEventListener('touchstart', handleTouchStart, { passive: false })
+    document.addEventListener('touchmove', handleTouchMove, { passive: false })
+    document.addEventListener('touchend', handleTouchEnd)
 
     return () => {
-      wheel.removeEventListener('mousedown', startDrag)
-      document.removeEventListener('mousemove', drag)
-      document.removeEventListener('mouseup', endDrag)
-      wheel.removeEventListener('touchstart', startDrag)
-      document.removeEventListener('touchmove', drag)
-      document.removeEventListener('touchend', endDrag)
+      wheel.removeEventListener('mousedown', handleMouseDown)
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      wheel.removeEventListener('touchstart', handleTouchStart)
+      document.removeEventListener('touchmove', handleTouchMove)
+      document.removeEventListener('touchend', handleTouchEnd)
     }
   }, [startDrag, drag, endDrag])
 

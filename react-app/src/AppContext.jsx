@@ -22,7 +22,9 @@ export function AppProvider({ children }) {
   const [songs, setSongs] = useState([]);
   const [setLists, setSetLists] = useState([]);
   const [currentView, setCurrentView] = useState(() => {
-    return localStorage.getItem('lastView') || 'performance';
+    const saved = localStorage.getItem('lastView');
+    const allowed = ['performance', 'setlists', 'songs', 'lights'];
+    return saved && allowed.includes(saved) ? saved : 'performance';
   });
   const [dbInitialized, setDbInitialized] = useState(false);
   const [migrationStatus, setMigrationStatus] = useState(null);
