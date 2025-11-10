@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getAllAccentPresets, savePreset } from '../utils/presets.js'
+import { getAccentPresets, savePreset } from '../utils/presets'
 
 export default function PresetSelector({ 
   timeSignature, 
@@ -17,7 +17,7 @@ export default function PresetSelector({
   }, [timeSignature])
 
   const loadPresets = async () => {
-    const all = await getAllAccentPresets()
+    const all = await getAccentPresets()
     // Filter by matching time signature
     const matching = all.filter(p => p.timeSignature === timeSignature)
     setPresets(matching)
