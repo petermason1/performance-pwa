@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useApp } from '../hooks/useApp'
+import QRCode from 'qrcode'
 
 export default function ExportImportModal({ onClose }) {
   const { songs, setLists, exportData: exportAppData, importData: importAppData, refreshSongs } = useApp()
@@ -9,6 +10,8 @@ export default function ExportImportModal({ onClose }) {
   const [isExporting, setIsExporting] = useState(false)
   const [selectedFileName, setSelectedFileName] = useState('')
   const [shareLink, setShareLink] = useState('')
+  const [qrCodeUrl, setQrCodeUrl] = useState('')
+  const qrCanvasRef = useRef(null)
 
   // Generate export data when modal opens
   useEffect(() => {
@@ -76,7 +79,7 @@ export default function ExportImportModal({ onClose }) {
     alert('✅ File downloaded!')
   }
 
-  const handleGenerateShareLink = () => {
+  const handleGenerateShareLink = async () => {
     if (!exportData || exportData.trim() === '') {
       alert('No data to share.')
       return
@@ -94,6 +97,22 @@ export default function ExportImportModal({ onClose }) {
       }
       
       setShareLink(url)
+      
+      // Generate QR code
+      try {
+        const qrDataUrl = await QRCode.toDataURL(url, {
+          width: 256,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#ffffff'
+          }
+        })
+        setQrCodeUrl(qrDataUrl)
+      } catch (qrErr) {
+        console.error('Error generating QR code:', qrErr)
+        // Continue without QR code
+      }
     } catch (e) {
       console.error('Error generating share link:', e)
       alert('Failed to generate share link. Data may be too large.')
@@ -216,15 +235,20 @@ export default function ExportImportModal({ onClose }) {
       if (mode === 'replace') {
         message = `✅ Successfully replaced all data!\n\n` +
                  `Imported: ${result.songs.added} songs, ${result.setlists.added} set lists`
+        if (result.presets?.added) message += `, ${result.presets.added} presets`
       } else {
         message = `✅ Merge complete!\n\n` +
                  `Songs: +${result.songs.added} new`
         if (result.songs.skipped > 0) message += `, ${result.songs.skipped} skipped (already exist)`
         message += `\nSet Lists: +${result.setlists.added} new`
         if (result.setlists.skipped > 0) message += `, ${result.setlists.skipped} skipped (already exist)`
+        if (result.presets?.added) {
+          message += `\nPresets: +${result.presets.added} new`
+          if (result.presets.skipped > 0) message += `, ${result.presets.skipped} skipped (already exist)`
+        }
       }
       
-      if (result.songs.errors.length > 0 || result.setlists.errors.length > 0) {
+      if (result.songs.errors.length > 0 || result.setlists.errors.length > 0 || result.presets?.errors.length > 0) {
         message += `\n\n⚠️ Some items had errors and were not imported.`
         console.error('Import errors:', result)
       }
@@ -306,6 +330,30 @@ export default function ExportImportModal({ onClose }) {
               <div style={{ marginBottom: '10px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                 📤 Share Link Generated
               </div>
+              
+              {qrCodeUrl && (
+                <div style={{
+                  textAlign: 'center',
+                  marginBottom: '15px',
+                  padding: '15px',
+                  background: 'white',
+                  borderRadius: '8px'
+                }}>
+                  <img 
+                    src={qrCodeUrl} 
+                    alt="QR Code for sharing data" 
+                    style={{ maxWidth: '200px', height: 'auto' }}
+                  />
+                  <div style={{
+                    marginTop: '8px',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    Scan this QR code to import on another device
+                  </div>
+                </div>
+              )}
+              
               <textarea
                 readOnly
                 value={shareLink}

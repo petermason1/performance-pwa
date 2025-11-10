@@ -172,3 +172,283 @@ header h1 {
   transform: scale(0.95) translateY(0);
 }
 
+.setlists-view {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header-subtitle {
+  margin-top: 0.35rem;
+  font-size: 0.95rem;
+  color: rgba(212, 225, 255, 0.65);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #e8eef5;
+  font-size: 1rem;
+  background: linear-gradient(135deg, rgba(26, 35, 50, 0.4), rgba(26, 35, 50, 0.65));
+  border-radius: 1.25rem;
+  border: 2px dashed rgba(0, 217, 255, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.empty-title {
+  margin: 0;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+}
+
+.empty-actions {
+  display: grid;
+  gap: 0.75rem;
+  width: min(360px, 100%);
+}
+
+.card-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.card-meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(212, 225, 255, 0.65);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.setlist-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.summary-chip {
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(0, 217, 255, 0.12);
+  border: 1px solid rgba(0, 217, 255, 0.28);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(226, 241, 255, 0.75);
+}
+
+.setlist-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.setlist-song-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.song-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 2.2fr) minmax(0, 2fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  border-radius: 0.9rem;
+  background: rgba(12, 19, 32, 0.75);
+  border: 1px solid rgba(0, 217, 255, 0.12);
+}
+
+@media (max-width: 820px) {
+  .song-row {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+  .song-metrics,
+  .song-actions {
+    grid-column: 2 / -1;
+  }
+}
+
+.song-row.empty {
+  justify-content: center;
+  color: rgba(212, 225, 255, 0.6);
+  border-style: dashed;
+}
+
+.song-index {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(99, 102, 241, 0.85);
+}
+
+.song-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.song-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e8eef5;
+}
+
+.song-artist {
+  font-size: 0.85rem;
+  color: rgba(212, 225, 255, 0.65);
+}
+
+.song-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.metric-tag {
+  padding: 0.3rem 0.65rem;
+  border-radius: 0.75rem;
+  background: rgba(0, 217, 255, 0.12);
+  border: 1px solid rgba(0, 217, 255, 0.2);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(226, 241, 255, 0.75);
+}
+
+.metric-tag.muted {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.28);
+}
+
+.song-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.song-action {
+  border: 1px solid rgba(0, 217, 255, 0.2);
+  background: rgba(12, 19, 32, 0.6);
+  color: rgba(226, 241, 255, 0.85);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.65rem;
+  transition: all 0.2s ease;
+}
+
+.song-action:hover {
+  border-color: rgba(0, 217, 255, 0.45);
+  background: rgba(0, 217, 255, 0.16);
+}
+
+.setlist-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 10, 20, 0.65);
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 1100;
+}
+
+.setlist-drawer {
+  width: min(420px, 100%);
+  background: rgba(10, 16, 30, 0.98);
+  border-left: 1px solid rgba(0, 217, 255, 0.18);
+  padding: 2rem 2.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-shadow: -14px 0 32px rgba(3, 7, 18, 0.45);
+}
+
+.drawer-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: relative;
+}
+
+.drawer-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  letter-spacing: 0.04em;
+}
+
+.drawer-header p {
+  margin: 0;
+  color: rgba(212, 225, 255, 0.65);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.drawer-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: none;
+  background: none;
+  color: rgba(212, 225, 255, 0.65);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.drawer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.drawer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.drawer-field span {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(212, 225, 255, 0.75);
+}
+
+.drawer-field input,
+.drawer-field select {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 217, 255, 0.35);
+  background: rgba(7, 12, 24, 0.85);
+  color: #f5f7ff;
+  padding: 0.6rem 0.75rem;
+  font-size: 1rem;
+}
+
+.drawer-field small {
+  font-size: 0.75rem;
+  color: rgba(212, 225, 255, 0.55);
+}
+
+.drawer-error {
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.65rem;
+  background: rgba(248, 113, 113, 0.16);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+  font-size: 0.85rem;
+}
+

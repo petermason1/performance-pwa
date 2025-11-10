@@ -1,45 +1,181 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../hooks/useApp'
 import SetListModal from '../components/SetListModal'
 import ExampleSetListsModal from '../components/ExampleSetListsModal'
 import './SetListsView.css'
 
+const TIME_SIGNATURE_DISPLAY = {
+  '2': '2/4',
+  '3': '3/4',
+  '4': '4/4',
+  '5': '5/4',
+  '6': '6/8',
+  '7': '7/8',
+  '9': '9/8',
+  '12': '12/8'
+}
+
+const QUICK_EDIT_SIGNATURE_OPTIONS = ['2', '3', '4', '5', '6', '7', '9', '12']
+
+function formatTimeSignature(value) {
+  if (!value) return '—'
+  if (TIME_SIGNATURE_DISPLAY[value]) return TIME_SIGNATURE_DISPLAY[value]
+  if (typeof value === 'string' && value.includes('/')) return value
+  return `${value}/4`
+}
+
+function calculateSetListDuration(listSongs) {
+  let totalSeconds = 0
+
+  listSongs.forEach(song => {
+    if (!song) return
+    if (song.duration) {
+      totalSeconds += song.duration * 60
+    } else if (song.lyrics && song.lyrics.length > 0) {
+      const lastLyric = song.lyrics[song.lyrics.length - 1]
+      totalSeconds += lastLyric.time || 0
+    } else {
+      totalSeconds += 180
+    }
+  })
+
+  return totalSeconds
+}
+
+function formatDuration(totalSeconds) {
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = Math.floor(totalSeconds % 60)
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  }
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
+function SongQuickEditDrawer({ song, open, onClose, onSave, saving, error }) {
+  const [form, setForm] = useState({ bpm: '', timeSignature: '4', metronomePresetName: '' })
+
+  useEffect(() => {
+    if (song) {
+      setForm({
+        bpm: song.bpm ?? '',
+        timeSignature: song.timeSignature ? String(song.timeSignature) : '4',
+        metronomePresetName: song.metronomePresetName || song.metronomePreset || ''
+      })
+    }
+  }, [song])
+
+  if (!open || !song) {
+    return null
+  }
+
+  const handleChange = (event) => {
+    const { name, value } = event.target
+    setForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    const parsedBpm = Number(form.bpm)
+    if (Number.isNaN(parsedBpm) || parsedBpm < 40 || parsedBpm > 300) {
+      return
+    }
+
+    onSave({
+      bpm: parsedBpm,
+      timeSignature: form.timeSignature,
+      metronomePresetName: form.metronomePresetName?.trim() || null
+    })
+  }
+
+  return (
+    <div className="setlist-drawer-backdrop" role="presentation" onClick={onClose}>
+      <aside
+        className="setlist-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quick-edit-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="drawer-header">
+          <h2 id="quick-edit-title">Quick Edit</h2>
+          <p>{song.name}</p>
+          <button type="button" className="drawer-close" onClick={onClose} aria-label="Close quick edit">
+            ×
+          </button>
+        </header>
+
+        <form className="drawer-form" onSubmit={handleSubmit}>
+          <label className="drawer-field">
+            <span>BPM</span>
+            <input
+              type="number"
+              name="bpm"
+              min="40"
+              max="300"
+              value={form.bpm}
+              onChange={handleChange}
+              required
+            />
+          </label>
+
+          <label className="drawer-field">
+            <span>Time Signature</span>
+            <select
+              name="timeSignature"
+              value={form.timeSignature}
+              onChange={handleChange}
+            >
+              {QUICK_EDIT_SIGNATURE_OPTIONS.map(option => (
+                <option key={option} value={option}>{formatTimeSignature(option)}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="drawer-field">
+            <span>Metronome Preset</span>
+            <input
+              type="text"
+              name="metronomePresetName"
+              placeholder="e.g., Latin Groove"
+              value={form.metronomePresetName}
+              onChange={handleChange}
+            />
+            <small>Connects to preset library (coming soon).</small>
+          </label>
+
+          {error ? <div className="drawer-error" role="alert">{error}</div> : null}
+
+          <button type="submit" className="btn btn-primary" disabled={saving}>
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </form>
+      </aside>
+    </div>
+  )
+}
+
 export default function SetListsView() {
-  const { setLists, songs, addSetList, getSong, deleteSetList, refreshData, setCurrentView } = useApp()
+  const {
+    setLists,
+    songs,
+    addSetList,
+    getSong,
+    deleteSetList,
+    refreshData,
+    setCurrentView,
+    updateSong
+  } = useApp()
+
   const [showModal, setShowModal] = useState(false)
   const [editingSetList, setEditingSetList] = useState(null)
   const [showExamples, setShowExamples] = useState(false)
+  const [drawerSong, setDrawerSong] = useState(null)
+  const [drawerSaving, setDrawerSaving] = useState(false)
+  const [drawerError, setDrawerError] = useState('')
 
-  const calculateSetListDuration = (songs) => {
-    let totalSeconds = 0
-    
-    songs.forEach(song => {
-      if (song.duration) {
-        // Use manually entered duration (in minutes)
-        totalSeconds += song.duration * 60
-      } else if (song.lyrics && song.lyrics.length > 0) {
-        // Calculate from last lyric timestamp
-        const lastLyric = song.lyrics[song.lyrics.length - 1]
-        totalSeconds += lastLyric.time || 0
-      } else {
-        // Default estimate: assume 3 minutes if no duration
-        totalSeconds += 180
-      }
-    })
-    
-    return totalSeconds
-  }
-
-  const formatDuration = (totalSeconds) => {
-    const hours = Math.floor(totalSeconds / 3600)
-    const minutes = Math.floor((totalSeconds % 3600) / 60)
-    const seconds = Math.floor(totalSeconds % 60)
-    
-    if (hours > 0) {
-      return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-    }
-    return `${minutes}:${String(seconds).padStart(2, '0')}`
-  }
+  const totalSongs = useMemo(() => songs.length, [songs])
 
   const handleEdit = (setList) => {
     setEditingSetList(setList)
@@ -53,26 +189,6 @@ export default function SetListsView() {
     }
   }
 
-  const handleView = (setList) => {
-    // For now, just show an alert with details
-    // TODO: Implement full detail/print view
-    const songs = setList.songIds.map(id => getSong(id)).filter(s => s)
-    const totalDuration = calculateSetListDuration(songs)
-    const avgBPM = songs.length > 0 ? 
-      Math.round(songs.reduce((sum, s) => sum + (s.bpm || 0), 0) / songs.length) : 0
-    
-    let message = `${setList.name}\n\n`
-    message += `${songs.length} song${songs.length !== 1 ? 's' : ''}\n`
-    message += `Duration: ${formatDuration(totalDuration)}\n`
-    if (avgBPM > 0) message += `Avg BPM: ${avgBPM}\n`
-    message += `\nSongs:\n`
-    songs.forEach((song, index) => {
-      message += `${index + 1}. ${song.name}${song.artist ? ` (${song.artist})` : ''} - ${song.bpm} BPM\n`
-    })
-    
-    alert(message)
-  }
-
   const handleNewSetList = () => {
     setEditingSetList(null)
     setShowModal(true)
@@ -84,27 +200,76 @@ export default function SetListsView() {
     refreshData()
   }
 
+  const handleLoadSetList = (setList, targetView) => {
+    if (!setList || !Array.isArray(setList.songIds) || setList.songIds.length === 0) {
+      alert('Add at least one song before loading this set list.')
+      return
+    }
+
+    localStorage.setItem('currentSetListId', setList.id)
+    localStorage.setItem('currentSongIndex', '0')
+    setCurrentView?.(targetView)
+    window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: targetView } }))
+  }
+
+  const handleLoadSong = (setList, index, targetView) => {
+    if (!setList || !Array.isArray(setList.songIds) || index < 0 || index >= setList.songIds.length) {
+      return
+    }
+    localStorage.setItem('currentSetListId', setList.id)
+    localStorage.setItem('currentSongIndex', String(index))
+    setCurrentView?.(targetView)
+    window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: targetView } }))
+  }
+
+  const handleOpenDrawer = (song) => {
+    setDrawerError('')
+    setDrawerSong(song)
+  }
+
+  const handleCloseDrawer = () => {
+    if (drawerSaving) return
+    setDrawerSong(null)
+    setDrawerError('')
+  }
+
+  const handleSaveDrawer = async (values) => {
+    if (!drawerSong) return
+    try {
+      setDrawerSaving(true)
+      setDrawerError('')
+      await updateSong(drawerSong.id, values)
+      await refreshData()
+      setDrawerSaving(false)
+      setDrawerSong(null)
+    } catch (error) {
+      console.error(error)
+      setDrawerError(error?.message || 'Failed to save song')
+      setDrawerSaving(false)
+    }
+  }
+
   return (
-    <div>
+    <div className="setlists-view">
       <header>
-        <h1>Set Lists</h1>
+        <div>
+          <h1>Set Lists</h1>
+          <p className="header-subtitle">{setLists.length} lists • {totalSongs} songs in library</p>
+        </div>
         <button className="btn btn-primary" onClick={handleNewSetList}>
           New Set List
         </button>
       </header>
-      
+
       <div className="setlists-container">
         {setLists.length === 0 ? (
-          <div className="empty-state" style={{ textAlign: 'center', padding: '30px 20px' }}>
-            <p style={{ marginBottom: '16px', fontSize: '1.05rem' }}>
-              No set lists yet. Get started quickly:
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', maxWidth: '420px', margin: '0 auto' }}>
+          <div className="empty-state" role="status">
+            <p className="empty-title">No set lists yet. Get started quickly:</p>
+            <div className="empty-actions">
               <button
                 className="btn btn-primary"
                 onClick={() => setShowExamples(true)}
                 aria-label="Browse and import example set lists"
-                style={{ width: '100%' }}
               >
                 📋 Import Example Set Lists
               </button>
@@ -112,7 +277,6 @@ export default function SetListsView() {
                 className="btn btn-secondary"
                 onClick={() => setCurrentView?.('songs')}
                 aria-label="Go to Songs view to import example songs"
-                style={{ width: '100%' }}
               >
                 📥 Import Example Songs
               </button>
@@ -120,7 +284,6 @@ export default function SetListsView() {
                 className="btn"
                 onClick={handleNewSetList}
                 aria-label="Create a new set list"
-                style={{ width: '100%' }}
               >
                 ➕ Create New Set List
               </button>
@@ -128,49 +291,116 @@ export default function SetListsView() {
           </div>
         ) : (
           setLists.map(setList => {
-            const songs = setList.songIds.map(id => getSong(id)).filter(s => s)
-            const totalDuration = calculateSetListDuration(songs)
-            const avgBPM = songs.length > 0 ? 
-              Math.round(songs.reduce((sum, s) => sum + (s.bpm || 0), 0) / songs.length) : 0
+            const setListSongs = setList.songIds.map(id => getSong(id)).filter(Boolean)
+            const totalDuration = calculateSetListDuration(setListSongs)
+            const avgBPM = setListSongs.length > 0 ?
+              Math.round(setListSongs.reduce((sum, song) => sum + (song?.bpm || 0), 0) / setListSongs.length) : 0
 
             return (
               <div key={setList.id} className="setlist-card">
                 <div className="card-header">
-                  <h3>{setList.name}</h3>
+                  <div className="card-heading">
+                    <h3>{setList.name}</h3>
+                    <p className="card-meta">
+                      {setListSongs.length} songs • {formatDuration(totalDuration)}
+                      {avgBPM > 0 ? ` • Avg ${avgBPM} BPM` : ''}
+                    </p>
+                  </div>
                   <div className="card-actions">
                     <button
                       className="btn-icon view-setlist"
-                      onClick={() => handleView(setList)}
-                      title="View/Print"
+                      onClick={() => handleLoadSetList(setList, 'performance')}
+                      title="Load in Performance"
                     >
-                      👁️
+                      🚀
                     </button>
                     <button
                       className="btn-icon edit-setlist"
                       onClick={() => handleEdit(setList)}
+                      title="Edit set list"
                     >
                       ✏️
                     </button>
                     <button
                       className="btn-icon delete-setlist"
                       onClick={() => handleDelete(setList)}
+                      title="Delete set list"
                     >
                       🗑️
                     </button>
                   </div>
                 </div>
+
                 <div className="card-body">
-                  <p><strong>{songs.length}</strong> song{songs.length !== 1 ? 's' : ''}</p>
-                  <p><strong>Duration:</strong> {formatDuration(totalDuration)}</p>
-                  {avgBPM > 0 && <p><strong>Avg BPM:</strong> {avgBPM}</p>}
-                  <ul className="song-list-inline">
-                    {songs.slice(0, 5).map(s => (
-                      <li key={s.id}>{s.name}</li>
-                    ))}
-                    {songs.length > 5 && (
-                      <li key="more"><em>...and {songs.length - 5} more</em></li>
+                  <div className="setlist-summary">
+                    <div className="summary-chip">{setListSongs.length} songs</div>
+                    <div className="summary-chip">{formatDuration(totalDuration)}</div>
+                    <div className="summary-chip">{avgBPM > 0 ? `${avgBPM} Avg BPM` : '— Avg BPM'}</div>
+                  </div>
+
+                  <div className="setlist-quick-actions">
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => handleLoadSetList(setList, 'performance')}
+                    >
+                      Performance View
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => handleLoadSetList(setList, 'stage')}
+                    >
+                      Launch Stage Mode
+                    </button>
+                  </div>
+
+                  <div className="setlist-song-table" role="list">
+                    {setListSongs.length === 0 ? (
+                      <div className="song-row empty">Add songs to this set list to prepare it for performance.</div>
+                    ) : (
+                      setListSongs.map((song, index) => (
+                        <div key={song.id} className="song-row" role="listitem">
+                          <div className="song-index">{index + 1}</div>
+                          <div className="song-title">
+                            <span className="song-name">{song.name}</span>
+                            {song.artist ? <span className="song-artist">{song.artist}</span> : null}
+                          </div>
+                          <div className="song-metrics">
+                            <span className="metric-tag">{song.bpm ? `${song.bpm} BPM` : '— BPM'}</span>
+                            <span className="metric-tag">{formatTimeSignature(song.timeSignature)}</span>
+                            <span className="metric-tag muted">{song.metronomePresetName || song.metronomePreset || song.helixPreset || 'Manual'}</span>
+                          </div>
+                          <div className="song-actions">
+                            <button
+                              type="button"
+                              className="song-action"
+                              onClick={() => handleLoadSong(setList, index, 'performance')}
+                              title="Load in Performance"
+                            >
+                              Play
+                            </button>
+                            <button
+                              type="button"
+                              className="song-action"
+                              onClick={() => handleLoadSong(setList, index, 'stage')}
+                              title="Load in Stage Mode"
+                            >
+                              Stage
+                            </button>
+                            <button
+                              type="button"
+                              className="song-action"
+                              onClick={() => handleOpenDrawer(song)}
+                              title="Quick edit song"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </div>
+                      ))
                     )}
-                  </ul>
+                  </div>
                 </div>
               </div>
             )
@@ -184,7 +414,7 @@ export default function SetListsView() {
           onClose={handleModalClose}
         />
       )}
-      
+
       {showExamples && (
         <ExampleSetListsModal
           songs={songs}
@@ -192,6 +422,15 @@ export default function SetListsView() {
           onClose={() => setShowExamples(false)}
         />
       )}
+
+      <SongQuickEditDrawer
+        song={drawerSong}
+        open={Boolean(drawerSong)}
+        onClose={handleCloseDrawer}
+        onSave={handleSaveDrawer}
+        saving={drawerSaving}
+        error={drawerError}
+      />
     </div>
   )
 }

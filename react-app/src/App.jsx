@@ -13,9 +13,13 @@ import PerformanceView from './views/PerformanceView'
 import SetListsView from './views/SetListsView'
 import SongsView from './views/SongsView'
 import MIDILightsView from './views/MIDILightsView'
+import MetronomeSettingsView from './views/MetronomeSettingsView'
+import StageModeView from './views/StageModeView'
 
 const TABS = [
   { id: 'performance', icon: '🎭', label: 'Performance' },
+  { id: 'stage', icon: '🎤', label: 'Stage Mode' },
+  { id: 'metronome', icon: '🎛️', label: 'Metronome' },
   { id: 'setlists', icon: '📋', label: 'Set Lists' },
   { id: 'songs', icon: '🎵', label: 'Songs' },
   { id: 'lights', icon: '🎹', label: 'MIDI Lights' }
@@ -28,7 +32,7 @@ function AppContent() {
   // Persist and restore currentView
   useEffect(() => {
     const saved = localStorage.getItem('appCurrentView')
-    if (saved && ['performance', 'setlists', 'songs', 'lights'].includes(saved)) {
+    if (saved && ['performance', 'stage', 'metronome', 'setlists', 'songs', 'lights'].includes(saved)) {
       setCurrentView(saved)
     }
   }, [setCurrentView])
@@ -87,8 +91,22 @@ function AppContent() {
     handleShareLinkImport()
   }, [dbInitialized, importData])
 
+  useEffect(() => {
+    const handleNavigate = (event) => {
+      const desiredView = event?.detail?.view
+      if (desiredView && ['performance', 'stage', 'metronome', 'setlists', 'songs', 'lights'].includes(desiredView)) {
+        setCurrentView(desiredView)
+      }
+    }
+
+    window.addEventListener('app:navigate', handleNavigate)
+    return () => window.removeEventListener('app:navigate', handleNavigate)
+  }, [setCurrentView])
+
   const views = useMemo(() => ({
     performance: <PerformanceView />,
+    stage: <StageModeView />,
+    metronome: <MetronomeSettingsView />,
     setlists: <SetListsView />,
     songs: <SongsView />,
     lights: <MIDILightsView />

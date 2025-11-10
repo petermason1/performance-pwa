@@ -26,7 +26,7 @@ export function AppProvider({ children }) {
   const [setLists, setSetLists] = useState([]);
   const [currentView, setCurrentView] = useState(() => {
     const saved = localStorage.getItem('lastView');
-    const allowed = ['performance', 'setlists', 'songs', 'lights'];
+    const allowed = ['performance', 'stage', 'metronome', 'setlists', 'songs', 'lights'];
     return saved && allowed.includes(saved) ? saved : 'performance';
   });
   const [dbInitialized, setDbInitialized] = useState(false);

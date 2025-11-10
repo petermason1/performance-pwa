@@ -566,13 +566,23 @@ export async function exportAllData() {
   const preferences = await getPreferences();
   const midiMappings = await getMIDIMappings();
   
+  // Import presets from presets.js
+  let presets = [];
+  try {
+    const { getAllPresets } = await import('./presets.js');
+    presets = await getAllPresets();
+  } catch (err) {
+    console.warn('Could not load presets for export:', err);
+  }
+  
   return {
     version: CURRENT_VERSION,
     exportedAt: new Date().toISOString(),
     songs,
     setlists,
     preferences,
-    midiMappings
+    midiMappings,
+    presets
   };
 }
 
@@ -590,7 +600,8 @@ export async function importData(data, mode = 'merge') {
   
   const results = {
     songs: { added: 0, skipped: 0, errors: [] },
-    setlists: { added: 0, skipped: 0, errors: [] }
+    setlists: { added: 0, skipped: 0, errors: [] },
+    presets: { added: 0, skipped: 0, errors: [] }
   };
   
   // Import songs
@@ -643,6 +654,32 @@ export async function importData(data, mode = 'merge') {
   // Import MIDI mappings (always merge)
   if (data.midiMappings) {
     await setMetaValue('midiMappings', data.midiMappings);
+  }
+  
+  // Import presets
+  if (Array.isArray(data.presets)) {
+    try {
+      const { savePreset, getPreset } = await import('./presets.js');
+      for (const preset of data.presets) {
+        try {
+          if (mode === 'merge') {
+            // Check if preset already exists
+            const existing = await getPreset(preset.id);
+            if (existing) {
+              results.presets.skipped++;
+              continue;
+            }
+          }
+          
+          await savePreset(preset);
+          results.presets.added++;
+        } catch (error) {
+          results.presets.errors.push({ preset, error: error.message });
+        }
+      }
+    } catch (err) {
+      console.warn('Could not import presets:', err);
+    }
   }
   
   console.log('Import completed:', results);

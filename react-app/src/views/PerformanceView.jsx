@@ -11,6 +11,7 @@ import ExampleSetListsModal from '../components/ExampleSetListsModal'
 import PresetSelector from '../components/PresetSelector'
 import { initPresets } from '../utils/presets'
 import KeyboardShortcutsModal from '../components/KeyboardShortcutsModal'
+import RealtimeSessionModal from '../components/RealtimeSessionModal'
 import './PerformanceView.css'
 
 export default function PerformanceView() {
@@ -450,6 +451,7 @@ export default function PerformanceView() {
 
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
   const [presetFeedback, setPresetFeedback] = useState('')
+  const [showRealtimeSession, setShowRealtimeSession] = useState(false)
 
   useKeyboardShortcuts({
     onToggleMetronome: toggle,
@@ -1297,6 +1299,14 @@ export default function PerformanceView() {
               >
                 Next ▶
               </button>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setShowRealtimeSession(true)}
+                aria-label="Open live session sync"
+                style={{ marginLeft: '10px' }}
+              >
+                🔴 Live Sync
+              </button>
             </div>
             
             {songHasChanges && currentSong && (
@@ -1334,6 +1344,13 @@ export default function PerformanceView() {
           </div>
         )}
       </div>
+      )}
+
+      {showRealtimeSession && (
+        <RealtimeSessionModal 
+          onClose={() => setShowRealtimeSession(false)} 
+          metronomeHook={metronomeHook}
+        />
       )}
     </div>
   )
