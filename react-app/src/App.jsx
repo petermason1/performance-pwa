@@ -96,15 +96,11 @@ function AppContent() {
 
   const activeView = views[currentView] || views.performance
 
-  return (
-      {/* Skip links for accessibility */}
-      <a href="#main-content" className="skip-link">
-        Skip to main content
-      </a>
-      <a href="#navigation" className="skip-link">
-        Skip to navigation
-      </a>
-    <div className="relative min-h-screen flex flex-col text-[var(--color-text-primary)]">
+    return (
+      <>
+        <a href="#main-content" className="skip-link">Skip to main content</a>
+        <a href="#navigation" className="skip-link">Skip to navigation</a>
+        <div className="relative min-h-screen flex flex-col text-[var(--color-text-primary)]">
       <AuthBanner />
       <AppHeader
         tabs={TABS}
