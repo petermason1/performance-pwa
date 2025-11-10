@@ -8,6 +8,7 @@ import ModeToggle from '../components/Performance/ModeToggle'
 import LiveView from '../components/Performance/LiveView'
 import MetronomeSettings from '../components/Performance/MetronomeSettings'
 import ExampleSetListsModal from '../components/ExampleSetListsModal'
+import KeyboardShortcutsModal from '../components/KeyboardShortcutsModal'
 import './PerformanceView.css'
 
 export default function PerformanceView() {
@@ -428,24 +429,48 @@ export default function PerformanceView() {
     }
   }, [currentSongIndex, selectSong])
 
-  // Keyboard shortcuts - moved after function definitions
+  // Keyboard shortcuts integration
+  const handleIncreaseBPM = useCallback(() => {
+    const newBPM = Math.min(300, bpm + 1)
+    handleBPMChange(newBPM)
+  }, [bpm, handleBPMChange])
+
+  const handleDecreaseBPM = useCallback(() => {
+    const newBPM = Math.max(40, bpm - 1)
+    handleBPMChange(newBPM)
+  }, [bpm, handleBPMChange])
+
+  const handleStopMetronome = useCallback(() => {
+    if (isPlaying) {
+      toggle()
+    }
+  }, [isPlaying, toggle])
+
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
+
+  useKeyboardShortcuts({
+    onToggleMetronome: toggle,
+    onPreviousSong: previousSong,
+    onNextSong: nextSong,
+    onStopMetronome: handleStopMetronome,
+    onIncreaseBPM: handleIncreaseBPM,
+    onDecreaseBPM: handleDecreaseBPM,
+    enabled: !isEditingBPM && !showKeyboardShortcuts // Disable when editing BPM or modal open
+  })
+
+  // Keyboard shortcut to show help modal
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.code === 'Space') {
+    const handleHelpKey = (e) => {
+      if ((e.key === '?' || e.key === '/') && !isEditingBPM && 
+          e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && 
+          !e.target.isContentEditable) {
         e.preventDefault()
-        toggle()
-      } else if (e.code === 'ArrowLeft') {
-        e.preventDefault()
-        previousSong()
-      } else if (e.code === 'ArrowRight') {
-        e.preventDefault()
-        nextSong()
+        setShowKeyboardShortcuts(true)
       }
     }
-    
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [toggle, previousSong, nextSong])
+    document.addEventListener('keydown', handleHelpKey)
+    return () => document.removeEventListener('keydown', handleHelpKey)
+  }, [isEditingBPM])
 
   const toggleBeatAccent = (index) => {
     const newPattern = [...accentPattern]
@@ -592,7 +617,16 @@ export default function PerformanceView() {
     <div role="main" aria-label="Performance View">
       <header className="performance-view-header">
         <h1>Performance</h1>
-      </header>
+      
+        <button
+          className="btn btn-secondary btn-small"
+          onClick={() => setShowKeyboardShortcuts(true)}
+          aria-label="Show keyboard shortcuts"
+          title="Keyboard shortcuts (press ?)"
+          style={{ marginLeft: 'auto' }}
+        >
+          ⌨️ Shortcuts
+        </button></header>
 
       {showExampleSetListsModal && (
         <ExampleSetListsModal
