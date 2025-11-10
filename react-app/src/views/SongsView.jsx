@@ -4,6 +4,7 @@ import SongModal from '../components/SongModal'
 import ImportSongsModal from '../components/ImportSongsModal'
 import ExportImportModal from '../components/ExportImportModal'
 import { exampleSongsData, parseExampleSongs } from '../utils/exampleSongs'
+import './SongsView.css'
 
 export default function SongsView() {
   const { songs, deleteSong, addSong, refreshData } = useApp()

@@ -1,0 +1,183 @@
+/* Songs View Styles */
+.songs-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.song-card {
+  background: linear-gradient(135deg, rgba(26, 35, 50, 0.4), rgba(26, 35, 50, 0.6));
+  border-radius: 1rem;
+  border: 2px solid rgba(0, 217, 255, 0.2);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.song-card:hover {
+  border-color: rgba(0, 217, 255, 0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 217, 255, 0.2);
+}
+
+.song-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  border-bottom: 2px solid rgba(0, 217, 255, 0.2);
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(99, 102, 241, 0.1));
+}
+
+.song-card .card-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #e8eef5;
+  flex: 1;
+}
+
+.song-artist {
+  font-weight: 400;
+  color: #8b92a8;
+  font-size: 0.9375rem;
+}
+
+.song-card .card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.song-card .card-body {
+  padding: 1.25rem;
+}
+
+.song-card .card-body p {
+  margin: 0.5rem 0;
+  color: #e8eef5;
+  font-size: 0.9375rem;
+}
+
+.song-card .card-body strong {
+  color: #00d9ff;
+  font-weight: 600;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, rgba(26, 35, 50, 0.3), rgba(26, 35, 50, 0.5));
+  border-radius: 1rem;
+  border: 2px dashed rgba(0, 217, 255, 0.2);
+}
+
+.empty-state p {
+  color: #8b92a8;
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Header Styles */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem 0;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #00d9ff, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  text-shadow: 0 0 30px rgba(0, 217, 255, 0.3);
+}
+
+/* Button Styles */
+.btn {
+  padding: 0.875rem 1.75rem;
+  border-radius: 0.875rem;
+  border: 2px solid rgba(0, 217, 255, 0.3);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(99, 102, 241, 0.2));
+  color: #e8eef5;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.3), rgba(99, 102, 241, 0.3));
+  border-color: #00d9ff;
+  color: #00d9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 217, 255, 0.3);
+}
+
+.btn-secondary {
+  background: rgba(26, 35, 50, 0.6);
+  color: #e8eef5;
+}
+
+.btn-secondary:hover {
+  background: rgba(26, 35, 50, 0.8);
+  border-color: rgba(0, 217, 255, 0.5);
+  color: #00d9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 217, 255, 0.2);
+}
+
+.btn:active {
+  transform: scale(0.95) translateY(0);
+}
+
+.btn-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  border: 2px solid rgba(0, 217, 255, 0.3);
+  background: rgba(26, 35, 50, 0.6);
+  color: #e8eef5;
+  font-size: 1.125rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon:hover {
+  border-color: #00d9ff;
+  background: rgba(0, 217, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.btn-icon.delete-song:hover {
+  border-color: #ff4455;
+  background: rgba(255, 68, 85, 0.2);
+}
+
+/* Select Styles */
+select.btn {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2300d9ff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+

@@ -1,5 +1,6 @@
 import TempoDisplay from './TempoDisplay'
 import ControlStrip from './ControlStrip'
+import BeatFlash from './BeatFlash'
 import TempoWheel from './TempoWheel'
 import BottomControls from './BottomControls'
 import SongNavigation from './SongNavigation'
@@ -16,13 +17,31 @@ export default function LiveView({
   currentSong,
   setListSongs,
   currentSongIndex,
+  isBeatFlashing,
+  isAccentBeat,
+  currentBeatInMeasure,
+  showBeatNumber,
   onToggleMetronome,
   onSoundToggle,
   onVisualToggle,
   onTimeSignatureChange,
   onTapTempo,
   onPreviousSong,
-  onNextSong
+  onNextSong,
+  soundPreset,
+  subdivision,
+  countInBeats,
+  accentVolume,
+  regularVolume,
+  subdivisionVolume,
+  masterVolume,
+  onSoundPresetChange,
+  onSubdivisionChange,
+  onCountInChange,
+  onAccentVolumeChange,
+  onRegularVolumeChange,
+  onSubdivisionVolumeChange,
+  onMasterVolumeChange
 }) {
   const cycleTimeSignature = () => {
     const nextSig = timeSignature === 4 ? 3 : timeSignature === 3 ? 6 : 4
@@ -44,7 +63,31 @@ export default function LiveView({
         onSoundToggle={onSoundToggle}
         onToggleMetronome={onToggleMetronome}
         onVisualToggle={onVisualToggle}
+        soundPreset={soundPreset}
+        subdivision={subdivision}
+        countInBeats={countInBeats}
+        accentVolume={accentVolume}
+        regularVolume={regularVolume}
+        subdivisionVolume={subdivisionVolume}
+        masterVolume={masterVolume}
+        onSoundPresetChange={onSoundPresetChange}
+        onSubdivisionChange={onSubdivisionChange}
+        onCountInChange={onCountInChange}
+        onAccentVolumeChange={onAccentVolumeChange}
+        onRegularVolumeChange={onRegularVolumeChange}
+        onSubdivisionVolumeChange={onSubdivisionVolumeChange}
+        onMasterVolumeChange={onMasterVolumeChange}
       />
+
+      {visualEnabled && (
+        <BeatFlash
+          isFlashing={isBeatFlashing}
+          isAccent={isAccentBeat}
+          currentBeat={currentBeatInMeasure}
+          timeSignature={timeSignature}
+          showBeatNumber={showBeatNumber}
+        />
+      )}
 
       <TempoWheel
         rotation={rotation}

@@ -1,5 +1,7 @@
 // Metronome Class with accurate timing and polyrhythm support
 
+import { MetronomeSoundEngine, SoundPreset } from './utils/metronomeSounds';
+
 export interface Lyric {
   time: number;
   text: string;
@@ -10,7 +12,9 @@ export interface Polyrhythm {
   name: string;
 }
 
-export type OnBeatCallback = (beatInMeasure: number, isAccent: boolean) => void;
+export type Subdivision = 'none' | 'eighth' | 'sixteenth' | 'triplet';
+
+export type OnBeatCallback = (beatInMeasure: number, isAccent: boolean, isSubdivision: boolean) => void;
 export type OnTimeUpdateCallback = (elapsedTime: number) => void;
 
 export class Metronome {
@@ -37,6 +41,12 @@ export class Metronome {
   timeUpdateInterval: number | null;
   soundEnabled: boolean;
   currentBeatNumber: number;
+  subdivision: Subdivision;
+  soundEngine: MetronomeSoundEngine;
+  countInBeats: number;
+  isCountIn: boolean;
+  countInComplete: boolean;
+  audioLatency: number; // Measured latency compensation
 
   constructor() {
     this.bpm = 120;
@@ -62,6 +72,14 @@ export class Metronome {
     this.timeUpdateInterval = null;
     this.soundEnabled = true;
     this.currentBeatNumber = 1;
+    this.subdivision = 'none';
+    this.countInBeats = 0;
+    this.isCountIn = false;
+    this.countInComplete = false;
+    this.audioLatency = 0.01; // Default 10ms latency compensation
+
+    // Initialize sound engine
+    this.soundEngine = new MetronomeSoundEngine({ preset: 'click' });
 
     this.initAudioContext();
   }
@@ -75,19 +93,42 @@ export class Metronome {
 
       this.audioContext = new AudioContextClass();
 
+      // Initialize sound engine with audio context
+      this.soundEngine.init(this.audioContext);
+
+      // Keep legacy gainNode for compatibility
       this.gainNode = this.audioContext.createGain();
       this.gainNode.connect(this.audioContext.destination);
       this.gainNode.gain.value = 0.3;
 
+      // Measure audio latency
+      this.measureLatency();
+
       this.audioContext.addEventListener('statechange', () => {
         if (this.audioContext?.state === 'suspended' && this.isPlaying) {
           console.warn('Audio context was suspended during playback');
+          // Auto-resume if suspended during playback
+          this.audioContext?.resume().catch(err => {
+            console.error('Failed to auto-resume audio context:', err);
+          });
         }
       });
     } catch (e) {
       console.error('Failed to initialize audio context:', e);
       this.audioContext = null;
     }
+  }
+
+  measureLatency(): void {
+    // Simple latency measurement - can be improved
+    if (!this.audioContext) return;
+    
+    // Estimate latency based on buffer size and sample rate
+    const bufferSize = this.audioContext.destination.channelCount * 
+                      (this.audioContext.destination.maxChannelCount || 2) * 
+                      128; // Typical buffer size
+    const sampleRate = this.audioContext.sampleRate;
+    this.audioLatency = bufferSize / sampleRate;
   }
 
   setBPM(bpm: number): void {
@@ -151,15 +192,9 @@ export class Metronome {
       this.accentPattern = null;
     }
     
-    // Realign measure boundary so "1" matches downbeat immediately
-    if (this.isPlaying && this.audioContext) {
-      const now = this.audioContext.currentTime;
-      const beatDuration = 60.0 / this.bpm;
-      this.beatCount = 0;
-      this.startTime = now;
-      this.nextBeatTime = now + beatDuration;
-      this.currentBeatNumber = 1;
-    }
+    // Don't restart playback - just update the pattern
+    // The accent will apply naturally on the next beat based on the current beat position
+    // This allows smooth accent changes without interrupting timing
   }
 
   getAccentBeats(): number[] {
@@ -220,6 +255,42 @@ export class Metronome {
     this.soundEnabled = enabled;
   }
 
+  setSubdivision(subdivision: Subdivision): void {
+    this.subdivision = subdivision;
+    // Reset beat count when changing subdivision
+    if (this.isPlaying) {
+      this.beatCount = 0;
+      this.currentBeatNumber = 1;
+    }
+  }
+
+  setSoundPreset(preset: SoundPreset): void {
+    this.soundEngine.setPreset(preset);
+  }
+
+  setAccentVolume(volume: number): void {
+    this.soundEngine.setAccentVolume(volume);
+  }
+
+  setRegularVolume(volume: number): void {
+    this.soundEngine.setRegularVolume(volume);
+  }
+
+  setSubdivisionVolume(volume: number): void {
+    this.soundEngine.setSubdivisionVolume(volume);
+  }
+
+  setMasterVolume(volume: number): void {
+    this.soundEngine.setMasterVolume(volume);
+    if (this.gainNode) {
+      this.gainNode.gain.value = volume;
+    }
+  }
+
+  setCountIn(beats: number): void {
+    this.countInBeats = Math.max(0, Math.min(4, beats));
+  }
+
   play(): void {
     if (!this.audioContext) {
       this.initAudioContext();
@@ -235,15 +306,27 @@ export class Metronome {
       });
     }
 
-    this.isPlaying = true;
+    // Initialize timing and beat count
+    // Add a small delay (50ms) to ensure the first beat is properly scheduled
+    const beatDuration = 60.0 / this.bpm;
     this.beatCount = 0;
     this.startTime = this.audioContext.currentTime;
-    this.nextBeatTime = this.audioContext.currentTime;
-    this.elapsedTime = 0;
-    this.currentLyricIndex = 0;
+    this.nextBeatTime = this.audioContext.currentTime + 0.05; // Small delay to ensure proper scheduling
     this.currentBeatNumber = 1;
 
-    const beatDuration = 60.0 / this.bpm;
+    // Handle count-in
+    if (this.countInBeats > 0) {
+      this.isCountIn = true;
+      this.countInComplete = false;
+    } else {
+      this.isCountIn = false;
+      this.countInComplete = true;
+    }
+
+    this.isPlaying = true;
+    this.elapsedTime = 0;
+    this.currentLyricIndex = 0;
+
     const beatsPerSecond = 1 / beatDuration;
     console.log(`Metronome starting: ${this.bpm} BPM = ${beatDuration.toFixed(3)}s per beat = ${beatsPerSecond.toFixed(2)} beats/sec`);
 
@@ -287,13 +370,73 @@ export class Metronome {
     const currentTime = this.audioContext.currentTime;
     const scheduleUntil = currentTime + this.scheduleAheadTime;
 
+    // Calculate subdivision duration
+    let subdivisionDuration = 0;
+    if (this.subdivision === 'eighth') {
+      subdivisionDuration = beatDuration / 2;
+    } else if (this.subdivision === 'sixteenth') {
+      subdivisionDuration = beatDuration / 4;
+    } else if (this.subdivision === 'triplet') {
+      subdivisionDuration = beatDuration / 3;
+    }
+
     while (this.nextBeatTime < scheduleUntil) {
-      this.scheduleBeat(this.nextBeatTime);
+      // Schedule main beat
+      this.scheduleBeat(this.nextBeatTime, false);
+
+      // Schedule subdivisions if enabled
+      if (subdivisionDuration > 0 && this.countInComplete) {
+        if (this.subdivision === 'eighth') {
+          this.scheduleBeat(this.nextBeatTime + subdivisionDuration, true);
+        } else if (this.subdivision === 'sixteenth') {
+          this.scheduleBeat(this.nextBeatTime + subdivisionDuration, true);
+          this.scheduleBeat(this.nextBeatTime + subdivisionDuration * 2, true);
+          this.scheduleBeat(this.nextBeatTime + subdivisionDuration * 3, true);
+        } else if (this.subdivision === 'triplet') {
+          this.scheduleBeat(this.nextBeatTime + subdivisionDuration, true);
+          this.scheduleBeat(this.nextBeatTime + subdivisionDuration * 2, true);
+        }
+      }
+
       this.nextBeatTime += beatDuration;
     }
   }
 
-  scheduleBeat(time: number): void {
+  scheduleBeat(time: number, isSubdivision: boolean): void {
+    // Apply latency compensation
+    const compensatedTime = time - this.audioLatency;
+
+    // Handle count-in
+    if (this.isCountIn && !this.countInComplete) {
+      if (this.beatCount >= this.countInBeats) {
+        // Count-in complete, start actual playback
+        this.isCountIn = false;
+        this.countInComplete = true;
+        this.beatCount = 0;
+        this.startTime = this.audioContext!.currentTime;
+        this.nextBeatTime = this.audioContext!.currentTime;
+        this.currentBeatNumber = 1;
+        return;
+      }
+      // Play count-in beat (always accent for visibility)
+      this.playBeatAtTime(compensatedTime, true, true);
+      if (this.onBeatCallback && this.audioContext) {
+        const delay = Math.max(0, (compensatedTime - this.audioContext.currentTime) * 1000);
+        if (delay <= 10) {
+          this.onBeatCallback(this.beatCount + 1, true, true);
+        } else {
+          setTimeout(() => {
+            if (this.isPlaying) {
+              this.onBeatCallback?.(this.beatCount + 1, true, true);
+            }
+          }, delay);
+        }
+      }
+      this.beatCount++;
+      return;
+    }
+
+    // Normal beat scheduling
     const beatInMeasure = this.beatCount % this.timeSignature;
     const currentBeat = this.beatCount;
 
@@ -314,48 +457,59 @@ export class Metronome {
     const displayBeatNumber = beatInMeasure + 1;
     this.currentBeatNumber = displayBeatNumber;
 
-    this.playBeatAtTime(time, isAccent);
+    this.playBeatAtTime(compensatedTime, isAccent, isSubdivision);
 
     if (this.onBeatCallback && this.audioContext) {
       // Use 1-based beat number for UI consistency (matches accent button labels)
-      const delay = Math.max(0, (time - this.audioContext.currentTime) * 1000);
+      const delay = Math.max(0, (compensatedTime - this.audioContext.currentTime) * 1000);
       if (delay <= 10) {
-        this.onBeatCallback(displayBeatNumber, isAccent);
+        this.onBeatCallback(displayBeatNumber, isAccent, isSubdivision);
       } else {
         setTimeout(() => {
           if (this.isPlaying) {
-            this.onBeatCallback?.(displayBeatNumber, isAccent);
+            this.onBeatCallback?.(displayBeatNumber, isAccent, isSubdivision);
           }
         }, delay);
       }
     }
 
-    this.beatCount++;
+    if (!isSubdivision) {
+      this.beatCount++;
+    }
   }
 
-  playBeatAtTime(time: number, isAccent: boolean): void {
-    if (!this.audioContext || !this.gainNode || !this.soundEnabled) {
+  playBeatAtTime(time: number, isAccent: boolean, isSubdivision: boolean = false): void {
+    if (!this.audioContext || !this.soundEnabled) {
       return;
     }
 
     try {
-      const oscillator = this.audioContext.createOscillator();
-      const envelope = this.audioContext.createGain();
-
-      oscillator.connect(envelope);
-      envelope.connect(this.gainNode);
-
-      oscillator.frequency.value = isAccent ? 1200 : 800;
-      oscillator.type = 'sine';
-
-      envelope.gain.setValueAtTime(0, time);
-      envelope.gain.linearRampToValueAtTime(0.3, time + 0.001);
-      envelope.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
-
-      oscillator.start(time);
-      oscillator.stop(time + 0.1);
+      // Use professional sound engine
+      this.soundEngine.playBeat(time, isAccent, isSubdivision);
     } catch (e) {
       console.error('Error playing beat:', e);
+      // Fallback to legacy oscillator if sound engine fails
+      if (this.gainNode) {
+        try {
+          const oscillator = this.audioContext.createOscillator();
+          const envelope = this.audioContext.createGain();
+
+          oscillator.connect(envelope);
+          envelope.connect(this.gainNode);
+
+          oscillator.frequency.value = isAccent ? 1200 : 800;
+          oscillator.type = 'sine';
+
+          envelope.gain.setValueAtTime(0, time);
+          envelope.gain.linearRampToValueAtTime(0.3, time + 0.001);
+          envelope.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+
+          oscillator.start(time);
+          oscillator.stop(time + 0.1);
+        } catch (fallbackError) {
+          console.error('Fallback sound also failed:', fallbackError);
+        }
+      }
     }
   }
 
@@ -378,6 +532,8 @@ export class Metronome {
     this.elapsedTime = 0;
     this.currentLyricIndex = 0;
     this.currentBeatNumber = 1;
+    this.isCountIn = false;
+    this.countInComplete = false;
 
     if (this.scheduleInterval) {
       clearInterval(this.scheduleInterval);

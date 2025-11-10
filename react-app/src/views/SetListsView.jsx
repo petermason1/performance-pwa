@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../hooks/useApp'
 import SetListModal from '../components/SetListModal'
+import './SetListsView.css'
 
 export default function SetListsView() {
   const { setLists, getSong, deleteSetList, refreshData } = useApp()

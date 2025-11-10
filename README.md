@@ -1,214 +1,277 @@
-# Performance PWA
+# Metronome Performance App
 
-A comprehensive Progressive Web App for live music performance management with set lists, synchronized lyrics, metronome, Helix Line 6 preset control, and MIDI lighting integration.
+A professional metronome and performance management application built for live musicians. Features real-time tempo control, set list management, MIDI integration for Helix preset switching, and collaborative band features.
 
-## Features
+## 🎯 Project Overview
 
-### 🎵 Set List Management
-- Create and manage multiple set lists
-- Drag and drop to reorder songs
-- Alphabetical sorting options
-- Load set lists for live performance
-- Print set lists with duration totals
+This app provides a comprehensive performance tool for bands, with a focus on:
+- **Live Performance Mode**: Large, touch-friendly tempo wheel with smooth BPM adjustments
+- **Set List Management**: Organize songs into multiple set lists with drag-and-drop
+- **MIDI Integration**: Automatic Helix preset changes per song, MIDI lighting control
+- **Band Collaboration**: Share songs and set lists with bandmates in real-time
+- **Offline-First**: Works without internet; syncs when connected
 
-### 📝 Song Management
-- Create songs with custom BPM (40-300) and time signatures
-- Add lyrics with timestamps for synchronized display
-- Assign Helix Line 6 preset names and numbers per song
-- Configure MIDI note triggers for lighting cues
-- Song duration tracking
-- Bulk import songs
+## 🛠 Tech Stack
 
-### ⏱️ Metronome
-- Visual and audio beat indicator
-- Adjustable BPM (40-300)
-- Time signature support (2/4, 3/4, 4/4, 5/4, 6/8, 7/8, 9/8, 12/8)
-- Interactive tempo wheel
-- Tap tempo functionality
-- Polyrhythm support
-- Custom accent patterns
+### Frontend
+- **Framework**: React 19.1 with hooks and functional components
+- **Build Tool**: Vite 7.1 (fast HMR, ES modules)
+- **Language**: TypeScript (strict mode) + JavaScript
+- **Styling**: Tailwind CSS 4.0 with custom glass-morphism theme
+- **State Management**: React Context API + custom hooks
 
-### 📖 Synchronized Lyrics
-- Lyrics display updates in real-time with metronome
-- Timestamp-based lyric formatting: `[MM:SS.mm] Your lyrics here`
-- Shows current and upcoming lines
-- Highlights current lyric line
+### Audio & MIDI
+- **Audio**: Web Audio API for metronome timing and sound generation
+- **MIDI**: Web MIDI API for Helix control and lighting
+- **Timing**: High-precision beat scheduling with lookahead
 
-### 🎸 Helix Line 6 Integration
-- Store preset names per song
-- Auto-send Program Change messages (preset 0-127)
-- Separate MIDI routing for Helix vs Lights
-- Display current preset for active song
-- USB MIDI and Bluetooth MIDI support
+### Data & Storage
+- **Local Storage**: IndexedDB via Dexie 4.2 for offline data
+- **Backend**: Supabase (Postgres + Auth + Realtime)
+- **Sync Strategy**: Offline-first with write queue and realtime subscriptions
 
-### 💡 MIDI Lighting Control
-- Web MIDI API integration
-- Separate device selection for Helix and Lights
-- Send MIDI notes for lighting control
-- Test and program light sequences
-- MIDI note grid for easy selection
+### Testing & Quality
+- **Test Framework**: Vitest 4.0 with React Testing Library
+- **Test Environment**: jsdom for DOM simulation
+- **Linting**: ESLint 9 with React hooks plugin
+- **Coverage**: Built-in vitest coverage reporting
 
-## Installation & Deployment
+### Deployment
+- **Hosting**: Vercel (production builds)
+- **PWA**: Progressive Web App with service worker (vite-plugin-pwa)
+- **Build**: Static assets, optimized for CDN delivery
 
-### Local Development
+## 🚀 Getting Started
 
-1. Clone this repository
-2. Serve the files using a local server:
-   ```bash
-   # Using Python
-   python3 -m http.server 8000
-   
-   # Using Node.js (if you have http-server installed)
-   npx http-server -p 8000
-   ```
-3. Open `http://localhost:8000` in your browser
+### Prerequisites
+- Node.js 18+ and npm
+- Modern browser with Web Audio API and Web MIDI API support
 
-### Deploy to Vercel (Free)
+### Installation
 
-1. **Push to GitHub:**
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git remote add origin https://github.com/YOUR_USERNAME/performance-pwa.git
-   git push -u origin main
-   ```
+```bash
+# Clone the repository
+git clone <repository-url>
+cd "Metronome App/react-app"
 
-2. **Deploy to Vercel:**
-   - Go to [vercel.com](https://vercel.com)
-   - Sign up with GitHub
-   - Click "New Project"
-   - Import your GitHub repository
-   - Vercel will auto-detect it's a static site
-   - Click "Deploy"
-   - Done! Your app will be live at `your-app.vercel.app`
+# Install dependencies
+npm install
 
-### Install on iPhone
-
-1. **Deploy the app** (use Vercel or another host)
-2. **Open Safari** on your iPhone
-3. **Navigate to your app URL** (e.g., `your-app.vercel.app`)
-4. **Tap the Share button** (square with arrow)
-5. **Tap "Add to Home Screen"**
-6. The app will appear as an icon on your home screen
-7. Works offline after first load!
-
-### Install on Android
-
-1. Open Chrome on Android
-2. Navigate to your app URL
-3. Chrome will show an "Install" banner automatically
-4. Tap "Install" or go to Menu → "Add to Home screen"
-5. App works offline!
-
-## Usage
-
-### Creating Songs
-
-1. Go to the **Songs** tab
-2. Click **New Song**
-3. Fill in:
-   - Song name
-   - Artist (optional)
-   - BPM (beats per minute)
-   - Time signature
-   - Duration (optional, auto-calculated from lyrics)
-   - Helix preset name (e.g., "Clean Chorus")
-   - Helix preset number (0-127 for MIDI Program Change)
-   - Lyrics with timestamps: `[00:00.00] First line of lyrics`
-   - MIDI notes (comma-separated, e.g., "36,40,44")
-
-### Lyrics Format
-
-Use timestamp format: `[MM:SS.mm] Your lyrics here`
-
-Example:
-```
-[00:00.00] Verse one starts here
-[00:08.50] Second line appears
-[00:16.00] Chorus begins now
+# Start development server
+npm run dev
 ```
 
-### Creating Set Lists
+The app will be available at `http://localhost:5173`
 
-1. Go to the **Set Lists** tab
-2. Click **New Set List**
-3. Enter a name
-4. Songs are sorted alphabetically
-5. Select songs and drag to reorder
-6. Click **Save**
+### Environment Variables
 
-### Performance Mode
+Create a `.env` file in `/react-app`:
 
-1. Go to the **Performance** tab
-2. Select a set list from the dropdown
-3. Click **Load**
-4. Use **Lock Order** button to prevent accidental reordering
-5. Click on songs to load them
-6. Use **◀ Prev** and **Next ▶** to navigate
-7. Adjust BPM with slider, tempo wheel, or tap tempo
-8. Click **Start** to begin metronome
-9. Lyrics display synchronized with tempo
-
-### MIDI Setup
-
-1. Go to **MIDI Lights & Helix Control** tab
-2. Connect your Helix via USB or 5-pin MIDI
-3. Connect your lights controller (separate device if needed)
-4. Select devices in the dropdowns:
-   - **Helix Line 6 Device**: For preset changes
-   - **Lights Controller Device**: For lighting control
-5. Set preset numbers in songs (0-127)
-6. Songs will auto-switch Helix presets when loaded
-
-## Keyboard Shortcuts
-
-- **Space**: Start/Stop metronome
-- **← Left Arrow**: Previous song
-- **→ Right Arrow**: Next song
-
-## Browser Requirements
-
-- **Chrome/Edge**: Full support (MIDI, Audio, PWA)
-- **Safari (iOS)**: Full support (PWA install via "Add to Home Screen")
-- **Firefox**: Full support (no MIDI on some versions)
-- **Opera**: Full support
-
-## Data Storage
-
-All data is stored locally in browser localStorage:
-- Set lists
-- Songs and lyrics
-- Settings
-- Sort preferences
-
-No server or internet connection required after initial load.
-
-## Offline Support
-
-The app works completely offline:
-- Service worker caches all files
-- All data stored in localStorage
-- Metronome uses Web Audio API (works offline)
-- MIDI works if device is connected
-- No internet needed after first load
-
-## File Structure
-
-```
-/
-├── index.html          # Main HTML structure
-├── styles.css          # Complete styling
-├── app.js              # Main application controller
-├── models.js           # Data models and storage
-├── metronome.js        # Metronome functionality
-├── midi.js             # MIDI controller
-├── import-songs.js     # Bulk song import
-├── sw.js               # Service worker (PWA)
-├── manifest.json       # PWA manifest
-└── README.md          # This file
+```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-## License
+## 📜 Available Scripts
 
-Free to use and modify.
+```bash
+npm run dev          # Start Vite dev server (HMR enabled)
+npm run build        # Production build to /dist
+npm run preview      # Preview production build locally
+npm run lint         # Run ESLint checks
+npm run test         # Run unit tests with Vitest
+npm run test:ui      # Open Vitest UI
+npm run test:coverage # Generate test coverage report
+```
+
+## 📁 Project Layout
+
+```
+react-app/
+├── src/
+│   ├── components/
+│   │   ├── layout/              # AppHeader, MainNav, AppFooter
+│   │   ├── Performance/         # Live view components (TempoWheel, ControlStrip, etc.)
+│   │   ├── ExportImportModal.jsx
+│   │   ├── MIDISettings.jsx
+│   │   ├── PWAUpdatePrompt.jsx
+│   │   ├── SetListModal.jsx
+│   │   └── SongModal.jsx
+│   ├── views/
+│   │   ├── PerformanceView.jsx  # Main metronome + setup view
+│   │   ├── SetListsView.jsx     # Set list creator/manager
+│   │   ├── SongsView.jsx        # Song library
+│   │   └── MIDILightsView.jsx   # MIDI lighting control
+│   ├── hooks/
+│   │   ├── useMetronome.ts      # Metronome state and controls
+│   │   ├── useTempoWheel.ts     # Tempo wheel drag/touch logic
+│   │   ├── useMIDI.js           # MIDI controller hooks
+│   │   └── useApp.js            # Global app context hooks
+│   ├── utils/
+│   │   ├── db.js                # IndexedDB setup (Dexie)
+│   │   ├── migrations.js        # Data migration helpers
+│   │   ├── audio.js             # Audio helpers
+│   │   ├── accessibility.js     # A11y utilities
+│   │   └── getTempoMarking.js   # Tempo name (Andante, Allegro, etc.)
+│   ├── metronome.ts             # Metronome class (Web Audio API)
+│   ├── midi.ts                  # MIDIController class (Web MIDI API)
+│   ├── models.ts                # TypeScript interfaces (Song, SetList, etc.)
+│   ├── App.jsx                  # Main app shell
+│   ├── AppContext.jsx           # Global context provider
+│   └── main.jsx                 # React entry point
+├── public/                      # Static assets (icons, manifest)
+├── vite.config.js               # Vite + PWA configuration
+├── tsconfig.json                # TypeScript config (strict mode)
+├── eslint.config.js             # ESLint rules
+└── package.json
+```
+
+## ✅ Current Status
+
+### ✔ Working Features
+- **Live Performance View**: Glass-morphism UI with large tempo wheel, BPM display, time signature toggle
+- **Smooth Tempo Changes**: Wheel adjustments don't interrupt playback; BPM updates take effect on next beat
+- **Beat Accents**: Per-beat accent patterns with visual and audio feedback
+- **MIDI Controller**: Send program changes to Helix, control lighting via MIDI notes
+- **IndexedDB Storage**: Songs and set lists persist locally with migration support
+- **PWA Support**: Install as standalone app, offline-capable (service worker disabled in dev)
+- **Responsive Design**: Mobile-first layout with desktop enhancements
+
+### 🔧 Known Issues
+- Stage mode UI not yet implemented (large controls for live performance)
+- Supabase integration pending (auth, band collaboration, realtime sync)
+- Set list drag-and-drop needs refinement
+- No automated tests for metronome timing accuracy yet
+- MIDI preset mapping per song is manual (no UI for assignment)
+
+## 🗺 Roadmap
+
+### Phase 1: Documentation & Planning (Current)
+- [x] Document tech stack and architecture
+- [x] Define metronome/wheel behavior requirements
+- [ ] Design stage mode UX (large controls, set list visibility)
+- [ ] Plan Supabase schema (users, bands, songs, setlists, genres)
+- [ ] Outline client integration strategy (auth, sync, offline cache)
+
+### Phase 2: Backend Integration
+- [ ] Set up Supabase project (separate from SmartRaceCards)
+- [ ] Create database schema with RLS policies for 3 bandmates (drums, bass/vox, guitar/vox)
+- [ ] Install @supabase/supabase-js and configure environment
+- [ ] Build SupabaseContext and auth provider
+- [ ] Implement login/signup UI
+- [ ] Add band membership/linking system
+- [ ] Migrate IndexedDB data to Supabase with offline cache
+- [ ] Set up realtime subscriptions for live updates
+
+### Phase 3: Set List & Song Features
+- [ ] Multiple set lists with drag-and-drop reordering
+- [ ] Song search bar to add from main library
+- [ ] Genre tagging and filtering
+- [ ] Set 1 / Set 2 / Additional Songs sections
+- [ ] MIDI preset mapping UI (assign Helix programs per song)
+- [ ] Automatic preset switching on song change
+
+### Phase 4: Stage Mode & Performance UX
+- [ ] Build stage mode view (large controls, high contrast)
+- [ ] Set list panel with current song highlight
+- [ ] Quick song navigation (prev/next with swipe gestures)
+- [ ] Tap tempo with visual feedback
+- [ ] BPM adjustment overlay (no accidental changes)
+
+### Phase 5: Testing & Quality
+- [ ] Unit tests for hooks (useMetronome, useTempoWheel)
+- [ ] Integration tests for accent alignment
+- [ ] MIDI controller mocks for testing
+- [ ] Accessibility audit (keyboard nav, screen readers)
+- [ ] Performance profiling (audio latency, render times)
+
+### Phase 6: Deployment & Collaboration
+- [ ] Configure Vercel deployment with Supabase env vars
+- [ ] Set up CI/CD pipeline
+- [ ] Enable service worker for production builds
+- [ ] Invite bandmates for beta testing
+- [ ] Gather feedback and iterate
+
+## 💡 Why Vite @ localhost:5173 (vs Next.js)?
+
+- **Faster feedback**: Vite's native ES modules + HMR provide near-instant rebuilds—critical for audio timing tweaks and UI iteration
+- **Lower overhead**: Single-page app suits this control-heavy interface; no SSR/ISR complexity needed
+- **Web Audio/MIDI focus**: Minimal bundle size and predictable build output simplifies browser API integration
+- **Deployment flexibility**: Static assets deploy anywhere (Vercel, Netlify, S3 + CloudFront)
+- Next.js would add routing/SSR features we don't need; React + Vite delivers the SPA behavior we require
+
+## 🎵 Metronome & Wheel Behavior Spec
+
+### Continuous Playback
+- Tempo wheel adjustments must NOT interrupt audio
+- BPM changes apply smoothly to the next scheduled beat
+- No audible glitches or timing drift during drag
+
+### Accurate Beat Display
+- UI beat counter stays aligned with the downbeat (1-based indexing)
+- Accent highlighting matches measure accents exactly
+- Time signature changes reset the measure cleanly
+
+### Responsive Interaction
+- Wheel handles drag and touch without jitter
+- Play button clicks within wheel don't trigger drag events
+- Tap tempo syncs immediately on 3rd tap
+
+### Visual Feedback
+- Wheel rotation speed mirrors BPM
+- Play/pause states update instantly
+- Accent flash remains synchronized with audio
+
+### Safety Guards
+- Enforce BPM limits (40–300)
+- Debounce tap tempo to prevent double-taps
+- Validate time signature before applying
+
+## 🤝 Contributing
+
+### Code Style
+- Use TypeScript for new files with strict mode enabled
+- Follow existing component structure (small, reusable components)
+- Write tests for new hooks and utilities
+- Run `npm run lint` before committing
+
+### Component Guidelines
+- Prefer functional components with hooks
+- Extract reusable logic into custom hooks
+- Keep components under 300 lines; split if larger
+- Use Tailwind classes; avoid inline styles unless dynamic
+
+### Testing
+- Add unit tests for any hook or utility function
+- Use React Testing Library for component tests
+- Mock MIDI/Audio APIs in tests (don't rely on browser support)
+
+## 🎸 Band Collaboration Features
+
+### Multi-User Support
+- Each bandmate has their own account (Supabase Auth)
+- Accounts link to a shared band entity
+- Row-level security ensures only band members see shared data
+
+### Real-Time Sync
+- Song edits propagate to all connected devices instantly
+- Set list changes update live during rehearsal
+- Conflict resolution: last-write-wins for simplicity
+
+### Offline Mode
+- Read-only access when offline (no writes to Supabase)
+- Write queue stores changes locally; syncs when online
+- Visual indicator shows sync status
+
+### MIDI Preset Workflow
+- Assign Helix preset number per song (stored in Supabase)
+- Automatically send program change when song becomes active
+- Fallback: manual preset selection if MIDI unavailable
+
+## 📄 License
+
+(Add license details if applicable)
+
+---
+
+**Built with ❤️ for live musicians**

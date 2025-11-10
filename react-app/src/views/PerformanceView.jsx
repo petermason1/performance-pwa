@@ -4,6 +4,8 @@ import { useTempoWheel } from '../hooks/useTempoWheel'
 import { midiController } from '../midi'
 import ModeToggle from '../components/Performance/ModeToggle'
 import LiveView from '../components/Performance/LiveView'
+import MetronomeSettings from '../components/Performance/MetronomeSettings'
+import './PerformanceView.css'
 
 export default function PerformanceView() {
   const { setLists, getSetList, getSong, updateSong, metronome: metronomeHook, setCurrentView } = useApp()
@@ -32,7 +34,6 @@ export default function PerformanceView() {
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('metronomeSoundEnabled') !== 'false')
   const [visualEnabled, setVisualEnabled] = useState(() => localStorage.getItem('metronomeVisualEnabled') !== 'false')
   const [showBeatNumber, setShowBeatNumber] = useState(() => localStorage.getItem('metronomeShowBeatNumber') !== 'false')
-  const pendingAccentPatternRef = useRef(undefined)
   
   // Use global metronome from context
   const {
@@ -44,8 +45,38 @@ export default function PerformanceView() {
     setAccentPattern: setMetronomeAccentPattern,
     setPolyrhythm: setMetronomePolyrhythm,
     setSoundEnabled: setMetronomeSoundEnabled,
+    setSubdivision: setMetronomeSubdivision,
+    setSoundPreset: setMetronomeSoundPreset,
+    setAccentVolume: setMetronomeAccentVolume,
+    setRegularVolume: setMetronomeRegularVolume,
+    setSubdivisionVolume: setMetronomeSubdivisionVolume,
+    setMasterVolume: setMetronomeMasterVolume,
+    setCountIn: setMetronomeCountIn,
     metronome
   } = metronomeHook
+
+  // Metronome settings state
+  const [soundPreset, setSoundPreset] = useState(() => {
+    return localStorage.getItem('metronomeSoundPreset') || 'click'
+  })
+  const [subdivision, setSubdivision] = useState(() => {
+    return localStorage.getItem('metronomeSubdivision') || 'none'
+  })
+  const [countInBeats, setCountInBeats] = useState(() => {
+    return parseInt(localStorage.getItem('metronomeCountIn') || '0', 10)
+  })
+  const [accentVolume, setAccentVolume] = useState(() => {
+    return parseFloat(localStorage.getItem('metronomeAccentVolume') || '0.8')
+  })
+  const [regularVolume, setRegularVolume] = useState(() => {
+    return parseFloat(localStorage.getItem('metronomeRegularVolume') || '0.5')
+  })
+  const [subdivisionVolume, setSubdivisionVolume] = useState(() => {
+    return parseFloat(localStorage.getItem('metronomeSubdivisionVolume') || '0.3')
+  })
+  const [masterVolume, setMasterVolume] = useState(() => {
+    return parseFloat(localStorage.getItem('metronomeMasterVolume') || '0.3')
+  })
   
   // Get songs from current set list
   const setListSongs = useMemo(() => {
@@ -63,7 +94,6 @@ export default function PerformanceView() {
     } else {
       setMetronomeAccentPattern(null)
     }
-    pendingAccentPatternRef.current = undefined
   }, [setMetronomeAccentPattern])
 
   const handleBPMChange = useCallback((newBPM) => {
@@ -178,19 +208,11 @@ export default function PerformanceView() {
   useEffect(() => {
     if (!metronome) return
     
-    metronome.setOnBeatCallback((beatNumber, isAccent) => {
-      // Apply any pending accent pattern at the next downbeat
-      if (beatNumber === 1 && pendingAccentPatternRef.current !== undefined) {
-        const pending = pendingAccentPatternRef.current
-        if (pending === null) {
-          setMetronomeAccentPattern(null)
-        } else if (Array.isArray(pending)) {
-          setMetronomeAccentPattern(pending)
-        }
-        pendingAccentPatternRef.current = undefined
+    metronome.setOnBeatCallback((beatNumber, isAccent, isSubdivision) => {
+      // Only update beat display for main beats, not subdivisions
+      if (!isSubdivision) {
+        setCurrentBeatInMeasure(beatNumber)
       }
-
-      setCurrentBeatInMeasure(beatNumber)
       
       if (visualEnabled) {
         setIsBeatFlashing(true)
@@ -238,6 +260,56 @@ export default function PerformanceView() {
     }
   }, [soundEnabled, setMetronomeSoundEnabled])
 
+  // Sync metronome settings with metronome engine
+  useEffect(() => {
+    if (setMetronomeSoundPreset) {
+      setMetronomeSoundPreset(soundPreset)
+      localStorage.setItem('metronomeSoundPreset', soundPreset)
+    }
+  }, [soundPreset, setMetronomeSoundPreset])
+
+  useEffect(() => {
+    if (setMetronomeSubdivision) {
+      setMetronomeSubdivision(subdivision)
+      localStorage.setItem('metronomeSubdivision', subdivision)
+    }
+  }, [subdivision, setMetronomeSubdivision])
+
+  useEffect(() => {
+    if (setMetronomeCountIn) {
+      setMetronomeCountIn(countInBeats)
+      localStorage.setItem('metronomeCountIn', countInBeats.toString())
+    }
+  }, [countInBeats, setMetronomeCountIn])
+
+  useEffect(() => {
+    if (setMetronomeAccentVolume) {
+      setMetronomeAccentVolume(accentVolume)
+      localStorage.setItem('metronomeAccentVolume', accentVolume.toString())
+    }
+  }, [accentVolume, setMetronomeAccentVolume])
+
+  useEffect(() => {
+    if (setMetronomeRegularVolume) {
+      setMetronomeRegularVolume(regularVolume)
+      localStorage.setItem('metronomeRegularVolume', regularVolume.toString())
+    }
+  }, [regularVolume, setMetronomeRegularVolume])
+
+  useEffect(() => {
+    if (setMetronomeSubdivisionVolume) {
+      setMetronomeSubdivisionVolume(subdivisionVolume)
+      localStorage.setItem('metronomeSubdivisionVolume', subdivisionVolume.toString())
+    }
+  }, [subdivisionVolume, setMetronomeSubdivisionVolume])
+
+  useEffect(() => {
+    if (setMetronomeMasterVolume) {
+      setMetronomeMasterVolume(masterVolume)
+      localStorage.setItem('metronomeMasterVolume', masterVolume.toString())
+    }
+  }, [masterVolume, setMetronomeMasterVolume])
+
   const loadSetList = (setListId) => {
     const setList = getSetList(setListId)
     if (!setList) return
@@ -250,7 +322,7 @@ export default function PerformanceView() {
     setCurrentSongIndex(0)
     setSongHasChanges(false)
     
-    if (setList.songIds.length > 0) {
+    if (setList.songIds && setList.songIds.length > 0) {
       const firstSong = getSong(setList.songIds[0])
       if (firstSong) {
         setCurrentSong(firstSong)
@@ -326,7 +398,7 @@ export default function PerformanceView() {
   }, [currentSetList, getSong, isPlaying, currentSongIndex, toggle])
 
   const nextSong = useCallback(() => {
-    if (!currentSetList || currentSetList.songIds.length === 0) return
+    if (!currentSetList || !currentSetList.songIds || currentSetList.songIds.length === 0) return
     if (currentSongIndex < currentSetList.songIds.length - 1) {
       selectSong(currentSongIndex + 1)
     }
@@ -363,20 +435,9 @@ export default function PerformanceView() {
     setAccentPatternState(newPattern)
     
     const hasAccents = newPattern.some(p => p)
-    if (!metronome || !isPlaying) {
-      setMetronomeAccentPattern(hasAccents ? newPattern : null)
-      pendingAccentPatternRef.current = undefined
-    } else {
-      const currentBeat = metronome.getCurrentBeatInMeasure() || 1
-      const targetBeat = index + 1
-      if (targetBeat <= currentBeat) {
-        // Beat already passed this measure – apply on next downbeat
-        pendingAccentPatternRef.current = hasAccents ? newPattern : null
-      } else {
-        setMetronomeAccentPattern(hasAccents ? newPattern : null)
-        pendingAccentPatternRef.current = undefined
-      }
-    }
+    // Apply accent pattern immediately - it will take effect on the next beat
+    // based on the current beat position, without restarting playback
+    setMetronomeAccentPattern(hasAccents ? newPattern : null)
     
     if (currentSong) {
       setSongHasChanges(true)
@@ -386,16 +447,16 @@ export default function PerformanceView() {
   const clearAllAccents = () => {
     const pattern = new Array(timeSignature).fill(false)
     setAccentPatternState(pattern)
+    // Apply immediately - no restart needed
     setMetronomeAccentPattern(null)
-    pendingAccentPatternRef.current = undefined
     if (currentSong) setSongHasChanges(true)
   }
 
   const setNoAccent = () => {
     const pattern = new Array(timeSignature).fill(false)
     setAccentPatternState(pattern)
+    // Apply immediately - no restart needed
     setMetronomeAccentPattern(null) // null means no accents
-    pendingAccentPatternRef.current = undefined
     if (currentSong) setSongHasChanges(true)
   }
 
@@ -505,15 +566,15 @@ export default function PerformanceView() {
 
   return (
     <div>
-      <header>
+      <header className="performance-view-header">
         <h1>Performance</h1>
       </header>
 
       <ModeToggle mode={performanceMode} onChange={setPerformanceMode} />
 
       {performanceMode === 'setup' && (
-        <div className="performance-mode active">
-          <div className="current-setlist-section">
+        <div className="performance-mode active setup-mode-container">
+          <div className="setlist-section">
             <select 
               className="setlist-select"
               value={selectedSetListId}
@@ -527,14 +588,14 @@ export default function PerformanceView() {
                 <option key={setList.id} value={setList.id}>{setList.name}</option>
               ))}
             </select>
-            <button className="btn btn-secondary" onClick={() => {
+            <button className="setlist-button" onClick={() => {
               if (selectedSetListId) loadSetList(selectedSetListId)
             }}>
               Load
             </button>
             {currentSetList && (
               <button 
-                className="btn btn-secondary" 
+                className="setlist-button" 
                 onClick={() => {
                   if (confirm('Unload this set list?')) {
                     setCurrentSetList(null)
@@ -545,21 +606,19 @@ export default function PerformanceView() {
                     localStorage.removeItem('currentSongIndex')
                   }
                 }}
-                style={{ marginLeft: '10px' }}
               >
                 Unload
               </button>
             )}
           </div>
 
-          <div className="song-list-container">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <h3 style={{ margin: 0 }}>Set List Songs</h3>
+          <div className="song-list-section">
+            <div className="song-list-header">
+              <h3>Set List Songs</h3>
               {currentSetList && (
                 <button 
-                  className="btn btn-secondary btn-small"
+                  className="setlist-button"
                   onClick={() => {
-                    // Navigate to Set Lists view - the user can edit the set list there
                     setCurrentView('setlists')
                   }}
                   title="Go to Set Lists to edit song order"
@@ -569,36 +628,30 @@ export default function PerformanceView() {
               )}
             </div>
             {currentSetList && (
-              <div style={{ 
-                display: 'block', 
-                background: 'var(--surface-light)', 
-                padding: '10px', 
-                borderRadius: '8px', 
-                marginBottom: '10px', 
-                color: 'var(--text-secondary)', 
-                fontSize: '0.9rem' 
-              }}>
+              <div className="song-list-tip">
                 💡 Click a song to load it. To reorder songs, go to <strong>Set Lists</strong> view and edit this set list.
               </div>
             )}
-            <div className="song-list">
+            <div className="song-list-container">
               {setListSongs.length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>
+                <p className="song-list-empty">
                   {currentSetList ? 'No songs in this set list' : 'Load a set list to see songs'}
                 </p>
               ) : (
                 setListSongs.map((song, index) => (
                   <div
                     key={song.id}
-                    className={`song-item performance-song-item ${index === currentSongIndex ? 'active' : ''}`}
+                    className={`song-item-card ${index === currentSongIndex ? 'active' : ''}`}
                     onClick={() => selectSong(index)}
                   >
                     <span className="song-number">{index + 1}</span>
-                    <span className="song-name">
-                      {song.name}
-                      {song.artist && <span className="song-artist-small"> ({song.artist})</span>}
-                    </span>
-                    <span className="song-bpm">{song.bpm} BPM</span>
+                    <div className="song-name-display">
+                      <span className="song-name">
+                        {song.name}
+                        {song.artist && <span className="song-artist-small"> ({song.artist})</span>}
+                      </span>
+                      <span className="song-bpm-display">{song.bpm} BPM</span>
+                    </div>
                   </div>
                 ))
               )}
@@ -620,6 +673,10 @@ export default function PerformanceView() {
           currentSong={currentSong}
           setListSongs={setListSongs}
           currentSongIndex={currentSongIndex}
+          isBeatFlashing={isBeatFlashing}
+          isAccentBeat={isAccentBeat}
+          currentBeatInMeasure={currentBeatInMeasure}
+          showBeatNumber={showBeatNumber}
           onToggleMetronome={toggle}
           onSoundToggle={setSoundEnabled}
           onVisualToggle={setVisualEnabled}
@@ -627,6 +684,20 @@ export default function PerformanceView() {
           onTapTempo={tapTempo}
           onPreviousSong={previousSong}
           onNextSong={nextSong}
+          soundPreset={soundPreset}
+          subdivision={subdivision}
+          countInBeats={countInBeats}
+          accentVolume={accentVolume}
+          regularVolume={regularVolume}
+          subdivisionVolume={subdivisionVolume}
+          masterVolume={masterVolume}
+          onSoundPresetChange={setSoundPreset}
+          onSubdivisionChange={setSubdivision}
+          onCountInChange={setCountInBeats}
+          onAccentVolumeChange={setAccentVolume}
+          onRegularVolumeChange={setRegularVolume}
+          onSubdivisionVolumeChange={setSubdivisionVolume}
+          onMasterVolumeChange={setMasterVolume}
         />
       )}
 
@@ -726,10 +797,10 @@ export default function PerformanceView() {
                 <button 
                   className="btn btn-secondary" 
                   onClick={nextSong}
-                  disabled={!currentSetList || currentSongIndex >= currentSetList.songIds.length - 1}
+                  disabled={!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1}
                   style={{ 
-                    opacity: (!currentSetList || currentSongIndex >= currentSetList.songIds.length - 1) ? 0.5 : 1, 
-                    cursor: (!currentSetList || currentSongIndex >= currentSetList.songIds.length - 1) ? 'not-allowed' : 'pointer',
+                    opacity: (!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1) ? 0.5 : 1, 
+                    cursor: (!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1) ? 'not-allowed' : 'pointer',
                     minWidth: '110px',
                     flexShrink: 0
                   }}

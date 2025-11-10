@@ -17,6 +17,9 @@ import {
   importData as dbImportData
 } from './utils/db.js';
 import { runAllMigrations, getMigrationStatus } from './utils/migrations.js';
+import { syncManager } from './lib/syncManager';
+import { useBand } from './hooks/useBand';
+import { supabase } from './lib/supabase';
 
 export function AppProvider({ children }) {
   const [songs, setSongs] = useState([]);
@@ -32,6 +35,9 @@ export function AppProvider({ children }) {
 
   // Global metronome that persists across views
   const metronomeHook = useMetronome(120);
+
+  // Band management
+  const { currentBand } = useBand();
 
   // Initialize database and run migrations
   useEffect(() => {
@@ -101,6 +107,33 @@ export function AppProvider({ children }) {
     }
   }, []);
 
+  // Sync with Supabase when band changes
+  useEffect(() => {
+    if (!dbInitialized || !currentBand) return;
+
+    const syncData = async () => {
+      console.log('🔄 Starting sync for band:', currentBand.name);
+      
+      // Sync songs and setlists
+      await syncManager.syncSongs(currentBand.id);
+      await syncManager.syncSetLists(currentBand.id);
+      
+      // Reload local data to reflect changes
+      await loadData();
+      
+      // Subscribe to realtime updates
+      syncManager.subscribeToSongs(currentBand.id, loadData);
+      syncManager.subscribeToSetLists(currentBand.id, loadData);
+    };
+
+    syncData();
+
+    // Cleanup subscriptions when band changes or component unmounts
+    return () => {
+      syncManager.unsubscribeAll();
+    };
+  }, [currentBand, dbInitialized, loadData]);
+
   // Save current view
   useEffect(() => {
     localStorage.setItem('lastView', currentView);
@@ -116,33 +149,55 @@ export function AppProvider({ children }) {
     try {
       const newSong = await dbAddSong(song);
       await refreshSongs();
+      
+      // Sync to Supabase if we have a band
+      if (currentBand) {
+        await syncManager.pushSong(newSong, currentBand.id);
+      }
+      
       return newSong;
     } catch (error) {
       console.error('Failed to add song:', error);
       throw error;
     }
-  }, [refreshSongs]);
+  }, [refreshSongs, currentBand]);
 
   const updateSong = useCallback(async (id, updates) => {
     try {
       const updated = await dbUpdateSong(id, updates);
       await refreshSongs();
+      
+      // Sync to Supabase if we have a band
+      if (currentBand) {
+        await syncManager.pushSong(updated, currentBand.id);
+      }
+      
       return updated;
     } catch (error) {
       console.error('Failed to update song:', error);
       throw error;
     }
-  }, [refreshSongs]);
+  }, [refreshSongs, currentBand]);
 
   const deleteSong = useCallback(async (id) => {
     try {
       await dbDeleteSong(id);
       await refreshSongs();
+      
+      // Delete from Supabase if we have a band
+      if (currentBand) {
+        const { error } = await supabase
+          .from('songs')
+          .delete()
+          .eq('id', id);
+        
+        if (error) console.error('Failed to delete song from Supabase:', error);
+      }
     } catch (error) {
       console.error('Failed to delete song:', error);
       throw error;
     }
-  }, [refreshSongs]);
+  }, [refreshSongs, currentBand]);
 
   const getSong = useCallback(async (id) => {
     try {
@@ -158,33 +213,55 @@ export function AppProvider({ children }) {
     try {
       const newSetList = await dbAddSetList(setList);
       await refreshSongs();
+      
+      // Sync to Supabase if we have a band
+      if (currentBand) {
+        await syncManager.pushSetList(newSetList, currentBand.id);
+      }
+      
       return newSetList;
     } catch (error) {
       console.error('Failed to add set list:', error);
       throw error;
     }
-  }, [refreshSongs]);
+  }, [refreshSongs, currentBand]);
 
   const updateSetList = useCallback(async (id, updates) => {
     try {
       const updated = await dbUpdateSetList(id, updates);
       await refreshSongs();
+      
+      // Sync to Supabase if we have a band
+      if (currentBand) {
+        await syncManager.pushSetList(updated, currentBand.id);
+      }
+      
       return updated;
     } catch (error) {
       console.error('Failed to update set list:', error);
       throw error;
     }
-  }, [refreshSongs]);
+  }, [refreshSongs, currentBand]);
 
   const deleteSetList = useCallback(async (id) => {
     try {
       await dbDeleteSetList(id);
       await refreshSongs();
+      
+      // Delete from Supabase if we have a band
+      if (currentBand) {
+        const { error } = await supabase
+          .from('setlists')
+          .delete()
+          .eq('id', id);
+        
+        if (error) console.error('Failed to delete setlist from Supabase:', error);
+      }
     } catch (error) {
       console.error('Failed to delete set list:', error);
       throw error;
     }
-  }, [refreshSongs]);
+  }, [refreshSongs, currentBand]);
 
   const getSetList = useCallback(async (id) => {
     try {

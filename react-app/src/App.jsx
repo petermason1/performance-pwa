@@ -1,8 +1,12 @@
 import { useEffect, useMemo } from 'react'
 import { AppProvider } from './AppContext'
 import { useApp } from './hooks/useApp'
+import { useSupabase } from './context/SupabaseContext'
 import './App.css'
 import PWAUpdatePrompt from './components/PWAUpdatePrompt'
+import AuthBanner from './components/Auth/AuthBanner'
+import AppHeader from './components/layout/AppHeader'
+import AppFooter from './components/layout/AppFooter'
 
 // Import views
 import PerformanceView from './views/PerformanceView'
@@ -19,6 +23,7 @@ const TABS = [
 
 function AppContent() {
   const { currentView, setCurrentView, importData, dbInitialized } = useApp()
+  const { user } = useSupabase()
 
   // Persist and restore currentView
   useEffect(() => {
@@ -89,66 +94,28 @@ function AppContent() {
     lights: <MIDILightsView />
   }), [])
 
-  const renderTabs = (variant) =>
-    TABS.map(tab => {
-      const isActive = currentView === tab.id
-      const baseClasses = variant === 'desktop'
-        ? 'flex-1 flex flex-col items-center justify-center min-h-[60px] px-3 py-2 gap-1 text-sm font-semibold'
-        : 'flex-1 flex flex-col items-center justify-center min-h-[54px] px-2 py-2 gap-0.5 text-xs font-semibold'
-
-      const activeClasses = variant === 'desktop'
-        ? 'text-[var(--color-accent-cyan)] bg-[var(--color-bg-tertiary)] glow-cyan border-b-2 border-[var(--color-accent-cyan)]'
-        : 'text-[var(--color-accent-cyan)] bg-[var(--color-bg-tertiary)] glow-cyan border-t-2 border-[var(--color-accent-cyan)]'
-
-      return (
-        <button
-          type="button"
-          key={`${variant}-${tab.id}`}
-          onClick={() => setCurrentView(tab.id)}
-          className={[
-            baseClasses,
-            'border-none bg-transparent cursor-pointer transition-all duration-300 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-cyan)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg-secondary)]',
-            isActive ? activeClasses : 'border-transparent'
-          ].join(' ')}
-          aria-label={tab.label}
-          aria-current={isActive ? 'page' : undefined}
-          role="tab"
-          aria-selected={isActive}
-        >
-          <span className="text-lg leading-none" aria-hidden="true">{tab.icon}</span>
-          <span className="truncate">{tab.label}</span>
-        </button>
-      )
-    })
-
   const activeView = views[currentView] || views.performance
 
   return (
     <div className="relative min-h-screen flex flex-col text-[var(--color-text-primary)]">
-      {/* Desktop navigation */}
-      <header className="hidden md:block sticky top-0 z-40 w-full bg-[var(--color-bg-secondary)]/85 backdrop-blur-lg border-b border-[var(--color-glass-border)] shadow-lg shadow-black/20">
-        <nav className="flex max-w-5xl mx-auto" role="tablist" aria-label="Main navigation">
-          {renderTabs('desktop')}
-        </nav>
-      </header>
+      <AuthBanner />
+      <AppHeader
+        tabs={TABS}
+        currentView={currentView}
+        onSelect={setCurrentView}
+      />
 
-      {/* Main content */}
-      <main className="flex-1 w-full max-w-5xl mx-auto px-3 sm:px-4 md:px-6 pt-6 md:pt-12 pb-24 md:pb-12">
+      <main className={`flex-1 w-full max-w-5xl mx-auto px-3 sm:px-4 md:px-6 pb-24 md:pb-12 ${user ? 'pt-20 md:pt-24' : 'pt-6 md:pt-12'}`}>
         {activeView}
       </main>
 
-      {/* Mobile navigation */}
-      <nav 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--color-bg-secondary)]/95 border-t border-[var(--color-glass-border)] backdrop-blur-lg px-2 shadow-[0_-6px_18px_rgba(0,0,0,0.6)]"
-        style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}
-        role="tablist"
-        aria-label="Main navigation"
+      <AppFooter
+        tabs={TABS}
+        currentView={currentView}
+        onSelect={setCurrentView}
       >
-        <div className="flex w-full max-w-4xl mx-auto">
-          {renderTabs('mobile')}
-        </div>
-      </nav>
-
+        <span className="tracking-[0.4em] uppercase">Navigate • Perform • Share</span>
+      </AppFooter>
       <PWAUpdatePrompt />
     </div>
   )

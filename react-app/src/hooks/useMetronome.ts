@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Metronome } from '../metronome';
+import { Metronome, Subdivision } from '../metronome';
+import { SoundPreset } from '../utils/metronomeSounds.js';
 
 export function useMetronome(initialBPM: number = 120) {
   const [bpm, setBPM] = useState(initialBPM);
@@ -11,7 +12,7 @@ export function useMetronome(initialBPM: number = 120) {
     metronomeRef.current = new Metronome();
     metronomeRef.current.setBPM(bpm);
     
-    // Set callback for beat updates - metronome passes (beatInMeasure, isAccent)
+    // Set callback for beat updates - metronome passes (beatInMeasure, isAccent, isSubdivision)
     metronomeRef.current.setOnBeatCallback((beatInMeasure) => {
       setBeatCount(beatInMeasure);
     });
@@ -121,6 +122,48 @@ export function useMetronome(initialBPM: number = 120) {
     }
   }, []);
 
+  const setSubdivision = useCallback((subdivision: Subdivision) => {
+    if (metronomeRef.current) {
+      metronomeRef.current.setSubdivision(subdivision);
+    }
+  }, []);
+
+  const setSoundPreset = useCallback((preset: SoundPreset) => {
+    if (metronomeRef.current) {
+      metronomeRef.current.setSoundPreset(preset);
+    }
+  }, []);
+
+  const setAccentVolume = useCallback((volume: number) => {
+    if (metronomeRef.current) {
+      metronomeRef.current.setAccentVolume(volume);
+    }
+  }, []);
+
+  const setRegularVolume = useCallback((volume: number) => {
+    if (metronomeRef.current) {
+      metronomeRef.current.setRegularVolume(volume);
+    }
+  }, []);
+
+  const setSubdivisionVolume = useCallback((volume: number) => {
+    if (metronomeRef.current) {
+      metronomeRef.current.setSubdivisionVolume(volume);
+    }
+  }, []);
+
+  const setMasterVolume = useCallback((volume: number) => {
+    if (metronomeRef.current) {
+      metronomeRef.current.setMasterVolume(volume);
+    }
+  }, []);
+
+  const setCountIn = useCallback((beats: number) => {
+    if (metronomeRef.current) {
+      metronomeRef.current.setCountIn(beats);
+    }
+  }, []);
+
   return {
     bpm,
     isPlaying,
@@ -133,6 +176,13 @@ export function useMetronome(initialBPM: number = 120) {
     setAccentPattern,
     setPolyrhythm,
     setSoundEnabled,
+    setSubdivision,
+    setSoundPreset,
+    setAccentVolume,
+    setRegularVolume,
+    setSubdivisionVolume,
+    setMasterVolume,
+    setCountIn,
     metronome: metronomeRef.current
   };
 }
