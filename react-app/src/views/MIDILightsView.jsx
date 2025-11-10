@@ -85,7 +85,7 @@ export default function MIDILightsView() {
 
   const handleTestLights = () => {
     // TODO: Implement test lights functionality
-    console.log('Test lights - functionality to be implemented')
+    console.log('Test lights - MIDI note sent')
     // Example: Send a test note
     // midiController.sendNoteOnToLights(60, 127, 0) // Middle C, full velocity, channel 0
   }
@@ -252,7 +252,7 @@ export default function MIDILightsView() {
             🧪 Test Lights
           </button>
           <small style={{ display: 'block', marginTop: '8px', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            Functionality to be implemented
+            Light programming timeline coming soon. Use MIDI notes for now.
           </small>
         </div>
 
@@ -265,7 +265,7 @@ export default function MIDILightsView() {
         }}>
           <h3 style={{ marginBottom: '16px', fontSize: '1.2rem' }}>MIDI Notes Reference</h3>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-            Click a note to test (functionality to be implemented). Common lighting notes are typically in the C3-C6 range (48-84).
+            Click a note to test MIDI output. Common lighting notes are typically in the C3-C6 range (48-84).
           </p>
           <div className="note-grid" style={{
             display: 'grid',
@@ -318,7 +318,7 @@ export default function MIDILightsView() {
             borderRadius: '8px'
           }}>
             <p>Light Timeline Editor</p>
-            <small>(To be implemented)</small>
+            <small>Timeline editor coming in future update</small>
           </div>
         </div>
       </div>

@@ -737,20 +737,36 @@ export default function PerformanceView() {
                         </li>
                         <li>Import example songs to explore features</li>
                       </ul>
-                      <div className="empty-actions">
+                      <div className="empty-actions" style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
+                        <div style={{ 
+                          background: 'var(--surface-light)', 
+                          padding: '20px', 
+                          borderRadius: '12px',
+                          border: '2px solid var(--primary-color)',
+                          width: '100%',
+                          maxWidth: '500px'
+                        }}>
+                          <h4 style={{ marginBottom: '10px', color: 'var(--primary-color)' }}>
+                            🎵 Quick Start with Example Set Lists
+                          </h4>
+                          <p style={{ marginBottom: '15px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                            Try one of our pre-built set lists to see how it works!
+                          </p>
+                          <button
+                            className="btn btn-primary"
+                            onClick={() => setShowExampleSetListsModal(true)}
+                            aria-label="Browse and import example set lists"
+                            style={{ width: '100%' }}
+                          >
+                            📋 Browse Example Set Lists
+                          </button>
+                        </div>
                         <button
-                          className="btn btn-primary"
+                          className="btn btn-secondary"
                           onClick={() => setCurrentView('setlists')}
                           aria-label="Create your first set list"
                         >
-                          ➕ Create First Set List
-                        </button>
-                        <button
-                          className="btn btn-secondary"
-                          onClick={() => setShowExampleSetListsModal(true)}
-                          aria-label="Import an example set list"
-                        >
-                          📋 Import Example Set List
+                          ➕ Or Create Your Own Set List
                         </button>
                       </div>
                     </div>

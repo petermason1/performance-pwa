@@ -238,3 +238,73 @@
   box-shadow: 0 0 10px rgba(255, 68, 85, 0.6);
 }
 
+
+
+/* URGENT: Make beat flash impossible to miss */
+.beat-circle.flashing {
+  animation: beatPulseProminent 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(1.2);
+}
+
+.beat-circle.flashing.accent {
+  background: rgba(255, 68, 85, 0.9) !important;
+  border-color: #ff4455 !important;
+  box-shadow: 
+    0 0 100px rgba(255, 68, 85, 1),
+    0 0 200px rgba(255, 68, 85, 0.8),
+    inset 0 0 60px rgba(255, 68, 85, 0.6) !important;
+}
+
+.beat-circle.flashing.regular {
+  background: rgba(0, 217, 255, 0.9) !important;
+  border-color: #00d9ff !important;
+  box-shadow: 
+    0 0 100px rgba(0, 217, 255, 1),
+    0 0 200px rgba(0, 217, 255, 0.8),
+    inset 0 0 60px rgba(0, 217, 255, 0.6) !important;
+}
+
+@keyframes beatPulseProminent {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0.95;
+  }
+}
+
+/* Larger beat circle for better visibility */
+.beat-circle {
+  width: 14rem !important;
+  height: 14rem !important;
+  border-width: 6px !important;
+}
+
+/* More prominent pulse rings */
+.beat-pulse-ring {
+  border-width: 4px !important;
+  animation: pulseRingProminent 0.8s ease-out !important;
+}
+
+@keyframes pulseRingProminent {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Larger beat number */
+.beat-number {
+  font-size: 5rem !important;
+  text-shadow: 0 0 30px currentColor !important;
+}
