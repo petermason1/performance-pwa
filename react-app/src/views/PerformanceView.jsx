@@ -8,6 +8,7 @@ import ModeToggle from '../components/Performance/ModeToggle'
 import LiveView from '../components/Performance/LiveView'
 import MetronomeSettings from '../components/Performance/MetronomeSettings'
 import ExampleSetListsModal from '../components/ExampleSetListsModal'
+import PresetSelector from '../components/PresetSelector'
 import KeyboardShortcutsModal from '../components/KeyboardShortcutsModal'
 import './PerformanceView.css'
 
@@ -1178,6 +1179,18 @@ export default function PerformanceView() {
                 </button>
               </div>
               <small id="accent-pattern-help">Click beats to toggle accent on/off</small>
+              <PresetSelector
+                timeSignature={timeSignature}
+                currentPattern={accentPattern}
+                onApplyPreset={(pattern) => {
+                  setAccentPatternState(pattern)
+                  setMetronomeAccentPattern(pattern)
+                  if (currentSong) setSongHasChanges(true)
+                }}
+                onSaveAsPreset={(pattern) => {
+                  // Handled by PresetSelector
+                }}
+              />
               <div style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 {isPlaying && currentBeatInMeasure > 0 ? (
                   <>
