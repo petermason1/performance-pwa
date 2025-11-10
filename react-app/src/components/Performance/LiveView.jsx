@@ -21,6 +21,7 @@ export default function LiveView({
   isAccentBeat,
   currentBeatInMeasure,
   showBeatNumber,
+  accentPattern,
   onToggleMetronome,
   onSoundToggle,
   onVisualToggle,
@@ -86,6 +87,7 @@ export default function LiveView({
           currentBeat={currentBeatInMeasure}
           timeSignature={timeSignature}
           showBeatNumber={showBeatNumber}
+          accentPattern={accentPattern}
         />
       )}
 

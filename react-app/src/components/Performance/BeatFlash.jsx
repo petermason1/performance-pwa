@@ -1,30 +1,74 @@
-export default function BeatFlash({ isFlashing, isAccent, currentBeat, timeSignature, showBeatNumber }) {
+import './BeatFlash.css'
+
+export default function BeatFlash({ isFlashing, isAccent, currentBeat, timeSignature, showBeatNumber, accentPattern = null }) {
+  // Generate beat indicator dots with accent pattern awareness
+  const beatDots = Array.from({ length: timeSignature }, (_, i) => i + 1)
+  
+  // Check if a beat is accented based on the pattern
+  const isBeatAccented = (beatNumber) => {
+    if (!accentPattern || accentPattern.length === 0) {
+      return beatNumber === 1 // Default: accent first beat only
+    }
+    // accentPattern is 0-indexed array of booleans
+    return accentPattern[beatNumber - 1] === true
+  }
+  
+  // Calculate progress percentage through the measure
+  const progressPercentage = timeSignature > 0 ? ((currentBeat - 1) / timeSignature) * 100 : 0
+
   return (
-    <div className="flex flex-col items-center justify-center py-6 px-6">
+    <div className="beat-flash-container" role="region" aria-label="Beat indicator">
+      {/* Measure progress bar */}
+      <div className="measure-progress-bar" role="progressbar" aria-valuenow={currentBeat} aria-valuemin="1" aria-valuemax={timeSignature}>
+        <div className="measure-progress-fill" style={{ width: `${progressPercentage}%` }} />
+      </div>
+      
       <div 
-        className={`relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full border-4 transition-all duration-150 ${
-          isFlashing 
-            ? isAccent
-              ? 'bg-[var(--color-accent-danger)]/40 border-[var(--color-accent-danger)] scale-110 shadow-[0_0_40px_rgba(255,0,85,0.8)]' 
-              : 'bg-[var(--color-accent-cyan)]/40 border-[var(--color-accent-cyan)] scale-110 shadow-[0_0_40px_rgba(0,217,255,0.8)]'
-            : 'bg-[var(--color-bg-tertiary)]/30 border-[var(--color-glass-border)] scale-100'
-        }`}
+        className={`beat-circle ${isFlashing ? (isAccent ? 'flashing accent' : 'flashing regular') : 'idle'}`}
+        aria-live="polite"
+        aria-atomic="true"
       >
+        {isFlashing && (
+          <>
+            <div className={`beat-pulse-ring ${isAccent ? 'accent' : 'regular'}`} />
+            {isAccent && <div className="beat-pulse-ring-secondary accent" />}
+          </>
+        )}
         {showBeatNumber && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className={`text-4xl sm:text-5xl md:text-6xl font-black font-mono ${
-              isAccent ? 'text-[var(--color-accent-danger)]' : 'text-[var(--color-accent-cyan)]'
-            }`}>
-              {currentBeat}
-            </span>
-          </div>
+          <span 
+            className={`beat-number ${isAccent ? 'accent' : 'regular'}`}
+            aria-label={`Beat ${currentBeat} of ${timeSignature}${isAccent ? ' (accented)' : ''}`}
+          >
+            {currentBeat}
+          </span>
+        )}
+        {!showBeatNumber && isFlashing && (
+          <div className={`beat-pulse-center ${isAccent ? 'accent' : 'regular'}`} />
         )}
       </div>
+      
       {showBeatNumber && (
-        <div className="mt-4 text-xs sm:text-sm text-[var(--color-text-secondary)] uppercase tracking-wider">
+        <div className="beat-label" aria-hidden="true">
           Beat {currentBeat} of {timeSignature}
+          {isAccent && <span className="accent-indicator"> • Accent</span>}
         </div>
       )}
+      
+      {/* Beat indicator dots for measure visualization with accent pattern */}
+      <div className="beat-indicators" role="group" aria-label="Measure beats">
+        {beatDots.map((beat) => {
+          const isCurrentBeat = beat === currentBeat
+          const isAccentedBeat = isBeatAccented(beat)
+          return (
+            <div
+              key={beat}
+              className={`beat-dot ${isCurrentBeat ? 'active' : ''} ${isAccentedBeat ? 'accent' : ''}`}
+              aria-label={`Beat ${beat}${isAccentedBeat ? ' (accented)' : ''}${isCurrentBeat ? ' - current' : ''}`}
+              title={`Beat ${beat}${isAccentedBeat ? ' - Accent' : ''}`}
+            />
+          )
+        })}
+      </div>
     </div>
   )
 }

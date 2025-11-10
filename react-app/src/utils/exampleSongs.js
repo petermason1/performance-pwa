@@ -169,3 +169,110 @@ function parseSong(songName, bpm, keyOrLine, songs) {
   })
 }
 
+// Example Set Lists
+export const exampleSetLists = [
+  {
+    name: "🎸 British Rock Classics",
+    description: "A collection of iconic British rock anthems perfect for pub gigs and parties",
+    songNames: [
+      "Oasis - Wonderwall",
+      "Oasis - Don't Look Back In Anger",
+      "Arctic Monkeys - Bet You Look Good on the Dance Floor",
+      "The Killers - Mr. Brightside",
+      "Kaiser Chiefs - I Predict a Riot",
+      "Franz Ferdinand - Take Me Out",
+      "The Fratellis - Chelsea Dagger",
+      "The Stone Roses - She Bangs the Drums",
+      "The Kooks - Naïve",
+      "Snow Patrol - Chasing Cars"
+    ]
+  },
+  {
+    name: "🎵 Acoustic Favorites",
+    description: "Slower, acoustic-friendly songs ideal for intimate venues or unplugged sets",
+    songNames: [
+      "Ed Sheeran - Thinking Out Loud",
+      "John Legend (Acoustic) - All of Me",
+      "Jason Mraz - I'm Yours",
+      "Green Day - Good Riddance (Time of Your Life)",
+      "The Lumineers - Ho, Hey!",
+      "Wheatus - Teenage Dirtbag",
+      "Neil Diamond - Sweet Caroline",
+      "Ocean Colour Scene - The Day We Caught The Train",
+      "Oasis - Wonderwall"
+    ]
+  },
+  {
+    name: "⚡ High Energy Party",
+    description: "Upbeat, high-tempo songs to get the crowd moving and keep energy levels high",
+    songNames: [
+      "Blink 182 - All The Small Things",
+      "Green Day - Basket Case",
+      "Arctic Monkeys - Bet You Look Good on the Dance Floor",
+      "The Jam - Going Underground",
+      "The Jam - Town Called Malice",
+      "Sam Fender - Will We Talk?",
+      "Mark Ronson/Amy Winehouse - Valerie",
+      "The Smiths - This Charming Man",
+      "The Strokes - Last Night",
+      "Buzzcocks - Ever Fallen In Love"
+    ]
+  },
+  {
+    name: "🎄 Christmas Classics",
+    description: "Holiday favorites for festive performances and seasonal gigs",
+    songNames: [
+      "Wizard - Wish It Could Be Xmas",
+      "Slade - Merry Xmas Everybody",
+      "Shakin Stevens - Merry Xmas Everyone"
+    ]
+  },
+  {
+    name: "🎹 Modern Pop Hits",
+    description: "Contemporary chart-toppers and recent crowd-pleasers",
+    songNames: [
+      "Dua Lipa - Don't Start Now",
+      "Miley Cyrus - Flowers",
+      "Bruno Mars - Uptown Funk",
+      "Walk the Moon - Shut Up and Dance",
+      "Ed Sheeran - Castle on the Hill",
+      "George Ezra - Shotgun",
+      "Lizzo - About Damn Time"
+    ]
+  }
+]
+
+/**
+ * Match songs from the example data by name/artist
+ * Returns array of matched song IDs
+ */
+export function matchSongsForSetList(setList, allSongs) {
+  const matchedSongIds = []
+  
+  setList.songNames.forEach(songName => {
+    // Try exact match first
+    const exactMatch = allSongs.find(song => {
+      const fullName = song.artist ? `${song.artist} - ${song.name}` : song.name
+      return fullName === songName
+    })
+    
+    if (exactMatch) {
+      matchedSongIds.push(exactMatch.id)
+      return
+    }
+    
+    // Try partial match
+    const partialMatch = allSongs.find(song => {
+      const fullName = song.artist ? `${song.artist} - ${song.name}` : song.name
+      return fullName.toLowerCase().includes(songName.toLowerCase()) ||
+             songName.toLowerCase().includes(fullName.toLowerCase())
+    })
+    
+    if (partialMatch) {
+      matchedSongIds.push(partialMatch.id)
+    }
+  })
+  
+  return matchedSongIds
+}
+

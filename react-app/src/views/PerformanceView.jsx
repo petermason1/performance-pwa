@@ -1,17 +1,21 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useApp } from '../hooks/useApp'
 import { useTempoWheel } from '../hooks/useTempoWheel'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { midiController } from '../midi'
+import { announce } from '../utils/accessibility'
 import ModeToggle from '../components/Performance/ModeToggle'
 import LiveView from '../components/Performance/LiveView'
 import MetronomeSettings from '../components/Performance/MetronomeSettings'
+import ExampleSetListsModal from '../components/ExampleSetListsModal'
 import './PerformanceView.css'
 
 export default function PerformanceView() {
-  const { setLists, getSetList, getSong, updateSong, metronome: metronomeHook, setCurrentView } = useApp()
+  const { songs, setLists, getSetList, getSong, updateSong, addSetList, metronome: metronomeHook, setCurrentView } = useApp()
   const [currentSetList, setCurrentSetList] = useState(null)
   const [currentSongIndex, setCurrentSongIndex] = useState(0)
   const [currentSong, setCurrentSong] = useState(null)
+  const [showExampleSetListsModal, setShowExampleSetListsModal] = useState(false)
   const [selectedSetListId, setSelectedSetListId] = useState(() => {
     // Restore selected set list from localStorage
     return localStorage.getItem('currentSetListId') || ''
@@ -101,6 +105,8 @@ export default function PerformanceView() {
     if (currentSong) {
       setSongHasChanges(true)
     }
+    // Announce tempo change to screen readers
+    announce(`Tempo changed to ${newBPM} BPM`, 'polite')
   }, [currentSong, updateBPM])
 
   // Sync bpmInputValue when bpm changes externally (but not when editing)
@@ -239,6 +245,15 @@ export default function PerformanceView() {
       metronome.setOnTimeUpdateCallback(null)
     }
   }, [metronome, currentSong, visualEnabled, setMetronomeAccentPattern])
+  
+  // Announce metronome state changes
+  useEffect(() => {
+    if (isPlaying) {
+      announce('Metronome started', 'assertive')
+    } else {
+      announce('Metronome stopped', 'polite')
+    }
+  }, [isPlaying])
   
   // Save settings to localStorage
   useEffect(() => {
@@ -389,6 +404,9 @@ export default function PerformanceView() {
       setSongHasChanges(false)
       setCurrentSong(songToLoad)
       
+      // Announce song change to screen readers
+      announce(`Now playing: ${songToLoad.name}${songToLoad.artist ? ` by ${songToLoad.artist}` : ''}, ${songToLoad.bpm} BPM`, 'assertive')
+      
       // If metronome is not playing, start it
       if (!isPlaying) {
         toggle()
@@ -465,6 +483,8 @@ export default function PerformanceView() {
     setMetronomeTimeSignature(sig)
     updateBeatPatternSelector(sig)
     if (currentSong) setSongHasChanges(true)
+    // Announce time signature change
+    announce(`Time signature changed to ${sig} over 4`, 'polite')
   }
 
   const handlePolyrhythmChange = (value) => {
@@ -539,6 +559,8 @@ export default function PerformanceView() {
     
     // Show success message briefly
     setTapTempoMessage(`Set to ${clampedBPM} BPM`)
+    // Announce to screen readers
+    announce(`Tap tempo set to ${clampedBPM} BPM`, 'assertive')
     setTimeout(() => {
       setTapTempoMessage('')
     }, 1500)
@@ -557,6 +579,8 @@ export default function PerformanceView() {
     updateSong(currentSong.id, updates)
     setCurrentSong({ ...currentSong, ...updates })
     setSongHasChanges(false)
+    // Announce save to screen readers
+    announce(`Song settings saved for ${currentSong.name}`, 'polite')
   }
 
   // Get current lyric
@@ -565,16 +589,24 @@ export default function PerformanceView() {
     []
 
   return (
-    <div>
+    <div role="main" aria-label="Performance View">
       <header className="performance-view-header">
         <h1>Performance</h1>
       </header>
+
+      {showExampleSetListsModal && (
+        <ExampleSetListsModal
+          songs={songs}
+          onImport={addSetList}
+          onClose={() => setShowExampleSetListsModal(false)}
+        />
+      )}
 
       <ModeToggle mode={performanceMode} onChange={setPerformanceMode} />
 
       {performanceMode === 'setup' && (
         <div className="performance-mode active setup-mode-container">
-          <div className="setlist-section">
+          <div className="setlist-section" role="region" aria-label="Set list selection">
             <select 
               className="setlist-select"
               value={selectedSetListId}
@@ -582,15 +614,22 @@ export default function PerformanceView() {
                 setSelectedSetListId(e.target.value)
                 if (e.target.value) loadSetList(e.target.value)
               }}
+              aria-label="Select a set list"
+              aria-describedby="setlist-help"
             >
               <option value="">Select a Set List</option>
               {setLists.map(setList => (
                 <option key={setList.id} value={setList.id}>{setList.name}</option>
               ))}
             </select>
-            <button className="setlist-button" onClick={() => {
-              if (selectedSetListId) loadSetList(selectedSetListId)
-            }}>
+            <button 
+              className="setlist-button" 
+              onClick={() => {
+                if (selectedSetListId) loadSetList(selectedSetListId)
+              }}
+              aria-label="Load selected set list"
+              disabled={!selectedSetListId}
+            >
               Load
             </button>
             {currentSetList && (
@@ -606,10 +645,12 @@ export default function PerformanceView() {
                     localStorage.removeItem('currentSongIndex')
                   }
                 }}
+                aria-label={`Unload set list: ${currentSetList.name}`}
               >
                 Unload
               </button>
             )}
+            <span id="setlist-help" className="sr-only">Select and load a set list to begin performance</span>
           </div>
 
           <div className="song-list-section">
@@ -632,11 +673,66 @@ export default function PerformanceView() {
                 💡 Click a song to load it. To reorder songs, go to <strong>Set Lists</strong> view and edit this set list.
               </div>
             )}
-            <div className="song-list-container">
+            <div className="song-list-container" role="list" aria-label="Set list songs">
               {setListSongs.length === 0 ? (
-                <p className="song-list-empty">
-                  {currentSetList ? 'No songs in this set list' : 'Load a set list to see songs'}
-                </p>
+                <div className="song-list-empty" role="status">
+                  <p className="empty-message">
+                    {currentSetList ? '📋 No songs in this set list' : '🎼 Load a set list to begin performing'}
+                  </p>
+                  {!currentSetList && (
+                    <div className="empty-tips">
+                      <p className="tip-title">💡 Quick Start Guide:</p>
+                      <ul className="tip-list">
+                        <li>
+                          <button 
+                            className="link-button"
+                            onClick={() => setCurrentView('setlists')}
+                            aria-label="Go to Set Lists view"
+                          >
+                            <strong>Create a Set List</strong>
+                          </button> to organize your songs
+                        </li>
+                        <li>
+                          <button 
+                            className="link-button"
+                            onClick={() => setCurrentView('songs')}
+                            aria-label="Go to Songs library"
+                          >
+                            <strong>Add Songs</strong>
+                          </button> to your library
+                        </li>
+                        <li>Import example songs to explore features</li>
+                      </ul>
+                      <div className="empty-actions">
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => setCurrentView('setlists')}
+                          aria-label="Create your first set list"
+                        >
+                          ➕ Create First Set List
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => setShowExampleSetListsModal(true)}
+                          aria-label="Import an example set list"
+                        >
+                          📋 Import Example Set List
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {currentSetList && (
+                    <div className="empty-actions">
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => setCurrentView('setlists')}
+                        aria-label="Add songs to this set list"
+                      >
+                        ➕ Add Songs to Set List
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 setListSongs.map((song, index) => (
                   <div
@@ -677,6 +773,7 @@ export default function PerformanceView() {
           isAccentBeat={isAccentBeat}
           currentBeatInMeasure={currentBeatInMeasure}
           showBeatNumber={showBeatNumber}
+          accentPattern={accentPattern}
           onToggleMetronome={toggle}
           onSoundToggle={setSoundEnabled}
           onVisualToggle={setVisualEnabled}
@@ -703,9 +800,9 @@ export default function PerformanceView() {
 
       {performanceMode === 'setup' && (
         <div className="performance-controls">
-        <div className="current-song-display">
-          <h2>{currentSong ? currentSong.name : '--'}</h2>
-          <div className="bpm-display">
+        <div className="current-song-display" role="region" aria-label="Current song information">
+          <h2 aria-live="polite">{currentSong ? currentSong.name : '--'}</h2>
+          <div className="bpm-display" role="group" aria-label="Tempo and time signature">
             {isEditingBPM ? (
               <input
                 type="number"
@@ -717,6 +814,8 @@ export default function PerformanceView() {
                 min="40"
                 max="300"
                 autoFocus
+                aria-label="Edit tempo in BPM"
+                aria-describedby="bpm-help"
                 style={{
                   fontSize: 'inherit',
                   fontWeight: 'inherit',
@@ -735,13 +834,23 @@ export default function PerformanceView() {
                 id="bpm-value" 
                 onClick={handleBPMClick}
                 style={{ cursor: 'pointer', userSelect: 'none' }}
-                title="Click to edit"
+                title="Click to edit tempo"
+                role="button"
+                tabIndex={0}
+                aria-label={`Current tempo: ${bpm} BPM. Click to edit.`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    handleBPMClick()
+                  }
+                }}
               >
                 {bpm}
               </span>
             )}
-            <span className="bpm-label">BPM</span>
-            <span className="time-signature-display">{timeSignature}/4</span>
+            <span className="bpm-label" aria-hidden="true">BPM</span>
+            <span className="time-signature-display" aria-label={`Time signature: ${timeSignature} over 4`}>{timeSignature}/4</span>
+            <span id="bpm-help" className="sr-only">Enter a tempo between 40 and 300 BPM</span>
           </div>
         </div>
 
@@ -777,11 +886,13 @@ export default function PerformanceView() {
           </div>
           <div className="tempo-wheel-controls">
             {setListSongs.length > 0 && (
-              <div className="song-navigation-container">
+              <div className="song-navigation-container" role="navigation" aria-label="Song navigation">
                 <button 
                   className="btn btn-secondary" 
                   onClick={previousSong}
                   disabled={currentSongIndex === 0}
+                  aria-label="Previous song in set list"
+                  aria-disabled={currentSongIndex === 0}
                   style={{ 
                     opacity: currentSongIndex === 0 ? 0.5 : 1, 
                     cursor: currentSongIndex === 0 ? 'not-allowed' : 'pointer',
@@ -791,13 +902,21 @@ export default function PerformanceView() {
                 >
                   ◀ Prev Song
                 </button>
-                <span className="current-song-title" title={currentSong ? `${currentSong.name}${currentSong.artist ? ` - ${currentSong.artist}` : ''}` : 'No Song'}>
+                <span 
+                  className="current-song-title" 
+                  title={currentSong ? `${currentSong.name}${currentSong.artist ? ` - ${currentSong.artist}` : ''}` : 'No Song'}
+                  aria-label={`Current song: ${currentSong ? `${currentSong.name}${currentSong.artist ? ` by ${currentSong.artist}` : ''}` : 'No Song'}`}
+                  role="status"
+                  aria-live="polite"
+                >
                   {currentSong ? `${currentSong.name}${currentSong.artist ? ` - ${currentSong.artist}` : ''}` : 'No Song'}
                 </span>
                 <button 
                   className="btn btn-secondary" 
                   onClick={nextSong}
                   disabled={!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1}
+                  aria-label="Next song in set list"
+                  aria-disabled={!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1}
                   style={{ 
                     opacity: (!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1) ? 0.5 : 1, 
                     cursor: (!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1) ? 'not-allowed' : 'pointer',
@@ -809,21 +928,57 @@ export default function PerformanceView() {
                 </button>
               </div>
             )}
-            <div className="tap-tempo-container">
-              <button className="btn btn-secondary tap-tempo-btn" onClick={tapTempo}>Tap Tempo</button>
-              <span className="tap-tempo-message">
+            <div className="tap-tempo-container" role="region" aria-label="Tap tempo">
+              <button 
+                className="btn btn-secondary tap-tempo-btn" 
+                onClick={tapTempo}
+                aria-label="Tap to set tempo"
+                aria-describedby="tap-tempo-help"
+              >
+                Tap Tempo
+              </button>
+              <span 
+                className="tap-tempo-message" 
+                role="status" 
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 {tapTempoMessage || '\u00A0'}
               </span>
+              <span id="tap-tempo-help" className="sr-only">Tap this button repeatedly at the desired tempo</span>
             </div>
           </div>
         </div>
 
-        <div className="lyrics-container">
+        <div className="lyrics-container" role="region" aria-label="Song lyrics">
           <div className="lyrics-display">
             {!currentSong || !currentSong.lyrics || currentSong.lyrics.length === 0 ? (
-              <p className="lyrics-placeholder">No lyrics for this song</p>
+              <div className="lyrics-empty-state">
+                <p className="lyrics-placeholder">🎵 No lyrics for this song</p>
+                <div className="empty-state-help">
+                  <p className="help-text">Add synchronized lyrics to follow along with your performance</p>
+                  <div className="help-actions">
+                    <button 
+                      className="btn btn-secondary btn-small"
+                      onClick={() => setCurrentView('songs')}
+                      aria-label="Go to songs view to add lyrics"
+                    >
+                      ✏️ Edit Song
+                    </button>
+                  </div>
+                  <details className="help-details">
+                    <summary>How to add lyrics</summary>
+                    <ol>
+                      <li>Go to the <strong>Songs</strong> view</li>
+                      <li>Click <strong>Edit</strong> on your song</li>
+                      <li>Add synchronized lyrics in LRC format</li>
+                      <li>Format: <code>[MM:SS.CC] Lyric text</code></li>
+                    </ol>
+                  </details>
+                </div>
+              </div>
             ) : lyricsToShow.length === 0 ? (
-              <p className="lyrics-placeholder">Ready...</p>
+              <p className="lyrics-placeholder">Ready to start...</p>
             ) : (
               lyricsToShow.map((lyric) => {
                 const actualIndex = currentSong.lyrics.indexOf(lyric)
@@ -838,10 +993,11 @@ export default function PerformanceView() {
           </div>
         </div>
 
-        <div className="metronome-section">
-          <div className="visual-beat" style={{ opacity: visualEnabled ? 1 : 0.3 }}>
+        <div className="metronome-section" role="region" aria-label="Metronome controls and display">
+          <div className="visual-beat" style={{ opacity: visualEnabled ? 1 : 0.3 }} role="img" aria-label="Visual beat indicator">
             <div 
               className={`beat-indicator ${isBeatFlashing ? 'active' : ''} ${isAccentBeat ? 'accent' : ''}`}
+              aria-live="off"
             >
               {showBeatNumber && (
                 isPlaying && currentBeatInMeasure > 0 ? (
@@ -868,36 +1024,49 @@ export default function PerformanceView() {
             </div>
           </div>
           
-          <div className="metronome-settings">
+          <div className="metronome-settings" role="group" aria-label="Metronome settings">
             <div className="settings-grid">
               <label className="settings-checkbox">
                 <input 
                   type="checkbox" 
                   checked={soundEnabled}
                   onChange={(e) => setSoundEnabled(e.target.checked)}
+                  aria-label="Enable metronome sound"
+                  aria-describedby="sound-setting-help"
                 />
-                <span className="settings-icon">🔊</span>
+                <span className="settings-icon" aria-hidden="true">🔊</span>
                 <span className="settings-label">Sound</span>
               </label>
+              <span id="sound-setting-help" className="sr-only">Toggle audio clicks for the metronome</span>
+              
               <label className="settings-checkbox">
                 <input 
                   type="checkbox" 
                   checked={visualEnabled}
                   onChange={(e) => setVisualEnabled(e.target.checked)}
+                  aria-label="Enable visual beat indicator"
+                  aria-describedby="visual-setting-help"
                 />
-                <span className="settings-icon">💡</span>
+                <span className="settings-icon" aria-hidden="true">💡</span>
                 <span className="settings-label">Visual Flash</span>
               </label>
+              <span id="visual-setting-help" className="sr-only">Toggle visual flashing indicator for beats</span>
+              
               {visualEnabled && (
-                <label className="settings-checkbox">
-                  <input 
-                    type="checkbox" 
-                    checked={showBeatNumber}
-                    onChange={(e) => setShowBeatNumber(e.target.checked)}
-                  />
-                  <span className="settings-icon">🔢</span>
-                  <span className="settings-label">Show No.</span>
-                </label>
+                <>
+                  <label className="settings-checkbox">
+                    <input 
+                      type="checkbox" 
+                      checked={showBeatNumber}
+                      onChange={(e) => setShowBeatNumber(e.target.checked)}
+                      aria-label="Show beat numbers in visual indicator"
+                      aria-describedby="beat-number-help"
+                    />
+                    <span className="settings-icon" aria-hidden="true">🔢</span>
+                    <span className="settings-label">Show No.</span>
+                  </label>
+                  <span id="beat-number-help" className="sr-only">Display the current beat number in the visual indicator</span>
+                </>
               )}
             </div>
           </div>
@@ -909,6 +1078,8 @@ export default function PerformanceView() {
                 id="time-signature-select"
                 value={timeSignature}
                 onChange={(e) => handleTimeSignatureChange(parseInt(e.target.value))}
+                aria-label="Select time signature"
+                aria-describedby="time-sig-help"
               >
                 <option value="2">2/4</option>
                 <option value="3">3/4</option>
@@ -919,32 +1090,44 @@ export default function PerformanceView() {
                 <option value="9">9/8</option>
                 <option value="12">12/8</option>
               </select>
-              <small>Beats per measure</small>
+              <small id="time-sig-help">Beats per measure</small>
             </div>
             
-            <div className="control-group">
-              <label>Accent Pattern</label>
-              <div className="beat-pattern-selector">
+            <div className="control-group" role="group" aria-labelledby="accent-pattern-label">
+              <label id="accent-pattern-label">Accent Pattern</label>
+              <div className="beat-pattern-selector" role="toolbar" aria-label="Accent pattern selector">
                 {accentPattern.map((accented, index) => (
                   <button
                     key={index}
                     className={`beat-btn ${accented ? 'accented' : ''}`}
                     data-beat-index={index}
                     onClick={() => toggleBeatAccent(index)}
+                    aria-label={`Beat ${index + 1}, ${accented ? 'accented' : 'not accented'}. Click to toggle.`}
+                    aria-pressed={accented}
                   >
                     {index + 1}
                   </button>
                 ))}
               </div>
-              <div className="accent-controls">
-                <button type="button" className="btn btn-secondary" onClick={clearAllAccents}>
+              <div className="accent-controls" role="group" aria-label="Accent pattern presets">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={clearAllAccents}
+                  aria-label="Clear all accent patterns"
+                >
                   Clear All
                 </button>
-                <button type="button" className="btn btn-secondary" onClick={setNoAccent}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={setNoAccent}
+                  aria-label="Set no accent (uniform beats)"
+                >
                   No Accent
                 </button>
               </div>
-              <small>Click beats to toggle accent on/off</small>
+              <small id="accent-pattern-help">Click beats to toggle accent on/off</small>
               <div style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 {isPlaying && currentBeatInMeasure > 0 ? (
                   <>
@@ -975,6 +1158,8 @@ export default function PerformanceView() {
                 id="polyrhythm-select"
                 value={polyrhythm?.name || ''}
                 onChange={(e) => handlePolyrhythmChange(e.target.value)}
+                aria-label="Select polyrhythm pattern"
+                aria-describedby="polyrhythm-help"
               >
                 <option value="">None (Standard)</option>
                 <option value="3:2">3:2 (Three over Two)</option>
@@ -982,7 +1167,7 @@ export default function PerformanceView() {
                 <option value="5:4">5:4 (Five over Four)</option>
                 <option value="custom">Custom Pattern</option>
               </select>
-              <small>Advanced rhythm patterns</small>
+              <small id="polyrhythm-help">Advanced rhythm patterns for complex time signatures</small>
             </div>
             
             {showCustomPolyrhythm && (
@@ -1000,16 +1185,32 @@ export default function PerformanceView() {
               </div>
             )}
             
-            <div className="button-group">
-              <button className="btn btn-secondary" onClick={previousSong}>◀ Prev</button>
+            <div className="button-group" role="group" aria-label="Metronome and song controls">
+              <button 
+                className="btn btn-secondary" 
+                onClick={previousSong}
+                aria-label="Go to previous song"
+                disabled={currentSongIndex === 0}
+              >
+                ◀ Prev
+              </button>
               <button 
                 className={`btn btn-primary ${isPlaying ? 'playing' : ''}`}
                 onClick={toggle}
+                aria-label={isPlaying ? 'Stop metronome' : 'Start metronome'}
+                aria-pressed={isPlaying}
               >
-                <span>{isPlaying ? '⏸' : '▶'}</span>
+                <span aria-hidden="true">{isPlaying ? '⏸' : '▶'}</span>
                 <span>{isPlaying ? 'Stop' : 'Start'}</span>
               </button>
-              <button className="btn btn-secondary" onClick={nextSong}>Next ▶</button>
+              <button 
+                className="btn btn-secondary" 
+                onClick={nextSong}
+                aria-label="Go to next song"
+                disabled={!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1}
+              >
+                Next ▶
+              </button>
             </div>
             
             {songHasChanges && currentSong && (
