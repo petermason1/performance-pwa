@@ -87,16 +87,39 @@ export default function MIDILightsView() {
   }
 
   const handleTestLights = () => {
-    // TODO: Implement test lights functionality
-    console.log('Test lights - MIDI note sent')
-    // Example: Send a test note
-    // midiController.sendNoteOnToLights(60, 127, 0) // Middle C, full velocity, channel 0
+    if (!isInitialized) {
+      setTestFeedback('⚠️ Enable MIDI and select a lights output first')
+      setTimeout(() => setTestFeedback(''), 1500)
+      return
+    }
+    // Send a simple triad to lights as a demo (C E G)
+    const ok = midiController.sendNotesToLights([60, 64, 67], 100, 0)
+    if (ok) {
+      setTestFeedback('✅ Sent test pattern to lights (C–E–G)')
+      setLastTestTime(Date.now())
+      setTimeout(() => setTestFeedback(''), 1500)
+    } else {
+      setTestFeedback('⚠️ No lights output selected')
+      setTimeout(() => setTestFeedback(''), 1500)
+    }
   }
 
   const handleNoteClick = (note) => {
-    // TODO: Implement note testing
-    console.log('Note clicked:', note)
-    // midiController.sendNoteOnToLights(note, 127, 0)
+    if (!isInitialized) {
+      setDeviceFeedback('⚠️ Enable MIDI first')
+      setTimeout(() => setDeviceFeedback(''), 1200)
+      return
+    }
+    const ok = midiController.sendNoteOnToLights(note, 110, 0)
+    if (ok) {
+      setDeviceFeedback(`✅ Sent note ${note}`)
+      // Send note off shortly after for a tap-like light flash
+      setTimeout(() => midiController.sendNoteOffToLights(note, 0), 200)
+      setTimeout(() => setDeviceFeedback(''), 1200)
+    } else {
+      setDeviceFeedback('⚠️ No lights output selected')
+      setTimeout(() => setDeviceFeedback(''), 1200)
+    }
   }
 
   // Generate MIDI note grid (C0 to C8 = notes 0-108, but we'll show commonly used range)
@@ -186,6 +209,7 @@ export default function MIDILightsView() {
             className="btn btn-secondary" 
             onClick={handleRefreshDevices}
             style={{ width: '100%' }}
+            aria-label="Refresh MIDI devices list"
           >
             🔄 Refresh Devices
           </button>
@@ -251,6 +275,7 @@ export default function MIDILightsView() {
             onClick={handleTestLights}
             style={{ width: '100%' }}
             disabled={!isInitialized}
+            aria-label="Send test light pattern"
           >
             🧪 Test Lights
           </button>
@@ -313,6 +338,7 @@ export default function MIDILightsView() {
                   gap: '4px'
                 }}
                 title={`Note ${note.midiNote}: ${note.name}`}
+                aria-label={`Send MIDI note ${note.midiNote} ${note.name} to lights`}
               >
                 <span style={{ fontWeight: '600' }}>{note.displayName}</span>
                 <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>{note.midiNote}</span>

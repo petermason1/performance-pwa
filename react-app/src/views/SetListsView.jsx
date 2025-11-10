@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useApp } from '../hooks/useApp'
 import SetListModal from '../components/SetListModal'
+import ExampleSetListsModal from '../components/ExampleSetListsModal'
 import './SetListsView.css'
 
 export default function SetListsView() {
-  const { setLists, getSong, deleteSetList, refreshData } = useApp()
+  const { setLists, songs, addSetList, getSong, deleteSetList, refreshData, setCurrentView } = useApp()
   const [showModal, setShowModal] = useState(false)
   const [editingSetList, setEditingSetList] = useState(null)
+  const [showExamples, setShowExamples] = useState(false)
 
   const calculateSetListDuration = (songs) => {
     let totalSeconds = 0
@@ -93,7 +95,37 @@ export default function SetListsView() {
       
       <div className="setlists-container">
         {setLists.length === 0 ? (
-          <p className="empty-state">No set lists yet. Create your first set list!</p>
+          <div className="empty-state" style={{ textAlign: 'center', padding: '30px 20px' }}>
+            <p style={{ marginBottom: '16px', fontSize: '1.05rem' }}>
+              No set lists yet. Get started quickly:
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', maxWidth: '420px', margin: '0 auto' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowExamples(true)}
+                aria-label="Browse and import example set lists"
+                style={{ width: '100%' }}
+              >
+                📋 Import Example Set Lists
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setCurrentView?.('songs')}
+                aria-label="Go to Songs view to import example songs"
+                style={{ width: '100%' }}
+              >
+                📥 Import Example Songs
+              </button>
+              <button
+                className="btn"
+                onClick={handleNewSetList}
+                aria-label="Create a new set list"
+                style={{ width: '100%' }}
+              >
+                ➕ Create New Set List
+              </button>
+            </div>
+          </div>
         ) : (
           setLists.map(setList => {
             const songs = setList.songIds.map(id => getSong(id)).filter(s => s)
@@ -150,6 +182,14 @@ export default function SetListsView() {
         <SetListModal
           setList={editingSetList}
           onClose={handleModalClose}
+        />
+      )}
+      
+      {showExamples && (
+        <ExampleSetListsModal
+          songs={songs}
+          onImport={addSetList}
+          onClose={() => setShowExamples(false)}
         />
       )}
     </div>
