@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'promptUpdate',
+      registerType: 'autoUpdate',
       devOptions: {
         // Disable service worker during Vite dev to avoid HMR conflicts
         enabled: false
@@ -26,8 +26,8 @@ export default defineConfig({
       },
       workbox: {
         cleanupOutdatedCaches: true,
-        skipWaiting: false, // Don't auto-skip, show prompt
-        clientsClaim: false, // Don't auto-claim, show prompt
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
