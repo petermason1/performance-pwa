@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRealtimeSession } from '../hooks/useRealtimeSession'
+import QRCode from 'qrcode'
 
 export default function RealtimeSessionModal({ onClose, metronomeHook }) {
   const [joinSessionInput, setJoinSessionInput] = useState('')
-  const [showQR, setShowQR] = useState(false)
+  const [qrCodeUrl, setQrCodeUrl] = useState('')
   
   const {
     isHost,
@@ -74,6 +75,18 @@ export default function RealtimeSessionModal({ onClose, metronomeHook }) {
       default: return 'Not connected'
     }
   }
+
+  // Generate QR code when session ID becomes available
+  useEffect(() => {
+    if (sessionId && isHost) {
+      const url = `${window.location.origin}${window.location.pathname}?session=${sessionId}`
+      QRCode.toDataURL(url, { width: 256, margin: 2 })
+        .then(dataUrl => setQrCodeUrl(dataUrl))
+        .catch(err => console.error('Error generating QR code:', err))
+    } else {
+      setQrCodeUrl('')
+    }
+  }, [sessionId, isHost])
 
   const handleClose = (e) => {
     if (e.target === e.currentTarget || e.target.classList.contains('close')) {
@@ -246,12 +259,37 @@ export default function RealtimeSessionModal({ onClose, metronomeHook }) {
                       📋 Copy
                     </button>
                   </div>
+                  
+                  {/* QR Code for easy scanning */}
+                  {qrCodeUrl && (
+                    <div style={{
+                      marginTop: '15px',
+                      textAlign: 'center',
+                      padding: '15px',
+                      background: 'white',
+                      borderRadius: '8px'
+                    }}>
+                      <img
+                        src={qrCodeUrl}
+                        alt="QR Code for joining session"
+                        style={{ maxWidth: '180px', height: 'auto' }}
+                      />
+                      <div style={{
+                        marginTop: '8px',
+                        fontSize: '0.8rem',
+                        color: 'var(--text-secondary)'
+                      }}>
+                        📱 Scan this QR code to join instantly
+                      </div>
+                    </div>
+                  )}
+
                   <p style={{
                     fontSize: '0.8rem',
                     color: 'var(--text-secondary)',
                     marginTop: '8px'
                   }}>
-                    💡 Bandmates can join by entering this ID
+                    💡 Bandmates can scan the QR code or enter the Session ID
                   </p>
                 </div>
               )}

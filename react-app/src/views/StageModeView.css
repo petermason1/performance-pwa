@@ -259,3 +259,99 @@
   cursor: pointer;
 }
 
+/* ===== ADVANCED CONTROLS ===== */
+.stage-advanced-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.stage-advanced-controls .btn-small {
+  font-size: 0.8rem;
+  padding: 6px 12px;
+}
+
+/* ===== HIGH CONTRAST MODE ===== */
+/* Enhanced visibility for dark stages or bright outdoor venues */
+.stage-mode-view.high-contrast {
+  background: #000000;
+}
+
+.stage-mode-view.high-contrast .stage-main {
+  background: linear-gradient(180deg, #0a0a0a, #000000);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.stage-mode-view.high-contrast .stage-song-info h1 {
+  color: #ffffff;
+  text-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+}
+
+.stage-mode-view.high-contrast .stage-song-meta {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.stage-mode-view.high-contrast .stage-status {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+}
+
+.stage-mode-view.high-contrast .stage-control-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.stage-mode-view.high-contrast .stage-control-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.stage-mode-view.high-contrast .stage-control-btn.primary.start {
+  background: rgba(34, 197, 94, 0.4);
+  border-color: rgba(34, 197, 94, 0.7);
+  color: #ffffff;
+}
+
+.stage-mode-view.high-contrast .stage-control-btn.primary.stop {
+  background: rgba(239, 68, 68, 0.4);
+  border-color: rgba(239, 68, 68, 0.7);
+  color: #ffffff;
+}
+
+.stage-mode-view.high-contrast .stage-toggle {
+  color: #ffffff;
+}
+
+.stage-mode-view.high-contrast .stage-footer {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.stage-mode-view.high-contrast .stage-footer-card {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.stage-mode-view.high-contrast .stage-footer-card h3 {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.stage-mode-view.high-contrast .stage-footer-card p {
+  color: #ffffff;
+}
+
+.stage-mode-view.high-contrast .stage-empty {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.stage-mode-view.high-contrast .stage-lyrics {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+

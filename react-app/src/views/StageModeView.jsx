@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from '../hooks/useApp'
+import { useRealtimeSession } from '../hooks/useRealtimeSession'
 import BeatFlash from '../components/Performance/BeatFlash'
+import RealtimeSessionModal from '../components/RealtimeSessionModal'
 import { announce } from '../utils/accessibility'
 import './StageModeView.css'
 
@@ -39,6 +41,19 @@ export default function StageModeView() {
   const [unlockProgress, setUnlockProgress] = useState(0)
   const unlockTimerRef = useRef(null)
   const [showLyrics, setShowLyrics] = useState(() => localStorage.getItem('stageModeShowLyrics') === 'true')
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isHighContrast, setIsHighContrast] = useState(() => localStorage.getItem('stageModeHighContrast') === 'true')
+  const [colorCodedBeats, setColorCodedBeats] = useState(() => localStorage.getItem('stageModeColorCoded') === 'true')
+  const [showRealtimeModal, setShowRealtimeModal] = useState(false)
+
+  // Realtime session hook
+  const realtimeSession = useRealtimeSession(metronome)
+
+  // Swipe gesture tracking
+  const touchStartX = useRef(0)
+  const touchEndX = useRef(0)
+  const touchStartY = useRef(0)
+  const touchEndY = useRef(0)
 
   const activeSetList = useMemo(() => {
     if (!activeSetListId) return null
@@ -230,8 +245,54 @@ export default function StageModeView() {
   const previousSong = setListSongs[safeSongIndex - 1] || null
   const nextSong = setListSongs[safeSongIndex + 1] || null
 
+  // Swipe gesture handlers
+  const handleTouchStart = (e) => {
+    if (isLiveLocked) return // Disable swipe when locked
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  const handleTouchMove = (e) => {
+    if (isLiveLocked) return
+    touchEndX.current = e.touches[0].clientX
+    touchEndY.current = e.touches[0].clientY
+  }
+
+  const handleTouchEnd = () => {
+    if (isLiveLocked) return
+    
+    const deltaX = touchEndX.current - touchStartX.current
+    const deltaY = touchEndY.current - touchStartY.current
+    const minSwipeDistance = 50
+
+    // Only trigger swipe if horizontal movement is greater than vertical
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
+      if (deltaX > 0 && previousSong) {
+        // Swipe right -> previous song
+        handlePreviousSong()
+        announce(`Switched to previous song: ${previousSong.name}`, 'polite')
+      } else if (deltaX < 0 && nextSong) {
+        // Swipe left -> next song
+        handleNextSong()
+        announce(`Switched to next song: ${nextSong.name}`, 'polite')
+      }
+    }
+
+    // Reset touch positions
+    touchStartX.current = 0
+    touchEndX.current = 0
+    touchStartY.current = 0
+    touchEndY.current = 0
+  }
+
   return (
-    <div className="view stage-mode-view" aria-live="polite">
+    <div 
+      className={`view stage-mode-view ${isHighContrast ? 'high-contrast' : ''}`} 
+      aria-live="polite"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <header className="stage-header">
         <div className="stage-status">
           <span className={`stage-status-light ${isPlaying ? 'online' : 'standby'}`} aria-hidden="true" />
@@ -246,11 +307,31 @@ export default function StageModeView() {
               <span className="stage-setlist-name">{activeSetList.name}</span>
             </>
           )}
+          {realtimeSession.connectionStatus === 'connected' && (
+            <>
+              <span className="stage-divider">•</span>
+              <span style={{ 
+                color: 'var(--accent-green)',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                🔴 {realtimeSession.isHost ? 'Hosting' : 'Synced'}
+                {realtimeSession.isHost && realtimeSession.connectedClients.length > 0 && (
+                  <span style={{ fontSize: '0.85em' }}>
+                    ({realtimeSession.connectedClients.length})
+                  </span>
+                )}
+              </span>
+            </>
+          )}
         </div>
 
-        <button
-          type="button"
-          className={`stage-live-toggle ${isLiveLocked ? 'locked' : ''}`}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button
+            type="button"
+            className={`stage-live-toggle ${isLiveLocked ? 'locked' : ''}`}
           onClick={handleLiveToggle}
           onMouseDown={isLiveLocked ? handleUnlockStart : undefined}
           onMouseUp={isLiveLocked ? handleUnlockEnd : undefined}
@@ -266,6 +347,30 @@ export default function StageModeView() {
         >
           {isLiveLocked ? (unlockProgress > 0 ? `Unlocking... ${Math.round(unlockProgress * 100)}%` : 'Hold to Unlock') : 'Go Live'}
         </button>
+          <button
+            type="button"
+            className="btn btn-secondary btn-small"
+            onClick={() => setShowRealtimeModal(true)}
+            aria-label="Open live session sync"
+            style={{
+              padding: '0.6rem 1rem',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              borderRadius: '999px',
+              background: realtimeSession.connectionStatus === 'connected' 
+                ? 'rgba(34, 197, 94, 0.2)' 
+                : 'rgba(226, 241, 255, 0.1)',
+              borderColor: realtimeSession.connectionStatus === 'connected' 
+                ? 'rgba(34, 197, 94, 0.5)' 
+                : 'rgba(226, 241, 255, 0.2)',
+              color: realtimeSession.connectionStatus === 'connected' 
+                ? '#bbf7d0' 
+                : 'rgba(247, 248, 255, 0.9)',
+            }}
+          >
+            {realtimeSession.connectionStatus === 'connected' ? '✓ ' : ''}🔴 Sync
+          </button>
+        </div>
       </header>
 
       <main className="stage-main">
@@ -284,6 +389,8 @@ export default function StageModeView() {
             timeSignature={metronome?.timeSignature || activeSong?.timeSignature || 4}
             showBeatNumber
             accentPattern={metronome?.accentPattern || activeSong?.accentPattern || null}
+            variant={isFullscreen ? 'fullscreen' : 'stage'}
+            colorCoded={colorCodedBeats}
           />
         </div>
 
@@ -393,6 +500,51 @@ export default function StageModeView() {
             </label>
           )}
         </div>
+
+        {/* Advanced Controls */}
+        <div className="stage-advanced-controls" style={{ 
+          display: 'flex', 
+          gap: '10px', 
+          marginTop: '15px',
+          flexWrap: 'wrap',
+          justifyContent: 'center'
+        }}>
+          <button
+            type="button"
+            className={`btn btn-small ${isFullscreen ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            aria-pressed={isFullscreen}
+            aria-label="Toggle fullscreen beat visualization"
+          >
+            {isFullscreen ? '✓ Fullscreen' : 'Fullscreen'}
+          </button>
+          <button
+            type="button"
+            className={`btn btn-small ${colorCodedBeats ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => {
+              const newValue = !colorCodedBeats
+              setColorCodedBeats(newValue)
+              localStorage.setItem('stageModeColorCoded', newValue.toString())
+            }}
+            aria-pressed={colorCodedBeats}
+            aria-label="Toggle color-coded beats (red downbeat, blue accent, white regular)"
+          >
+            {colorCodedBeats ? '✓ Colors' : 'Colors'}
+          </button>
+          <button
+            type="button"
+            className={`btn btn-small ${isHighContrast ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => {
+              const newValue = !isHighContrast
+              setIsHighContrast(newValue)
+              localStorage.setItem('stageModeHighContrast', newValue.toString())
+            }}
+            aria-pressed={isHighContrast}
+            aria-label="Toggle high contrast theme for dark stages"
+          >
+            {isHighContrast ? '✓ High Contrast' : 'High Contrast'}
+          </button>
+        </div>
       </main>
 
       <footer className="stage-footer">
@@ -442,6 +594,14 @@ export default function StageModeView() {
           </button>
         </div>
       </footer>
+
+      {/* Realtime Session Modal */}
+      {showRealtimeModal && (
+        <RealtimeSessionModal
+          onClose={() => setShowRealtimeModal(false)}
+          metronomeHook={metronome}
+        />
+      )}
     </div>
   )
 }
