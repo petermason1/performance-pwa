@@ -328,7 +328,7 @@ export default function StageModeView() {
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="stage-header-actions">
           <button
             type="button"
             className={`stage-live-toggle ${isLiveLocked ? 'locked' : ''}`}
@@ -349,24 +349,9 @@ export default function StageModeView() {
         </button>
           <button
             type="button"
-            className="btn btn-secondary btn-small"
+            className={`stage-sync-button ${realtimeSession.connectionStatus === 'connected' ? 'connected' : ''}`}
             onClick={() => setShowRealtimeModal(true)}
             aria-label="Open live session sync"
-            style={{
-              padding: '0.6rem 1rem',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              borderRadius: '999px',
-              background: realtimeSession.connectionStatus === 'connected' 
-                ? 'rgba(34, 197, 94, 0.2)' 
-                : 'rgba(226, 241, 255, 0.1)',
-              borderColor: realtimeSession.connectionStatus === 'connected' 
-                ? 'rgba(34, 197, 94, 0.5)' 
-                : 'rgba(226, 241, 255, 0.2)',
-              color: realtimeSession.connectionStatus === 'connected' 
-                ? '#bbf7d0' 
-                : 'rgba(247, 248, 255, 0.9)',
-            }}
           >
             {realtimeSession.connectionStatus === 'connected' ? '✓ ' : ''}🔴 Sync
           </button>
@@ -502,13 +487,7 @@ export default function StageModeView() {
         </div>
 
         {/* Advanced Controls */}
-        <div className="stage-advanced-controls" style={{ 
-          display: 'flex', 
-          gap: '10px', 
-          marginTop: '15px',
-          flexWrap: 'wrap',
-          justifyContent: 'center'
-        }}>
+        <div className="stage-advanced-controls">
           <button
             type="button"
             className={`btn btn-small ${isFullscreen ? 'btn-primary' : 'btn-secondary'}`}
