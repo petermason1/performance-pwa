@@ -1,32 +1,8 @@
 // Preset System - Global and Per-Song Presets
 import Dexie from 'dexie'
 
-export interface AccentPreset {
-  id: string
-  name: string
-  description?: string
-  pattern: boolean[]
-  timeSignature: number
-  scope: 'global' | 'song'
-  createdAt: string
-  updatedAt: string
-}
-
-export interface PolyrhythmPreset {
-  id: string
-  name: string
-  description?: string
-  pattern: number[]
-  patternName: string
-  scope: 'global' | 'song'
-  createdAt: string
-  updatedAt: string
-}
-
-export type Preset = AccentPreset | PolyrhythmPreset
-
 // Built-in global presets
-export const BUILT_IN_PRESETS: AccentPreset[] = [
+export const BUILT_IN_PRESETS = [
   {
     id: 'rock-backbeat',
     name: 'Rock Backbeat',
@@ -81,20 +57,17 @@ export const BUILT_IN_PRESETS: AccentPreset[] = [
 
 // Preset database using Dexie
 class PresetDB extends Dexie {
-  presets: Dexie.Table<Preset, string>
-
   constructor() {
     super('PresetsDB')
     this.version(1).stores({
       presets: 'id, scope, name, createdAt'
     })
-    this.presets = this.table('presets')
   }
 }
 
-let presetDBInstance: PresetDB | null = null
+let presetDBInstance = null
 
-function getPresetDB(): PresetDB {
+function getPresetDB() {
   if (!presetDBInstance) {
     presetDBInstance = new PresetDB()
   }
@@ -102,7 +75,7 @@ function getPresetDB(): PresetDB {
 }
 
 // Initialize with built-in presets
-export async function initPresets(): Promise<void> {
+export async function initPresets() {
   const db = getPresetDB()
   const existing = await db.presets.toArray()
   const existingIds = new Set(existing.map(p => p.id))
@@ -115,19 +88,19 @@ export async function initPresets(): Promise<void> {
   }
 }
 
-export async function getAllPresets(): Promise<Preset[]> {
+export async function getAllPresets() {
   await initPresets()
   const db = getPresetDB()
   return db.presets.toArray()
 }
 
-export async function getPreset(id: string): Promise<Preset | undefined> {
+export async function getPreset(id) {
   await initPresets()
   const db = getPresetDB()
   return db.presets.get(id)
 }
 
-export async function savePreset(preset: Preset): Promise<void> {
+export async function savePreset(preset) {
   await initPresets()
   const db = getPresetDB()
   const presetWithDates = {
@@ -138,7 +111,7 @@ export async function savePreset(preset: Preset): Promise<void> {
   await db.presets.put(presetWithDates)
 }
 
-export async function deletePreset(id: string): Promise<void> {
+export async function deletePreset(id) {
   const db = getPresetDB()
   // Don't delete built-in presets
   const builtInIds = new Set(BUILT_IN_PRESETS.map(p => p.id))
@@ -148,20 +121,20 @@ export async function deletePreset(id: string): Promise<void> {
   await db.presets.delete(id)
 }
 
-export async function getPresetsByScope(scope: 'global' | 'song'): Promise<Preset[]> {
+export async function getPresetsByScope(scope) {
   await initPresets()
   const db = getPresetDB()
   return db.presets.where('scope').equals(scope).toArray()
 }
 
-export async function getAccentPresets(): Promise<AccentPreset[]> {
+export async function getAccentPresets() {
   const all = await getAllPresets()
-  return all.filter((p): p is AccentPreset => 
-    'pattern' in p && Array.isArray(p.pattern) && typeof p.pattern[0] === 'boolean'
+  return all.filter((p) => 
+    p.pattern && Array.isArray(p.pattern) && typeof p.pattern[0] === 'boolean'
   )
 }
 
-export async function getPolyrhythmPresets(): Promise<PolyrhythmPreset[]> {
+export async function getPolyrhythmPresets() {
   const all = await getAllPresets()
-  return all.filter((p): p is PolyrhythmPreset => 'patternName' in p)
+  return all.filter((p) => p.patternName)
 }

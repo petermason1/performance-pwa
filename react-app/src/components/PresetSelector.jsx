@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getAllAccentPresets, savePreset } from '../utils/presets'
+import { getAllAccentPresets, savePreset } from '../utils/presets.js'
 
 export default function PresetSelector({ 
   timeSignature, 
@@ -7,7 +7,7 @@ export default function PresetSelector({
   onApplyPreset,
   onSaveAsPreset 
 }) {
-  const [presets, setPresets] = useState<AccentPreset[]>([])
+  const [presets, setPresets] = useState([])
   const [selectedPresetId, setSelectedPresetId] = useState('')
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [presetName, setPresetName] = useState('')
@@ -23,7 +23,7 @@ export default function PresetSelector({
     setPresets(matching)
   }
 
-  const handleApplyPreset = async (presetId: string) => {
+  const handleApplyPreset = async (presetId) => {
     const preset = presets.find(p => p.id === presetId)
     if (preset) {
       setSelectedPresetId(presetId)
