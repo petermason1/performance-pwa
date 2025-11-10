@@ -248,3 +248,20 @@ header h1 {
   background: rgba(0, 217, 255, 0.5);
 }
 
+
+
+/* Real-time feedback animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.test-feedback {
+  animation: fadeIn 0.3s ease;
+}

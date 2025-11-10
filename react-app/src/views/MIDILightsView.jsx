@@ -4,6 +4,9 @@ import './MIDILightsView.css'
 
 export default function MIDILightsView() {
   const [outputs, setOutputs] = useState([])
+  const [testFeedback, setTestFeedback] = useState('')
+  const [lastTestTime, setLastTestTime] = useState(null)
+  const [deviceFeedback, setDeviceFeedback] = useState('')
   const [selectedOutput, setSelectedOutput] = useState(null)
   const [selectedHelixOutput, setSelectedHelixOutput] = useState(null)
   const [selectedLightsOutput, setSelectedLightsOutput] = useState(null)
@@ -254,6 +257,25 @@ export default function MIDILightsView() {
           <small style={{ display: 'block', marginTop: '8px', color: 'var(--text-secondary)', textAlign: 'center' }}>
             Light programming timeline coming soon. Use MIDI notes for now.
           </small>
+          {testFeedback && (
+            <div 
+              className="test-feedback" 
+              role="status" 
+              aria-live="polite"
+              style={{
+                marginTop: '10px',
+                padding: '10px',
+                background: 'var(--accent-green)',
+                color: 'white',
+                borderRadius: '8px',
+                fontWeight: '600',
+                textAlign: 'center',
+                animation: 'fadeIn 0.3s ease'
+              }}
+            >
+              {testFeedback}
+            </div>
+          )}
         </div>
 
         <div className="midi-notes" style={{
