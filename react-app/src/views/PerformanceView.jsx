@@ -9,6 +9,7 @@ import LiveView from '../components/Performance/LiveView'
 import MetronomeSettings from '../components/Performance/MetronomeSettings'
 import ExampleSetListsModal from '../components/ExampleSetListsModal'
 import PresetSelector from '../components/PresetSelector'
+import { initPresets } from '../utils/presets'
 import KeyboardShortcutsModal from '../components/KeyboardShortcutsModal'
 import './PerformanceView.css'
 
