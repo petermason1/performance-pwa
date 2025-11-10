@@ -452,6 +452,7 @@ export default function PerformanceView() {
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
   const [presetFeedback, setPresetFeedback] = useState('')
   const [showRealtimeSession, setShowRealtimeSession] = useState(false)
+  const [showLyrics, setShowLyrics] = useState(() => localStorage.getItem('performanceShowLyrics') === 'true')
 
   useKeyboardShortcuts({
     onToggleMetronome: toggle,
@@ -1332,6 +1333,70 @@ export default function PerformanceView() {
                 >
                   <span>Hold to Overwrite</span>
                 </button>
+              </div>
+            )}
+
+            {/* Lyrics Panel */}
+            {currentSong && (
+              <div className="lyrics-section" style={{ marginTop: '20px' }}>
+                <button 
+                  className="btn btn-secondary btn-small lyrics-toggle"
+                  onClick={() => {
+                    const newValue = !showLyrics
+                    setShowLyrics(newValue)
+                    localStorage.setItem('performanceShowLyrics', newValue.toString())
+                  }}
+                  aria-expanded={showLyrics}
+                  aria-controls="lyrics-panel"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: showLyrics ? '12px' : '0'
+                  }}
+                >
+                  <span aria-hidden="true">{showLyrics ? '▼' : '▶'}</span>
+                  <span>Lyrics</span>
+                </button>
+                
+                {showLyrics && (
+                  <div 
+                    id="lyrics-panel"
+                    className="lyrics-panel"
+                    role="region"
+                    aria-label="Song lyrics"
+                    style={{
+                      padding: '16px',
+                      background: 'var(--surface-light)',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border)',
+                      maxHeight: '300px',
+                      overflowY: 'auto'
+                    }}
+                  >
+                    {currentSong.lyrics ? (
+                      <pre style={{
+                        fontFamily: 'inherit',
+                        fontSize: '1rem',
+                        lineHeight: '1.6',
+                        margin: 0,
+                        whiteSpace: 'pre-wrap',
+                        wordWrap: 'break-word',
+                        color: 'var(--text-primary)'
+                      }}>
+                        {currentSong.lyrics}
+                      </pre>
+                    ) : (
+                      <p style={{ 
+                        color: 'var(--text-secondary)',
+                        fontStyle: 'italic',
+                        margin: 0
+                      }}>
+                        No lyrics for this song. Add lyrics in the Songs view.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

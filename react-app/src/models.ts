@@ -16,7 +16,8 @@ export interface Song {
     pattern: number[];
     name: string;
   } | null;
-  lyrics?: Lyric[];
+  lyrics?: string;  // Plain text lyrics with \n line breaks
+  lyricsFormat?: 'plain' | 'lrc';  // Future: support LRC timestamped format
   duration?: number;
   helixPreset?: string;
   helixPresetNumber?: number;
@@ -77,6 +78,7 @@ export class DataStore {
       accentPattern: song.accentPattern,
       polyrhythm: song.polyrhythm,
       lyrics: song.lyrics,
+      lyricsFormat: song.lyricsFormat || 'plain',
       duration: song.duration,
       helixPreset: song.helixPreset,
       helixPresetNumber: song.helixPresetNumber,

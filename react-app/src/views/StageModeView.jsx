@@ -38,6 +38,7 @@ export default function StageModeView() {
   const [isLiveLocked, setIsLiveLocked] = useState(false)
   const [unlockProgress, setUnlockProgress] = useState(0)
   const unlockTimerRef = useRef(null)
+  const [showLyrics, setShowLyrics] = useState(() => localStorage.getItem('stageModeShowLyrics') === 'true')
 
   const activeSetList = useMemo(() => {
     if (!activeSetListId) return null
@@ -286,6 +287,48 @@ export default function StageModeView() {
           />
         </div>
 
+        {/* Lyrics Display for Stage Mode */}
+        {showLyrics && activeSong && (
+          <div 
+            className="stage-lyrics"
+            role="region"
+            aria-label="Song lyrics"
+            style={{
+              padding: '20px',
+              background: 'rgba(0, 0, 0, 0.3)',
+              borderRadius: '12px',
+              margin: '20px auto',
+              maxWidth: '600px',
+              maxHeight: '200px',
+              overflowY: 'auto'
+            }}
+          >
+            {activeSong.lyrics ? (
+              <pre style={{
+                fontFamily: 'inherit',
+                fontSize: '1.1rem',
+                lineHeight: '1.8',
+                margin: 0,
+                whiteSpace: 'pre-wrap',
+                wordWrap: 'break-word',
+                color: 'var(--text-primary)',
+                textAlign: 'center'
+              }}>
+                {activeSong.lyrics}
+              </pre>
+            ) : (
+              <p style={{ 
+                color: 'var(--text-secondary)',
+                fontStyle: 'italic',
+                margin: 0,
+                textAlign: 'center'
+              }}>
+                No lyrics available
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="stage-controls">
           <button
             type="button"
@@ -321,6 +364,7 @@ export default function StageModeView() {
               type="checkbox"
               checked={visualEnabled}
               onChange={(event) => handleVisualToggle(event.target.checked)}
+              aria-label="Toggle visual beat flash"
             />
             <span>Flash</span>
           </label>
@@ -329,9 +373,25 @@ export default function StageModeView() {
               type="checkbox"
               checked={soundEnabled}
               onChange={(event) => handleSoundToggle(event.target.checked)}
+              aria-label="Toggle audio click"
             />
             <span>Audio</span>
           </label>
+          {activeSong && activeSong.lyrics && (
+            <label className="stage-toggle">
+              <input
+                type="checkbox"
+                checked={showLyrics}
+                onChange={(event) => {
+                  const newValue = event.target.checked
+                  setShowLyrics(newValue)
+                  localStorage.setItem('stageModeShowLyrics', newValue.toString())
+                }}
+                aria-label="Toggle lyrics display"
+              />
+              <span>Lyrics</span>
+            </label>
+          )}
         </div>
       </main>
 

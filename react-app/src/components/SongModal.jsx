@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../hooks/useApp'
-import { parseLyrics, formatLyrics } from '../models'
 
 export default function SongModal({ song, onClose }) {
   const { addSong, updateSong } = useApp()
@@ -27,7 +26,7 @@ export default function SongModal({ song, onClose }) {
         helixPreset: song.helixPreset || '',
         helixPresetNumber: song.helixPresetNumber !== undefined ? song.helixPresetNumber : '',
         duration: song.duration ? song.duration.toString() : '',
-        lyrics: formatLyrics(song.lyrics || []),
+        lyrics: song.lyrics || '',
         midiNotes: song.midiNotes ? song.midiNotes.join(',') : '',
         accentPattern: song.accentPattern || null,
         polyrhythm: song.polyrhythm || null
@@ -62,7 +61,6 @@ export default function SongModal({ song, onClose }) {
   const handleSubmit = (e) => {
     e.preventDefault()
     
-    const lyrics = parseLyrics(formData.lyrics)
     const midiNotes = formData.midiNotes
       .split(',')
       .map(n => parseInt(n.trim()))
@@ -74,12 +72,12 @@ export default function SongModal({ song, onClose }) {
       timeSignature: formData.timeSignature,
       helixPreset: formData.helixPreset || null,
       helixPresetNumber: formData.helixPresetNumber !== '' ? parseInt(formData.helixPresetNumber) : null,
-      lyrics,
+      lyrics: formData.lyrics.trim() || null,
+      lyricsFormat: 'plain',
       midiNotes,
       accentPattern: formData.accentPattern,
       polyrhythm: formData.polyrhythm,
-      duration: formData.duration ? parseFloat(formData.duration) : 
-                (lyrics.length > 0 ? lyrics[lyrics.length - 1].time / 60 : null)
+      duration: formData.duration ? parseFloat(formData.duration) : null
     }
 
     if (song?.id) {
@@ -137,7 +135,7 @@ export default function SongModal({ song, onClose }) {
               onChange={handleChange}
               placeholder="e.g., 3.5"
             />
-            <small>Leave empty to calculate from lyrics timestamps</small>
+            <small>Optional: Song duration for setlist planning</small>
           </div>
 
           <div className="form-group">
@@ -183,16 +181,21 @@ export default function SongModal({ song, onClose }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="song-lyrics">Lyrics (with timestamps)</label>
+            <label htmlFor="song-lyrics">Lyrics (optional)</label>
             <textarea
               id="song-lyrics"
               name="lyrics"
               rows="10"
               value={formData.lyrics}
               onChange={handleChange}
-              placeholder="Format: [00:00.00] Line 1&#10;[00:04.00] Line 2&#10;[00:08.00] Line 3"
+              placeholder="Enter song lyrics, one line per verse/chorus&#10;&#10;Verse 1&#10;Line 1&#10;Line 2&#10;&#10;Chorus&#10;Line 1&#10;Line 2"
+              style={{
+                fontFamily: 'monospace',
+                fontSize: '0.95rem',
+                lineHeight: '1.6'
+              }}
             />
-            <small>Format: [MM:SS.mm] Your lyrics here</small>
+            <small>Enter plain text lyrics for reference during performance</small>
           </div>
 
           <div className="form-group">
