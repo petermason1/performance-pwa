@@ -449,6 +449,7 @@ export default function PerformanceView() {
   }, [isPlaying, toggle])
 
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
+  const [presetFeedback, setPresetFeedback] = useState('')
 
   useKeyboardShortcuts({
     onToggleMetronome: toggle,
@@ -1183,15 +1184,36 @@ export default function PerformanceView() {
               <PresetSelector
                 timeSignature={timeSignature}
                 currentPattern={accentPattern}
-                onApplyPreset={(pattern) => {
+                onApplyPreset={(pattern, presetName) => {
                   setAccentPatternState(pattern)
                   setMetronomeAccentPattern(pattern)
                   if (currentSong) setSongHasChanges(true)
+                  setPresetFeedback(`✅ Applied preset: ${presetName || 'Custom'}`)
+                  setTimeout(() => setPresetFeedback(''), 2000)
                 }}
                 onSaveAsPreset={(pattern) => {
                   // Handled by PresetSelector
                 }}
               />
+              {presetFeedback && (
+                <div 
+                  className="preset-feedback" 
+                  role="status" 
+                  aria-live="polite"
+                  style={{
+                    marginTop: '10px',
+                    padding: '8px 12px',
+                    background: 'var(--accent-green)',
+                    color: 'white',
+                    borderRadius: '6px',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    textAlign: 'center'
+                  }}
+                >
+                  {presetFeedback}
+                </div>
+              )}
               <div style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 {isPlaying && currentBeatInMeasure > 0 ? (
                   <>

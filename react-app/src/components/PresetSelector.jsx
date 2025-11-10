@@ -27,7 +27,7 @@ export default function PresetSelector({
     const preset = presets.find(p => p.id === presetId)
     if (preset) {
       setSelectedPresetId(presetId)
-      onApplyPreset(preset.pattern)
+      onApplyPreset(preset.pattern, preset.name)
     }
   }
 
