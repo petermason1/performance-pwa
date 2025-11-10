@@ -281,3 +281,38 @@ export function ComponentName({ prop1, prop2 }) {
 - ✅ Handle errors gracefully
 - ✅ Test on real devices regularly
 
+
+## Development Workflow & Priorities
+
+### Architecture Alignment
+- **Always reference** `/docs/ARCHITECTURE.md` for current tech structure, priority roadmap, and implementation patterns
+- **Stay synced** with architectural decisions: if logic or component boundaries shift, suggest cohesive updates
+- **Surface refactoring opportunities** as you work—add notes to ARCHITECTURE.md for review
+
+### Priority Focus
+- **Start with Priority 1-2 features** from ARCHITECTURE.md:
+  - UI feedback (beat visualization)
+  - Accessibility improvements (ARIA labels, keyboard navigation)
+  - Onboarding (sample setlists, demo messaging)
+- **Break big features into small, testable chunks** for rapid iteration
+- **Guide sprint planning** around priority checklists
+
+### Feature Implementation
+- **Use reusable component patterns** and context providers as outlined in ARCHITECTURE.md
+- **Keep everything typed, testable, and documented**
+- **Update docs and checklists** as new features ship
+- **Auto-generate/update code snippets and documentation** after feature PRs
+
+### Accessibility & Onboarding
+- **Prompt for ARIA guidelines** and keyboard shortcut coverage when needed
+- **Suggest engaging empty states** and helpful overlays that match app context
+- **Complete ARIA audit** across all views (see Priority 1 checklist)
+
+### Code Quality
+- **Spot code smells** and outdated patterns while working
+- **Suggest best-practice refactoring** as features land
+- **Maintain testability** - write tests for new hooks/utilities
+- **Document architectural shifts** in ARCHITECTURE.md
+
+### Summary
+Keep focused on priority checklists, suggest refactoring as features land, automate doc/test generation, and help structure new sprints and features for rapid iteration and clarity. Always sync with ARCHITECTURE.md.
