@@ -96,31 +96,32 @@ function AppContent() {
 
   const activeView = views[currentView] || views.performance
 
-    return (
-      <>
-        <a href="#main-content" className="skip-link">Skip to main content</a>
-        <a href="#navigation" className="skip-link">Skip to navigation</a>
-        <div className="relative min-h-screen flex flex-col text-[var(--color-text-primary)]">
-      <AuthBanner />
-      <AppHeader
-        tabs={TABS}
-        currentView={currentView}
-        onSelect={setCurrentView}
-      />
+  return (
+    <>
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+      <a href="#navigation" className="skip-link">Skip to navigation</a>
+      <div className="relative min-h-screen flex flex-col text-[var(--color-text-primary)]">
+        <AuthBanner />
+        <AppHeader
+          tabs={TABS}
+          currentView={currentView}
+          onSelect={setCurrentView}
+        />
 
-      <main className={`flex-1 w-full max-w-5xl mx-auto px-3 sm:px-4 md:px-6 pb-24 md:pb-12 ${user ? 'pt-20 md:pt-24' : 'pt-6 md:pt-12'}`}>
-        {activeView}
-      </main>
+        <main className={`flex-1 w-full max-w-5xl mx-auto px-3 sm:px-4 md:px-6 pb-24 md:pb-12 ${user ? 'pt-20 md:pt-24' : 'pt-6 md:pt-12'}`}>
+          {activeView}
+        </main>
 
-      <AppFooter
-        tabs={TABS}
-        currentView={currentView}
-        onSelect={setCurrentView}
-      >
-        <span className="tracking-[0.4em] uppercase">Navigate • Perform • Share</span>
-      </AppFooter>
-      <PWAUpdatePrompt />
-    </div>
+        <AppFooter
+          tabs={TABS}
+          currentView={currentView}
+          onSelect={setCurrentView}
+        >
+          <span className="tracking-[0.4em] uppercase">Navigate • Perform • Share</span>
+        </AppFooter>
+        <PWAUpdatePrompt />
+      </div>
+    </>
   )
 }
 
