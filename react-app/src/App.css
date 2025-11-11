@@ -105,6 +105,22 @@ body {
   .md\:hidden { display: none !important; }
 }
 
+/* Sidebar layout adjustments */
+@media (min-width: 768px) {
+  /* Default sidebar width */
+  .app-header.md\:ml-\[240px\],
+  main.md\:ml-\[240px\] {
+    margin-left: 240px;
+    transition: margin-left 0.3s ease;
+  }
+  
+  /* When sidebar is collapsed */
+  body.sidebar-collapsed .app-header.md\:ml-\[240px\],
+  body.sidebar-collapsed main.md\:ml-\[240px\] {
+    margin-left: 64px;
+  }
+}
+
 /* Ensure header is hidden on small screens even if utilities fail */
 .app-header { display: none; }
 @media (min-width: 768px) {

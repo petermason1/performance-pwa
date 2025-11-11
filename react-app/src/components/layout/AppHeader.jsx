@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import MainNav from './MainNav'
 import LoginModal from '../Auth/LoginModal'
 import { useSupabase } from '../../context/SupabaseContext'
 import { useApp } from '../../hooks/useApp'
@@ -7,7 +6,7 @@ import { useRealtimeSession } from '../../hooks/useRealtimeSession'
 import RealtimeSessionModal from '../RealtimeSessionModal'
 import './AppHeader.css'
 
-function AppHeader({ tabs, currentView, onSelect }) {
+function AppHeader() {
   const { user, signOut, loading } = useSupabase()
   const { metronome } = useApp()
   const realtimeSession = useRealtimeSession(metronome)
@@ -24,7 +23,7 @@ function AppHeader({ tabs, currentView, onSelect }) {
 
   return (
     <>
-      <header className="app-header hidden md:block">
+      <header className="app-header hidden md:block md:ml-[240px]">
         <div className="app-header-content">
           <div className="app-header-title">
             <span className="app-header-subtitle">Metronome Suite</span>
@@ -79,15 +78,6 @@ function AppHeader({ tabs, currentView, onSelect }) {
               {loading ? '...' : user ? 'Log Out' : 'Log In'}
             </button>
           </div>
-        </div>
-        <div className="app-header-nav-section">
-          <MainNav
-            tabs={tabs}
-            currentView={currentView}
-            onSelect={onSelect}
-            variant="header"
-            className="px-2"
-          />
         </div>
       </header>
 

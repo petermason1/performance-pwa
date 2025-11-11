@@ -38,13 +38,13 @@ function MainNav({ tabs, currentView, onSelect, variant = 'desktop', className =
   const { navClass, navStyle } = VARIANT_CONFIG[variant] || VARIANT_CONFIG.desktop
   const [showMore, setShowMore] = useState(false)
 
-  // For mobile variant, reduce to core tabs and add a More button
+  // For mobile variant, show all tabs (they'll wrap/scroll if needed)
   let visibleTabs = tabs
   let extraTabs = []
   if (variant === 'mobile') {
-    const core = ['stage', 'metronome', 'setlists', 'songs']
-    visibleTabs = tabs.filter(t => core.includes(t.id))
-    extraTabs = tabs.filter(t => !core.includes(t.id))
+    // Show all tabs on mobile - they'll fit or scroll horizontally
+    visibleTabs = tabs
+    extraTabs = []
   }
 
   return (
@@ -76,62 +76,7 @@ function MainNav({ tabs, currentView, onSelect, variant = 'desktop', className =
             </button>
           )
         })}
-        {variant === 'mobile' && (
-          <button
-            type="button"
-            className={`main-nav-button ${showMore ? 'active' : 'inactive'}`}
-            onClick={() => setShowMore(s => !s)}
-            aria-expanded={showMore}
-            aria-label="More"
-          >
-            <span className="main-nav-icon" aria-hidden="true">⋯</span>
-            <span className="main-nav-label">More</span>
-          </button>
-        )}
       </div>
-
-      {variant === 'mobile' && showMore && (
-        <div className="more-drawer" role="menu" aria-label="More actions" onClick={() => setShowMore(false)}>
-          <div className="more-drawer-content" onClick={(e) => e.stopPropagation()}>
-            {extraTabs.map(t => (
-              <button
-                key={`more-${t.id}`}
-                className="more-item"
-                onClick={() => { onSelect(t.id); setShowMore(false) }}
-                role="menuitem"
-              >
-                <span className="more-icon" aria-hidden="true">{t.icon}</span>
-                <span className="more-label">{t.label}</span>
-              </button>
-            ))}
-            <hr className="more-sep" />
-            <button
-              className="more-item"
-              onClick={() => { dispatchUi({ type: 'OPEN_REALTIME' }); setShowMore(false) }}
-              role="menuitem"
-            >
-              <span className="more-icon" aria-hidden="true">🔴</span>
-              <span className="more-label">Live Sync</span>
-            </button>
-            <button
-              className="more-item"
-              onClick={() => { dispatchUi({ type: 'OPEN_SHORTCUTS' }); setShowMore(false) }}
-              role="menuitem"
-            >
-              <span className="more-icon" aria-hidden="true">⌨️</span>
-              <span className="more-label">Shortcuts</span>
-            </button>
-            <button
-              className="more-item"
-              onClick={() => { dispatchUi({ type: 'TOGGLE_FOCUS_MODE' }); setShowMore(false) }}
-              role="menuitem"
-            >
-              <span className="more-icon" aria-hidden="true">🎯</span>
-              <span className="more-label">{focusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}</span>
-            </button>
-          </div>
-        </div>
-      )}
     </nav>
   )
 }
