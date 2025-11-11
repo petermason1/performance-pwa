@@ -4,14 +4,14 @@
       "src": "react-app/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "react-app/dist"
+        "distDir": "dist"
       }
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "react-app/$1"
+      "dest": "dist/$1"
     }
   ]
 }
