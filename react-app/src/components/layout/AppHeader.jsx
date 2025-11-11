@@ -7,7 +7,7 @@ import RealtimeSessionModal from '../RealtimeSessionModal'
 import MainNav from './MainNav'
 import './AppHeader.css'
 
-function AppHeader({ tabs = [], currentView, onSelect }) {
+function AppHeader({ tabs = [], groups = [], currentView, onSelect }) {
   const { user, signOut, loading } = useSupabase()
   const { metronome } = useApp()
   const realtimeSession = useRealtimeSession(metronome)
@@ -32,7 +32,7 @@ function AppHeader({ tabs = [], currentView, onSelect }) {
         <div className="app-header-content">
           <div className="app-header-title">
             <span className="app-header-subtitle">
-              Smart Metronome
+              ⏱️ Smart Metronome
             </span>
             <span className="app-header-main-title">
               {activeTab ? activeTab.label : 'Live Performance Control'}
@@ -94,6 +94,7 @@ function AppHeader({ tabs = [], currentView, onSelect }) {
             <div className="app-header-nav-shell">
               <MainNav
                 tabs={tabs}
+                groups={groups}
                 currentView={currentView}
                 onSelect={onSelect}
                 variant="header"

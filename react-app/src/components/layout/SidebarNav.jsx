@@ -7,15 +7,20 @@ const NAV_GROUPS = [
   {
     label: 'Overview',
     tabs: [
-      { id: 'dashboard', icon: '🏠', label: 'Dashboard' },
-      { id: 'performance', icon: '🎭', label: 'Performance' },
-      { id: 'stage', icon: '🎤', label: 'Stage Mode' }
+      { id: 'dashboard', icon: '🏠', label: 'Dashboard' }
+    ]
+  },
+  {
+    label: 'Live',
+    tabs: [
+      { id: 'performance', icon: '🎛️', label: 'Performance' },
+      { id: 'stage', icon: '🎤', label: 'Live Stage' }
     ]
   },
   {
     label: 'Setup',
     tabs: [
-      { id: 'metronome', icon: '🎛️', label: 'Metronome' },
+      { id: 'metronome', icon: '⏱️', label: 'Metronome' },
       { id: 'setlists', icon: '📋', label: 'Set Lists' },
       { id: 'songs', icon: '🎵', label: 'Songs' }
     ]
@@ -23,7 +28,7 @@ const NAV_GROUPS = [
   {
     label: 'Control',
     tabs: [
-      { id: 'lights', icon: '🎹', label: 'MIDI Lights' }
+      { id: 'lights', icon: '✨', label: 'Lights' }
     ]
   }
 ]

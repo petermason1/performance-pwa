@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { AppProvider } from './AppContext'
 import { useApp } from './hooks/useApp'
 import { useSupabase } from './context/SupabaseContext'
@@ -20,15 +20,37 @@ import MIDILightsView from './views/MIDILightsView'
 import MetronomeSettingsView from './views/MetronomeSettingsView'
 import StageModeView from './views/StageModeView'
 
-const TABS = [
-  { id: 'dashboard', icon: '🏠', label: 'Dashboard' },
-  { id: 'performance', icon: '🎭', label: 'Performance' },
-  { id: 'stage', icon: '🎤', label: 'Stage Mode' },
-  { id: 'metronome', icon: '🎛️', label: 'Smart Metronome' },
-  { id: 'setlists', icon: '📋', label: 'Set Lists' },
-  { id: 'songs', icon: '🎵', label: 'Songs' },
-  { id: 'lights', icon: '🎹', label: 'MIDI Lights' }
+const NAV_GROUPS = [
+  {
+    label: 'Overview',
+    tabs: [
+      { id: 'dashboard', icon: '🏠', label: 'Dashboard', description: 'Smart Metronome home screen' }
+    ]
+  },
+  {
+    label: 'Live',
+    tabs: [
+      { id: 'performance', icon: '🎛️', label: 'Performance', description: 'Rehearsal control surface' },
+      { id: 'stage', icon: '🎤', label: 'Live Stage', description: 'High-contrast live mode' }
+    ]
+  },
+  {
+    label: 'Preparation',
+    tabs: [
+      { id: 'metronome', icon: '⏱️', label: 'Metronome', description: 'Dial in tempo, accents, presets' },
+      { id: 'setlists', icon: '📋', label: 'Set Lists', description: 'Plan and reorder your show' },
+      { id: 'songs', icon: '📚', label: 'Songs', description: 'Manage BPM, lyrics, presets' }
+    ]
+  },
+  {
+    label: 'Control',
+    tabs: [
+      { id: 'lights', icon: '✨', label: 'Lights', description: 'Program MIDI light cues' }
+    ]
+  }
 ]
+
+const TABS = NAV_GROUPS.flatMap(group => group.tabs)
 
 function AppContent() {
   const { currentView, setCurrentView, importData, dbInitialized, ui, dispatchUi } = useApp()
@@ -154,6 +176,29 @@ function AppContent() {
   const activeView = views[currentView] || views.dashboard
   const activeTabMeta = useMemo(() => TABS.find(tab => tab.id === currentView), [currentView])
 
+  const statusText = useMemo(() => {
+    switch (currentView) {
+      case 'performance':
+        return 'Live controls standing by'
+      case 'stage':
+        return 'Stage view armed for showtime'
+      case 'metronome':
+        return 'Metronome ready to edit'
+      case 'setlists':
+        return 'Set lists synced'
+      case 'songs':
+        return 'Library loaded'
+      case 'lights':
+        return 'Lighting cues available'
+      default:
+        return 'All systems synced'
+    }
+  }, [currentView])
+
+  const handleOpenSettings = useCallback(() => {
+    setCurrentView('metronome')
+  }, [setCurrentView])
+
     return (
       <>
         <a href="#main-content" className="skip-link">Skip to main content</a>
@@ -170,14 +215,27 @@ function AppContent() {
       {/* Global Top Navigation */}
       <AppHeader
         tabs={TABS}
+        groups={NAV_GROUPS}
         currentView={currentView}
         onSelect={setCurrentView}
       />
 
         <main className={`flex-1 w-full max-w-5xl mx-auto pb-24 md:pb-12 md:ml-[240px] ${user ? 'pt-20 md:pt-24' : 'pt-6 md:pt-12'}`}>
         <PageHeader
-          title="Smart Metronome"
+          title="⏱️ Smart Metronome"
           subtitle={activeTabMeta?.label || 'Control Center'}
+          status={statusText}
+          actions={
+            <button
+              type="button"
+              className="btn btn-secondary btn-small page-header-settings"
+              onClick={handleOpenSettings}
+              title="Open Smart Metronome settings"
+            >
+              <span aria-hidden="true" className="page-header-settings-icon">⚙</span>
+              <span className="page-header-settings-label">Settings</span>
+            </button>
+          }
         />
         {activeView}
       </main>

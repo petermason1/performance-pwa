@@ -280,8 +280,9 @@
 
 .app-header-nav-shell {
   position: relative;
-  padding: 0.65rem 0.75rem 0.75rem;
-  max-width: 100%;
+  padding: 0.55rem 0.65rem 0.65rem;
+  max-width: min(960px, 100%);
+  margin: 0 auto;
 }
 
 .app-header-nav-shell::before,

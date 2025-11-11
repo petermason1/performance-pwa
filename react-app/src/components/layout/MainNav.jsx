@@ -33,7 +33,7 @@ const VARIANT_CONFIG = {
   }
 }
 
-function MainNav({ tabs, currentView, onSelect, variant = 'desktop', className = '', style }) {
+function MainNav({ tabs, currentView, onSelect, variant = 'desktop', className = '', style, groups }) {
   const { dispatchUi, focusMode } = useContext(AppContext)
   const { navClass, navStyle } = VARIANT_CONFIG[variant] || VARIANT_CONFIG.desktop
   const [showMore, setShowMore] = useState(false)
@@ -49,6 +49,51 @@ function MainNav({ tabs, currentView, onSelect, variant = 'desktop', className =
 
   const navVariantClass = `main-nav--${variant}`
 
+  const renderButton = (tab) => {
+    const isActive = currentView === tab.id
+    return (
+      <button
+        type="button"
+        key={`${variant}-${tab.id}`}
+        onClick={() => {
+          onSelect(tab.id)
+          setShowMore(false)
+        }}
+        className={`main-nav-button main-nav-button--${variant} ${isActive ? 'active' : 'inactive'}`}
+        aria-label={tab.label}
+        aria-current={isActive ? 'page' : undefined}
+        role="tab"
+        aria-selected={isActive}
+      >
+        <span className="main-nav-icon" aria-hidden="true">{tab.icon}</span>
+        <span className="main-nav-label">{tab.label}</span>
+      </button>
+    )
+  }
+
+  let navBody
+
+  if (variant === 'header' && Array.isArray(groups) && groups.length) {
+    navBody = (
+      <div className="main-nav-container main-nav-container--grouped">
+        {groups.map(group => (
+          <div className="main-nav-group" key={`group-${group.label}`}>
+            <span className="main-nav-group-label">{group.label}</span>
+            <div className="main-nav-group-items">
+              {group.tabs.map(renderButton)}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  } else {
+    navBody = (
+      <div className="main-nav-container">
+        {visibleTabs.map(renderButton)}
+      </div>
+    )
+  }
+
   return (
     <nav
       className={`main-nav ${navVariantClass} ${navClass} ${className}`.trim()}
@@ -56,29 +101,7 @@ function MainNav({ tabs, currentView, onSelect, variant = 'desktop', className =
       role="tablist"
       aria-label="Main navigation"
     >
-      <div className="main-nav-container">
-        {visibleTabs.map(tab => {
-          const isActive = currentView === tab.id
-          return (
-            <button
-              type="button"
-              key={`${variant}-${tab.id}`}
-              onClick={() => {
-                onSelect(tab.id)
-                setShowMore(false)
-              }}
-              className={`main-nav-button main-nav-button--${variant} ${isActive ? 'active' : 'inactive'}`}
-              aria-label={tab.label}
-              aria-current={isActive ? 'page' : undefined}
-              role="tab"
-              aria-selected={isActive}
-            >
-              <span className="main-nav-icon" aria-hidden="true">{tab.icon}</span>
-              <span className="main-nav-label">{tab.label}</span>
-            </button>
-          )
-        })}
-      </div>
+      {navBody}
     </nav>
   )
 }
