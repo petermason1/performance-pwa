@@ -294,13 +294,13 @@ export default function MetronomeSettingsView() {
         </div>
 
         <div className="preview-wrapper" aria-hidden={!visualEnabled}>
-          <BeatFlash
-            isFlashing={false}
-            isAccent={false}
-            currentBeat={1}
+          <BeatPreview
+            bpm={bpm}
             timeSignature={timeSignature}
-            showBeatNumber
             accentPattern={accentPattern}
+            showBeatNumber={true}
+            visualEnabled={visualEnabled}
+            playing={false}
           />
         </div>
       </section>
