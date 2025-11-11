@@ -11,6 +11,8 @@ This app provides a comprehensive performance tool for bands, with a focus on:
 - **Band Collaboration**: Share songs and set lists with bandmates in real-time
 - **Offline-First**: Works without internet; syncs when connected
 
+<!-- Trigger rebuild -->
+
 ## 🛠 Tech Stack
 
 ### Frontend
