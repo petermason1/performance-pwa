@@ -91,12 +91,14 @@ function AppHeader({ tabs = [], currentView, onSelect }) {
 
         {tabs.length > 0 && (
           <div className="app-header-nav-section" aria-label="Primary">
-            <MainNav
-              tabs={tabs}
-              currentView={currentView}
-              onSelect={onSelect}
-              variant="header"
-            />
+            <div className="app-header-nav-shell">
+              <MainNav
+                tabs={tabs}
+                currentView={currentView}
+                onSelect={onSelect}
+                variant="header"
+              />
+            </div>
           </div>
         )}
       </header>

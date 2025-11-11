@@ -8,6 +8,7 @@ import AuthBanner from './components/Auth/AuthBanner'
 import AppHeader from './components/layout/AppHeader'
 import AppFooter from './components/layout/AppFooter'
 import SidebarNav from './components/layout/SidebarNav'
+import PageHeader from './components/layout/PageHeader'
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal'
 
 // Import views
@@ -151,6 +152,7 @@ function AppContent() {
   }), [])
 
   const activeView = views[currentView] || views.dashboard
+  const activeTabMeta = useMemo(() => TABS.find(tab => tab.id === currentView), [currentView])
 
     return (
       <>
@@ -173,6 +175,10 @@ function AppContent() {
       />
 
         <main className={`flex-1 w-full max-w-5xl mx-auto pb-24 md:pb-12 md:ml-[240px] ${user ? 'pt-20 md:pt-24' : 'pt-6 md:pt-12'}`}>
+        <PageHeader
+          title="Smart Metronome"
+          subtitle={activeTabMeta?.label || 'Control Center'}
+        />
         {activeView}
       </main>
 
