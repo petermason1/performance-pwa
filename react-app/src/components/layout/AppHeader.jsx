@@ -6,7 +6,7 @@ import { useRealtimeSession } from '../../hooks/useRealtimeSession'
 import RealtimeSessionModal from '../RealtimeSessionModal'
 import './AppHeader.css'
 
-function AppHeader({ tabs = [], groups = [], currentView, onSelect }) {
+function AppHeader({ tabs = [], groups = [], currentView, onSelect, activeTab, statusText, onOpenSettings }) {
   const { user, signOut, loading } = useSupabase()
   const { metronome } = useApp()
   const realtimeSession = useRealtimeSession(metronome)
@@ -22,25 +22,36 @@ function AppHeader({ tabs = [], groups = [], currentView, onSelect }) {
     }
   }
 
-  const activeTab = useMemo(() => {
-    return tabs.find(tab => tab.id === currentView) || tabs[0] || null
-  }, [tabs, currentView])
-
   return (
     <>
       <header className="app-header">
         <div className="app-header-content">
+          {/* Left: Menu Button */}
+          <button
+            onClick={() => setShowNavMenu(!showNavMenu)}
+            className="app-header-menu-button"
+            aria-label="Open navigation menu"
+            aria-expanded={showNavMenu}
+          >
+            <span className="app-header-menu-icon" aria-hidden="true">☰</span>
+            <span className="app-header-menu-label">Menu</span>
+          </button>
+
+          {/* Center: Branding */}
+          <div className="app-header-brand-section">
+            <div className="app-header-brand">
+              <span className="app-header-logo" aria-hidden="true">⏱️</span>
+              <span className="app-header-brand-text">Smart Metronome</span>
+            </div>
+            {activeTab && (
+              <span className="app-header-status">
+                {activeTab.description || activeTab.label}
+              </span>
+            )}
+          </div>
+
+          {/* Right: Actions */}
           <div className="app-header-actions">
-            {/* Navigation Menu Button */}
-            <button
-              onClick={() => setShowNavMenu(!showNavMenu)}
-              className="app-header-menu-button"
-              aria-label="Open navigation menu"
-              aria-expanded={showNavMenu}
-            >
-              <span className="app-header-menu-icon" aria-hidden="true">☰</span>
-              <span className="app-header-menu-label">Menu</span>
-            </button>
             {/* Session Status Indicator */}
             {realtimeSession.connectionStatus === 'connected' && (
               <button

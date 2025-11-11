@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useSupabase } from '../../context/SupabaseContext'
+import './LoginModal.css'
 
 export default function LoginModal({ onClose }) {
   const { signIn, signUp, isOnline } = useSupabase()
@@ -58,117 +59,137 @@ export default function LoginModal({ onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-      <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-glass-border)] rounded-2xl p-6 w-full max-w-md shadow-2xl">
-        <h2 className="text-2xl font-bold mb-4 text-[var(--color-text-primary)]">
-          {mode === 'login' ? '🔐 Log In' : '🎸 Sign Up'}
-        </h2>
+    <div className="login-modal-overlay" onClick={onClose}>
+      <div className="login-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="login-modal-header">
+          <h2 className="login-modal-title">
+            <span aria-hidden="true">{mode === 'login' ? '🔐' : '🎸'}</span>
+            {mode === 'login' ? 'Log In' : 'Sign Up'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="login-modal-close"
+            aria-label="Close modal"
+          >
+            ✕
+          </button>
+        </div>
 
         {successMessage && (
-          <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
+          <div className="login-modal-alert login-modal-alert--success">
+            <span aria-hidden="true">✅</span>
             {successMessage}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="login-modal-alert login-modal-alert--error">
+            <span aria-hidden="true">⚠️</span>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="login-modal-form">
           {mode === 'signup' && (
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+            <div className="login-modal-field">
+              <label htmlFor="displayName" className="login-modal-label">
                 Display Name
               </label>
               <input
+                id="displayName"
                 type="text"
                 placeholder="Your name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg bg-[var(--color-bg-tertiary)] border border-[var(--color-glass-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)]/50 focus:outline-none focus:border-[var(--color-accent-cyan)] transition-colors"
+                className="login-modal-input"
                 required
               />
             </div>
           )}
           
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
-              Email
+          <div className="login-modal-field">
+            <label htmlFor="email" className="login-modal-label">
+              Email Address
             </label>
             <input
+              id="email"
               type="email"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg bg-[var(--color-bg-tertiary)] border border-[var(--color-glass-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)]/50 focus:outline-none focus:border-[var(--color-accent-cyan)] transition-colors"
+              className="login-modal-input"
               required
+              autoComplete="email"
             />
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+          <div className="login-modal-field">
+            <label htmlFor="password" className="login-modal-label">
               Password
             </label>
             <input
+              id="password"
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg bg-[var(--color-bg-tertiary)] border border-[var(--color-glass-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)]/50 focus:outline-none focus:border-[var(--color-accent-cyan)] transition-colors"
+              className="login-modal-input"
               required
               minLength={6}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
             />
           </div>
-
-          {error && (
-            <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-              {error}
-            </div>
-          )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full px-4 py-3 bg-[var(--color-accent-cyan)] text-black rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+            className="login-modal-submit"
           >
             {loading ? '⏳ Loading...' : mode === 'login' ? 'Log In' : 'Sign Up'}
           </button>
         </form>
 
-        <div className="mt-4 text-center text-sm">
-          {mode === 'login' ? (
-            <>
-              Don't have an account?{' '}
-              <button
-                onClick={() => {
-                  setMode('signup')
-                  setError(null)
-                  setSuccessMessage(null)
-                }}
-                className="text-[var(--color-accent-cyan)] hover:underline font-semibold"
-              >
-                Sign up
-              </button>
-            </>
-          ) : (
-            <>
-              Already have an account?{' '}
-              <button
-                onClick={() => {
-                  setMode('login')
-                  setError(null)
-                  setSuccessMessage(null)
-                }}
-                className="text-[var(--color-accent-cyan)] hover:underline font-semibold"
-              >
-                Log in
-              </button>
-            </>
-          )}
-        </div>
+        <div className="login-modal-footer">
+          <div className="login-modal-toggle">
+            {mode === 'login' ? (
+              <>
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('signup')
+                    setError(null)
+                    setSuccessMessage(null)
+                  }}
+                >
+                  Sign up
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('login')
+                    setError(null)
+                    setSuccessMessage(null)
+                  }}
+                >
+                  Log in
+                </button>
+              </>
+            )}
+          </div>
 
-        <button
-          onClick={onClose}
-          className="mt-4 w-full text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-        >
-          Continue offline →
-        </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="login-modal-offline"
+          >
+            Continue offline →
+          </button>
+        </div>
       </div>
     </div>
   )

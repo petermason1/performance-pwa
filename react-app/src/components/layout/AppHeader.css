@@ -1,15 +1,13 @@
 .app-header {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   z-index: 50;
   width: 100%;
-  background: rgba(10, 14, 26, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0, 217, 255, 0.15);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, rgba(10, 14, 26, 0.98), rgba(18, 24, 39, 0.98));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 2px solid var(--accent-cyan-bold);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05), var(--glow-cyan);
 }
 
 .app-header-content {
@@ -17,9 +15,29 @@
   margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: var(--space-sm) var(--space-lg);
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
   gap: var(--space-md);
+}
+
+.app-header-brand-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .app-header-brand-section {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .app-header-status {
+    display: none;
+  }
 }
 
 @media (max-width: 640px) {
@@ -27,18 +45,30 @@
     padding: var(--space-sm) var(--space-md);
     gap: var(--space-sm);
   }
+
+  .app-header-brand-text {
+    font-size: 1rem;
+  }
 }
 
 @media (max-width: 480px) {
   .app-header-content {
     padding: var(--space-sm);
-    gap: var(--space-sm);
+    gap: var(--space-xs);
+  }
+
+  .app-header-menu-label {
+    display: none;
   }
 }
 
 @media (max-width: 360px) {
   .app-header-content {
     padding: var(--space-xs) var(--space-sm);
+  }
+
+  .app-header-brand-text {
+    font-size: 0.9rem;
   }
 }
 
@@ -47,15 +77,6 @@
     padding: var(--space-xs);
     gap: var(--space-xs);
   }
-}
-
-.app-header-title {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
 }
 
 .app-header-brand {

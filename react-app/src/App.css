@@ -126,7 +126,7 @@ body {
     flex-direction: column;
     color: var(--text-primary);
     text-rendering: optimizeLegibility;
-    padding-top: 56px;
+    padding-top: 0;
 }
 
 .app-shell-main {

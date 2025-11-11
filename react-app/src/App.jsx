@@ -213,30 +213,15 @@ function AppContent() {
         <div className="app-shell">
       <AuthBanner />
 
-      {/* Minimal Top Bar - Menu + Auth */}
+      {/* Integrated Header with Menu + Branding */}
       <AppHeader
         tabs={TABS}
         groups={NAV_GROUPS}
         currentView={currentView}
         onSelect={setCurrentView}
-      />
-
-      {/* Main Branded Page Header - Appears on every page */}
-      <PageHeader
-        title="⏱️ Smart Metronome"
-        subtitle={activeTabMeta?.label || 'Control Center'}
-        status={statusText}
-        actions={
-          <button
-            type="button"
-            className="btn btn-secondary btn-small page-header-settings"
-            onClick={handleOpenSettings}
-            title="Open Smart Metronome settings"
-          >
-            <span aria-hidden="true" className="page-header-settings-icon">⚙</span>
-            <span className="page-header-settings-label">Settings</span>
-          </button>
-        }
+        activeTab={activeTabMeta}
+        statusText={statusText}
+        onOpenSettings={handleOpenSettings}
       />
 
         <main className={`app-shell-main ${user ? 'has-user' : ''}`}>
