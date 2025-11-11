@@ -265,3 +265,142 @@ header h1 {
 .test-feedback {
   animation: fadeIn 0.3s ease;
 }
+
+@media (max-width: 480px) {
+  .midi-controls {
+    padding: 1rem 0.5rem;
+  }
+
+  header {
+    padding: 1rem 0;
+    margin-bottom: 1.5rem;
+  }
+
+  header h1 {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+  }
+
+  .control-group {
+    padding: 1rem;
+    border-radius: 0.875rem;
+    margin-bottom: 1rem;
+  }
+
+  .control-group label {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .control-group select {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    padding-right: 2.5rem;
+  }
+
+  .note-grid {
+    grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .note-grid button {
+    padding: 0.625rem 0.375rem;
+    font-size: 0.8rem;
+    min-height: 50px;
+  }
+
+  .btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.85rem;
+    width: 100%;
+  }
+
+  .alert {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .midi-controls {
+    padding: 0.75rem 0.375rem;
+  }
+
+  header {
+    padding: 0.75rem 0;
+  }
+
+  header h1 {
+    font-size: 1.4rem;
+  }
+
+  .control-group {
+    padding: 0.875rem;
+  }
+
+  .note-grid {
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    gap: 0.375rem;
+  }
+
+  .note-grid button {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+    min-height: 45px;
+  }
+
+  .btn {
+    padding: 0.625rem 1rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .midi-controls {
+    padding: 0.5rem 0.25rem;
+  }
+
+  header {
+    padding: 0.5rem 0;
+    margin-bottom: 1rem;
+  }
+
+  header h1 {
+    font-size: 1.25rem;
+  }
+
+  .control-group {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .control-group label {
+    font-size: 0.85rem;
+  }
+
+  .control-group select {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.85rem;
+    padding-right: 2rem;
+  }
+
+  .note-grid {
+    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+    gap: 0.25rem;
+    padding: 0.5rem;
+  }
+
+  .note-grid button {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.7rem;
+    min-height: 40px;
+  }
+
+  .btn {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.75rem;
+  }
+
+  .alert {
+    padding: 0.875rem;
+  }
+}

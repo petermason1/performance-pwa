@@ -511,3 +511,82 @@
   background: rgba(0, 217, 255, 0.5);
 }
 
+@media (max-width: 360px) {
+  .performance-view-header {
+    padding: 0.75rem 0 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .performance-view-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .setup-mode-container {
+    padding: 1rem 0.75rem 1.25rem;
+  }
+
+  .setlist-section {
+    gap: 0.75rem;
+  }
+
+  .song-item-card {
+    padding: 0.875rem;
+    gap: 0.75rem;
+  }
+
+  .song-name {
+    font-size: 0.95rem;
+  }
+
+  .song-artist-small,
+  .song-bpm-display {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .performance-view-header {
+    padding: 0.5rem 0 0.5rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .performance-view-header h1 {
+    font-size: 1.35rem;
+  }
+
+  .setup-mode-container {
+    padding: 0.875rem 0.625rem 1rem;
+    border-radius: 1rem;
+  }
+
+  .setlist-section {
+    gap: 0.625rem;
+  }
+
+  .setlist-select,
+  .setlist-button {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.85rem;
+  }
+
+  .song-item-card {
+    padding: 0.75rem;
+    gap: 0.625rem;
+    border-radius: 0.75rem;
+  }
+
+  .song-number {
+    font-size: 0.9rem;
+    min-width: 1.75rem;
+  }
+
+  .song-name {
+    font-size: 0.9rem;
+  }
+
+  .song-artist-small,
+  .song-bpm-display {
+    font-size: 0.75rem;
+  }
+}
+
