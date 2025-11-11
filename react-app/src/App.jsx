@@ -7,7 +7,6 @@ import PWAUpdatePrompt from './components/PWAUpdatePrompt'
 import AuthBanner from './components/Auth/AuthBanner'
 import AppHeader from './components/layout/AppHeader'
 import AppFooter from './components/layout/AppFooter'
-import SidebarNav from './components/layout/SidebarNav'
 import PageHeader from './components/layout/PageHeader'
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal'
 
@@ -211,15 +210,9 @@ function AppContent() {
       <>
         <a href="#main-content" className="skip-link">Skip to main content</a>
         <a href="#navigation" className="skip-link">Skip to navigation</a>
-        <div className="relative min-h-screen flex flex-col text-[var(--color-text-primary)]">
+        <div className="app-shell">
       <AuthBanner />
-      
-      {/* Desktop Sidebar Navigation */}
-      <SidebarNav
-        currentView={currentView}
-        onSelect={setCurrentView}
-      />
-      
+
       {/* Global Top Navigation */}
       <AppHeader
         tabs={TABS}
@@ -228,7 +221,7 @@ function AppContent() {
         onSelect={setCurrentView}
       />
 
-        <main className={`flex-1 w-full max-w-5xl mx-auto pb-24 md:pb-12 md:ml-[240px] ${user ? 'pt-20 md:pt-24' : 'pt-6 md:pt-12'}`}>
+        <main className={`app-shell-main ${user ? 'has-user' : ''}`}>
         <PageHeader
           title="⏱️ Smart Metronome"
           subtitle={activeTabMeta?.label || 'Control Center'}
