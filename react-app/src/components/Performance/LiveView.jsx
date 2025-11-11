@@ -42,7 +42,8 @@ export default function LiveView({
   onAccentVolumeChange,
   onRegularVolumeChange,
   onSubdivisionVolumeChange,
-  onMasterVolumeChange
+  onMasterVolumeChange,
+  onToggleAccent
 }) {
   const cycleTimeSignature = () => {
     const nextSig = timeSignature === 4 ? 3 : timeSignature === 3 ? 6 : 4
@@ -88,6 +89,8 @@ export default function LiveView({
           timeSignature={timeSignature}
           showBeatNumber={showBeatNumber}
           accentPattern={accentPattern}
+          editableAccents={Boolean(onToggleAccent)}
+          onToggleAccent={onToggleAccent}
         />
       )}
 

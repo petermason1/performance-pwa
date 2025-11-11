@@ -746,6 +746,7 @@ export default function PerformanceView() {
           onRegularVolumeChange={setRegularVolume}
           onSubdivisionVolumeChange={setSubdivisionVolume}
           onMasterVolumeChange={setMasterVolume}
+          onToggleAccent={(beatNumber) => toggleBeatAccent(beatNumber - 1)}
         />
       )}
 
@@ -962,6 +963,7 @@ export default function PerformanceView() {
           onRegularVolumeChange={setRegularVolume}
           onSubdivisionVolumeChange={setSubdivisionVolume}
           onMasterVolumeChange={setMasterVolume}
+          onToggleAccent={(beatNumber) => toggleBeatAccent(beatNumber - 1)}
         />
       )}
 
@@ -1722,6 +1724,7 @@ export default function PerformanceView() {
               onRegularVolumeChange={setRegularVolume}
               onSubdivisionVolumeChange={setSubdivisionVolume}
               onMasterVolumeChange={setMasterVolume}
+              onToggleAccent={(beatNumber) => toggleBeatAccent(beatNumber - 1)}
             />
           )}
 

@@ -376,6 +376,17 @@ export default function StageModeView() {
             accentPattern={metronome?.accentPattern || activeSong?.accentPattern || null}
             variant={isFullscreen ? 'fullscreen' : 'stage'}
             colorCoded={colorCodedBeats}
+            editableAccents={!isLiveLocked}
+            onToggleAccent={(beatNumber) => {
+              if (isLiveLocked) return
+              const sig = metronome?.timeSignature || activeSong?.timeSignature || 4
+              const current = Array.isArray(metronome?.accentPattern) && metronome.accentPattern.length === sig 
+                ? [...metronome.accentPattern] 
+                : new Array(sig).fill(false)
+              const idx = beatNumber - 1
+              current[idx] = !current[idx]
+              setMetronomeAccentPattern?.(current.some(Boolean) ? current : null)
+            }}
           />
         </div>
 

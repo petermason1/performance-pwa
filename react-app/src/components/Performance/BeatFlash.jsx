@@ -8,7 +8,9 @@ export default function BeatFlash({
   showBeatNumber, 
   accentPattern = null,
   variant = 'normal', // 'normal' | 'stage' | 'fullscreen'
-  colorCoded = false // Enable color-coded beats (red=downbeat, blue=accent, white=regular)
+  colorCoded = false, // Enable color-coded beats (red=downbeat, blue=accent, white=regular)
+  editableAccents = false,
+  onToggleAccent // (beatNumber: 1-based) => void
 }) {
   // Generate beat indicator dots with accent pattern awareness
   const beatDots = Array.from({ length: timeSignature }, (_, i) => i + 1)
@@ -34,6 +36,14 @@ export default function BeatFlash({
   }
   
   const beatColorType = getBeatColorType()
+
+  const handleKeyToggle = (e, beat) => {
+    if (!editableAccents || !onToggleAccent) return
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onToggleAccent(beat)
+    }
+  }
 
   return (
     <div className={`beat-flash-container beat-flash-${variant} ${colorCoded ? 'color-coded' : ''}`} role="region" aria-label="Beat indicator">
@@ -78,12 +88,18 @@ export default function BeatFlash({
         {beatDots.map((beat) => {
           const isCurrentBeat = beat === currentBeat
           const isAccentedBeat = isBeatAccented(beat)
+          const isEditable = Boolean(editableAccents && onToggleAccent)
           return (
             <div
               key={beat}
-              className={`beat-dot ${isCurrentBeat ? 'active' : ''} ${isAccentedBeat ? 'accent' : ''}`}
+              className={`beat-dot ${isCurrentBeat ? 'active' : ''} ${isAccentedBeat ? 'accent' : ''} ${isEditable ? 'editable' : ''}`}
               aria-label={`Beat ${beat}${isAccentedBeat ? ' (accented)' : ''}${isCurrentBeat ? ' - current' : ''}`}
               title={`Beat ${beat}${isAccentedBeat ? ' - Accent' : ''}`}
+              role={isEditable ? 'button' : undefined}
+              aria-pressed={isEditable ? isAccentedBeat : undefined}
+              tabIndex={isEditable ? 0 : -1}
+              onClick={isEditable ? () => onToggleAccent(beat) : undefined}
+              onKeyDown={isEditable ? (e) => handleKeyToggle(e, beat) : undefined}
             />
           )
         })}

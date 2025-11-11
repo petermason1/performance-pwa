@@ -238,6 +238,8 @@
   box-shadow: 0 0 10px rgba(255, 68, 85, 0.6);
 }
 
+.beat-dot.editable { cursor: pointer; }
+.beat-dot.editable:focus { outline: 2px solid #00d9ff; outline-offset: 2px; }
 
 
 /* URGENT: Make beat flash impossible to miss */
