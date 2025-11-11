@@ -11,14 +11,14 @@ const NAV_GROUPS = [
     ]
   },
   {
-    label: 'Live',
+    label: 'Live Performance',
     tabs: [
       { id: 'performance', icon: '🎛️', label: 'Performance' },
       { id: 'stage', icon: '🎤', label: 'Live Stage' }
     ]
   },
   {
-    label: 'Setup',
+    label: 'Preparation',
     tabs: [
       { id: 'metronome', icon: '⏱️', label: 'Metronome' },
       { id: 'setlists', icon: '📋', label: 'Set Lists' },
@@ -26,9 +26,9 @@ const NAV_GROUPS = [
     ]
   },
   {
-    label: 'Control',
+    label: 'Control Center',
     tabs: [
-      { id: 'lights', icon: '✨', label: 'Lights' }
+      { id: 'lights', icon: '🌈', label: 'Lights' }
     ]
   }
 ]

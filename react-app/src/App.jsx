@@ -22,30 +22,38 @@ import StageModeView from './views/StageModeView'
 
 const NAV_GROUPS = [
   {
+    icon: '🛰️',
     label: 'Overview',
+    helper: 'Check system status and quick stats',
     tabs: [
-      { id: 'dashboard', icon: '🏠', label: 'Dashboard', description: 'Smart Metronome home screen' }
+      { id: 'dashboard', icon: '🏠', label: 'Dashboard', description: 'Mission control for Smart Metronome' }
     ]
   },
   {
-    label: 'Live',
+    icon: '🎚️',
+    label: 'Live Performance',
+    helper: 'On-stage and rehearsal tools',
     tabs: [
-      { id: 'performance', icon: '🎛️', label: 'Performance', description: 'Rehearsal control surface' },
-      { id: 'stage', icon: '🎤', label: 'Live Stage', description: 'High-contrast live mode' }
+      { id: 'performance', icon: '🎛️', label: 'Performance', description: 'Rehearsal workstation', priority: 'primary', actionLabel: 'Open Performance' },
+      { id: 'stage', icon: '🎤', label: 'Live Stage', description: 'Minimal live view', actionLabel: 'Launch Live Stage' }
     ]
   },
   {
+    icon: '🧭',
     label: 'Preparation',
+    helper: 'Program sets and adjust tempo',
     tabs: [
-      { id: 'metronome', icon: '⏱️', label: 'Metronome', description: 'Dial in tempo, accents, presets' },
-      { id: 'setlists', icon: '📋', label: 'Set Lists', description: 'Plan and reorder your show' },
-      { id: 'songs', icon: '📚', label: 'Songs', description: 'Manage BPM, lyrics, presets' }
+      { id: 'metronome', icon: '⏱️', label: 'Metronome', description: 'Dial in tempo, accents & presets' },
+      { id: 'setlists', icon: '📋', label: 'Set Lists', description: 'Plan, reorder and save shows', actionLabel: 'Create Set List' },
+      { id: 'songs', icon: '📚', label: 'Songs', description: 'Manage song BPM, lyrics & presets' }
     ]
   },
   {
-    label: 'Control',
+    icon: '✨',
+    label: 'Control Center',
+    helper: 'Automation & lighting cues',
     tabs: [
-      { id: 'lights', icon: '✨', label: 'Lights', description: 'Program MIDI light cues' }
+      { id: 'lights', icon: '🌈', label: 'Lights', description: 'Program MIDI lighting cues' }
     ]
   }
 ]

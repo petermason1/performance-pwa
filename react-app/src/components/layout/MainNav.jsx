@@ -59,11 +59,12 @@ function MainNav({ tabs, currentView, onSelect, variant = 'desktop', className =
           onSelect(tab.id)
           setShowMore(false)
         }}
-        className={`main-nav-button main-nav-button--${variant} ${isActive ? 'active' : 'inactive'}`}
+        className={`main-nav-button main-nav-button--${variant} ${tab.priority ? `is-${tab.priority}` : ''} ${isActive ? 'active' : 'inactive'}`}
         aria-label={tab.label}
         aria-current={isActive ? 'page' : undefined}
         role="tab"
         aria-selected={isActive}
+        title={tab.description}
       >
         <span className="main-nav-icon" aria-hidden="true">{tab.icon}</span>
         <span className="main-nav-label">{tab.label}</span>
@@ -78,9 +79,31 @@ function MainNav({ tabs, currentView, onSelect, variant = 'desktop', className =
       <div className="main-nav-container main-nav-container--grouped">
         {groups.map(group => (
           <div className="main-nav-group" key={`group-${group.label}`}>
-            <span className="main-nav-group-label">{group.label}</span>
+            <div className="main-nav-group-header">
+              <span className="main-nav-group-icon" aria-hidden="true">{group.icon}</span>
+              <div className="main-nav-group-text">
+                <span className="main-nav-group-label">{group.label}</span>
+                {group.helper && <span className="main-nav-group-helper">{group.helper}</span>}
+              </div>
+            </div>
             <div className="main-nav-group-items">
-              {group.tabs.map(renderButton)}
+              {group.tabs.map(tab => (
+                <div className="main-nav-item-wrapper" key={`${group.label}-${tab.id}`}>
+                  {renderButton(tab)}
+                  {tab.actionLabel && (
+                    <button
+                      type="button"
+                      className="main-nav-action"
+                      onClick={() => {
+                        onSelect(tab.id)
+                        setShowMore(false)
+                      }}
+                    >
+                      {tab.actionLabel}
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         ))}
