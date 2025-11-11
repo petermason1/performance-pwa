@@ -122,6 +122,26 @@ export default function SongsView() {
           <button className="btn btn-secondary" onClick={() => setShowExportModal(true)}>
             Import Data
           </button>
+          <button 
+            className="btn btn-secondary" 
+            onClick={async () => {
+              try {
+                const { syncManager } = await import('../lib/syncManager')
+                const result = await syncManager.fetchExampleSongs()
+                if (result.success) {
+                  alert(`✅ Loaded ${result.count} example songs!`)
+                  refreshData()
+                } else {
+                  alert(`❌ Failed to load example songs: ${result.error?.message || 'Unknown error'}`)
+                }
+              } catch (error) {
+                alert(`❌ Error: ${error.message}`)
+              }
+            }}
+            title="Refresh example songs from Supabase"
+          >
+            🔄 Refresh Examples
+          </button>
         </div>
       </header>
       
