@@ -32,7 +32,7 @@ function AppHeader({ tabs = [], currentView, onSelect }) {
         <div className="app-header-content">
           <div className="app-header-title">
             <span className="app-header-subtitle">
-              Metronome Suite
+              Smart Metronome
             </span>
             <span className="app-header-main-title">
               {activeTab ? activeTab.label : 'Live Performance Control'}

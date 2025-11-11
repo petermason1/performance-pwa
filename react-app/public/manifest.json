@@ -1,7 +1,7 @@
 {
-  "name": "Performance PWA",
-  "short_name": "Performance",
-  "description": "Set lists, lyrics, metronome, Helix presets, and MIDI lighting control",
+  "name": "Smart Metronome",
+  "short_name": "Smart Metronome",
+  "description": "Smart Metronome with set lists, lyrics, Helix presets, and MIDI lighting control",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

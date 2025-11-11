@@ -208,7 +208,7 @@ export default function DashboardView() {
           <div className="dashboard-hero-text">
             <span className="dashboard-hero-greeting">{heroGreeting}</span>
             <span className="dashboard-hero-subtitle">{heroSubtitle}</span>
-            <h1 className="dashboard-hero-title">Metronome Suite Control Center</h1>
+            <h1 className="dashboard-hero-title">Smart Metronome Control Center</h1>
             <p className="dashboard-hero-description">
               Jump into performance, prep your set, and verify every device is locked to the click.
             </p>

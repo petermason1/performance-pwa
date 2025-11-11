@@ -23,7 +23,7 @@ const TABS = [
   { id: 'dashboard', icon: '🏠', label: 'Dashboard' },
   { id: 'performance', icon: '🎭', label: 'Performance' },
   { id: 'stage', icon: '🎤', label: 'Stage Mode' },
-  { id: 'metronome', icon: '🎛️', label: 'Metronome' },
+  { id: 'metronome', icon: '🎛️', label: 'Smart Metronome' },
   { id: 'setlists', icon: '📋', label: 'Set Lists' },
   { id: 'songs', icon: '🎵', label: 'Songs' },
   { id: 'lights', icon: '🎹', label: 'MIDI Lights' }
