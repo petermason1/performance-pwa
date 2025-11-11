@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from '../hooks/useApp'
 import { useRealtimeSession } from '../hooks/useRealtimeSession'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import BeatFlash from '../components/Performance/BeatFlash'
 import RealtimeSessionModal from '../components/RealtimeSessionModal'
 import { announce } from '../utils/accessibility'
@@ -190,6 +191,35 @@ export default function StageModeView() {
     setVisualEnabled(enabled)
     localStorage.setItem('metronomeVisualEnabled', enabled ? 'true' : 'false')
   }, [])
+
+  const handleStopMetronome = useCallback(() => {
+    if (isPlaying) {
+      toggle()
+    }
+  }, [isPlaying, toggle])
+
+  const handleIncreaseBPM = useCallback(() => {
+    if (!isLiveLocked) {
+      updateBPM(Math.min(bpm + 1, 300))
+    }
+  }, [bpm, updateBPM, isLiveLocked])
+
+  const handleDecreaseBPM = useCallback(() => {
+    if (!isLiveLocked) {
+      updateBPM(Math.max(bpm - 1, 40))
+    }
+  }, [bpm, updateBPM, isLiveLocked])
+
+  // Keyboard shortcuts for Stage Mode
+  useKeyboardShortcuts({
+    onToggleMetronome: handleToggleMetronome,
+    onPreviousSong: handlePreviousSong,
+    onNextSong: handleNextSong,
+    onStopMetronome: handleStopMetronome,
+    onIncreaseBPM: handleIncreaseBPM,
+    onDecreaseBPM: handleDecreaseBPM,
+    enabled: !isLiveLocked // Disable shortcuts when live locked
+  })
 
   const handleLiveToggle = useCallback(() => {
     if (!isLiveLocked) {

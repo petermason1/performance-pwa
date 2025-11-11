@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 const shortcuts = [
   {
     category: 'Metronome Control',
+    views: ['Performance', 'Stage Mode'],
     items: [
       { key: 'Space', description: 'Play/Pause metronome' },
       { key: 'Escape', description: 'Stop metronome' },
@@ -12,13 +13,23 @@ const shortcuts = [
   },
   {
     category: 'Song Navigation',
+    views: ['Performance', 'Stage Mode'],
     items: [
       { key: '← Left Arrow', description: 'Previous song' },
       { key: '→ Right Arrow', description: 'Next song' },
     ]
   },
   {
+    category: 'Songs View',
+    views: ['Songs'],
+    items: [
+      { key: 'N', description: 'New song' },
+      { key: 'Escape', description: 'Close modals' },
+    ]
+  },
+  {
     category: 'General',
+    views: ['All Views'],
     items: [
       { key: '? or /', description: 'Show keyboard shortcuts (this help)' },
     ]
@@ -79,7 +90,7 @@ export default function KeyboardShortcutsModal({ onClose }) {
           {shortcuts.map((category, catIndex) => (
             <div key={catIndex}>
               <h3 style={{ 
-                marginBottom: '12px', 
+                marginBottom: '8px', 
                 fontSize: '1.1rem',
                 color: 'var(--primary-color)',
                 borderBottom: '2px solid var(--border)',
@@ -87,6 +98,16 @@ export default function KeyboardShortcutsModal({ onClose }) {
               }}>
                 {category.category}
               </h3>
+              {category.views && (
+                <div style={{ 
+                  fontSize: '0.75rem', 
+                  color: 'var(--text-tertiary)', 
+                  marginBottom: '12px',
+                  fontStyle: 'italic'
+                }}>
+                  Available in: {category.views.join(', ')}
+                </div>
+              )}
               <div style={{ display: 'grid', gap: '10px' }}>
                 {category.items.map((item, itemIndex) => (
                   <div 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AppProvider } from './AppContext'
 import { useApp } from './hooks/useApp'
 import { useSupabase } from './context/SupabaseContext'
@@ -8,6 +8,7 @@ import AuthBanner from './components/Auth/AuthBanner'
 import AppHeader from './components/layout/AppHeader'
 import AppFooter from './components/layout/AppFooter'
 import SidebarNav from './components/layout/SidebarNav'
+import KeyboardShortcutsModal from './components/KeyboardShortcutsModal'
 
 // Import views
 import PerformanceView from './views/PerformanceView'
@@ -27,8 +28,9 @@ const TABS = [
 ]
 
 function AppContent() {
-  const { currentView, setCurrentView, importData, dbInitialized } = useApp()
+  const { currentView, setCurrentView, importData, dbInitialized, ui, dispatchUi } = useApp()
   const { user } = useSupabase()
+  const [showShortcuts, setShowShortcuts] = useState(false)
 
   // Persist and restore currentView
   useEffect(() => {
@@ -41,6 +43,38 @@ function AppContent() {
   useEffect(() => {
     localStorage.setItem('appCurrentView', currentView)
   }, [currentView])
+
+  // Global keyboard shortcuts handler (? key to show shortcuts)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't trigger when typing in inputs
+      if (
+        e.target.tagName === 'INPUT' ||
+        e.target.tagName === 'TEXTAREA' ||
+        e.target.isContentEditable ||
+        e.target.closest('.modal')
+      ) {
+        return
+      }
+
+      // ? or / to show shortcuts
+      if (e.key === '?' || (e.key === '/' && !e.shiftKey)) {
+        e.preventDefault()
+        setShowShortcuts(true)
+        dispatchUi({ type: 'OPEN_SHORTCUTS' })
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [dispatchUi])
+
+  // Sync shortcuts modal with UI state
+  useEffect(() => {
+    if (ui.openShortcuts && !showShortcuts) {
+      setShowShortcuts(true)
+    }
+  }, [ui.openShortcuts, showShortcuts])
 
   // Handle share link imports
   useEffect(() => {
@@ -143,6 +177,16 @@ function AppContent() {
         <span className="tracking-[0.4em] uppercase">Navigate • Perform • Share</span>
       </AppFooter>
       <PWAUpdatePrompt />
+      
+      {/* Global Keyboard Shortcuts Modal */}
+      {showShortcuts && (
+        <KeyboardShortcutsModal 
+          onClose={() => { 
+            setShowShortcuts(false)
+            dispatchUi({ type: 'CLOSE_SHORTCUTS' })
+          }} 
+        />
+      )}
     </div>
     </>
   )

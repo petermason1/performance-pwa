@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../hooks/useApp'
 import SongModal from '../components/SongModal'
 import ImportSongsModal from '../components/ImportSongsModal'
@@ -55,6 +55,44 @@ export default function SongsView() {
     setSortBy(newSort)
     localStorage.setItem('songSortBy', newSort)
   }
+
+  // Keyboard shortcuts for Songs view
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't trigger when typing in inputs or modals are open
+      if (
+        e.target.tagName === 'INPUT' ||
+        e.target.tagName === 'TEXTAREA' ||
+        e.target.isContentEditable ||
+        showSongModal ||
+        showImportModal ||
+        showExportModal
+      ) {
+        return
+      }
+
+      switch (e.key) {
+        case 'n':
+        case 'N':
+          if (!e.ctrlKey && !e.metaKey) {
+            e.preventDefault()
+            setEditingSong(null)
+            setShowSongModal(true)
+          }
+          break
+        case 'Escape':
+          // Close any open modals
+          if (showSongModal) setShowSongModal(false)
+          if (showImportModal) setShowImportModal(false)
+          if (showExportModal) setShowExportModal(false)
+          setEditingSong(null)
+          break
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [showSongModal, showImportModal, showExportModal])
 
   const handleImportExamples = () => {
     if (!confirm('Import example songs? This will add 85+ example songs to your library.\n\nDuplicates (by name) will be skipped.')) {
