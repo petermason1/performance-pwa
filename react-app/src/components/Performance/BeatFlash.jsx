@@ -18,7 +18,8 @@ export default function BeatFlash({
   // Check if a beat is accented based on the pattern
   const isBeatAccented = (beatNumber) => {
     if (!accentPattern || accentPattern.length === 0) {
-      return beatNumber === 1 // Default: accent first beat only
+      // No explicit accents: treat all beats as not accented (uniform)
+      return false
     }
     // accentPattern is 0-indexed array of booleans
     return accentPattern[beatNumber - 1] === true
