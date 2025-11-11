@@ -186,12 +186,30 @@
 }
 
 @media (max-width: 360px) {
+  .page-header {
+    padding: var(--space-sm) var(--space-sm);
+  }
+
   .page-header-title {
     font-size: 1.3rem;
   }
 
   .page-header-subtitle {
     font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .page-header {
+    padding: var(--space-xs) var(--space-xs);
+  }
+
+  .page-header-title {
+    font-size: 1.2rem;
+  }
+
+  .page-header-main {
+    gap: var(--space-sm);
   }
 }
 

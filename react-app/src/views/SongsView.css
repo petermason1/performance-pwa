@@ -8,6 +8,14 @@
   gap: 1.5rem;
 }
 
+@media (max-width: 360px) {
+  .songs-container {
+    grid-template-columns: 1fr;
+    padding: 1rem 0.5rem;
+    gap: 1rem;
+  }
+}
+
 .song-card {
   background: linear-gradient(135deg, rgba(26, 35, 50, 0.6), rgba(26, 35, 50, 0.8));
   border-radius: 1rem;
@@ -49,6 +57,43 @@
 
   .song-card .card-actions .btn {
     flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 360px) {
+  .song-card {
+    border-radius: 0.75rem;
+  }
+
+  .song-card .card-header {
+    padding: var(--space-sm);
+  }
+
+  .song-card .card-body {
+    padding: var(--space-sm);
+  }
+
+  .song-card .card-header h3 {
+    font-size: 1rem;
+  }
+
+  .song-artist {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .song-card .card-header {
+    padding: var(--space-xs);
+  }
+
+  .song-card .card-body {
+    padding: var(--space-xs);
+  }
+
+  .song-card .card-actions .btn {
+    font-size: 0.75rem;
+    padding: var(--space-xs);
   }
 }
 
