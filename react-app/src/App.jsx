@@ -126,7 +126,7 @@ function AppContent() {
           onSelect={setCurrentView}
         />
 
-        <main className={`flex-1 w-full max-w-5xl mx-auto px-3 sm:px-4 md:px-6 pb-24 md:pb-12 ${user ? 'pt-20 md:pt-24' : 'pt-6 md:pt-12'}`}>
+        <main className={`flex-1 w-full max-w-5xl mx-auto pb-24 md:pb-12 ${user ? 'pt-20 md:pt-24' : 'pt-6 md:pt-12'}`}>
           {activeView}
         </main>
 
