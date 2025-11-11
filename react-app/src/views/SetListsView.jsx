@@ -325,24 +325,24 @@ export default function SetListsView() {
                   </div>
                   <div className="card-actions">
                     <button
-                      className="btn-icon view-setlist"
+                      className="btn btn-secondary btn-small"
+                      onClick={() => handleEdit(setList)}
+                      title="Edit set list details and songs"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      className="btn btn-primary btn-small"
                       onClick={() => handleLoadSetList(setList, 'performance')}
-                      title="Load in Performance"
+                      title="Load in Performance View"
                       disabled={isLoadingSongs}
                     >
-                      🚀
+                      🚀 Open
                     </button>
                     <button
-                      className="btn-icon edit-setlist"
-                      onClick={() => handleEdit(setList)}
-                      title="Edit set list"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      className="btn-icon delete-setlist"
+                      className="btn btn-danger btn-small"
                       onClick={() => handleDelete(setList)}
-                      title="Delete set list"
+                      title="Delete this set list"
                     >
                       🗑️
                     </button>

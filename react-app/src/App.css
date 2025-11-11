@@ -23,14 +23,22 @@
     --bg-secondary: #121827;
     --bg-tertiary: #1a2332;
     
-    /* Neon Accents */
+    /* Neon Accents - Enhanced for visual hierarchy */
     --accent-cyan: #00d9ff;
     --accent-cyan-soft: rgba(0, 217, 255, 0.18);
     --accent-cyan-bold: rgba(0, 217, 255, 0.65);
+    --accent-cyan-bright: #00f0ff;
     --accent-purple: #6366f1;
+    --accent-purple-bright: #818cf8;
     --accent-green: #00ff88;
     --accent-danger: #ff0055;
     --accent-warning: #ffaa00;
+    
+    /* Priority action colors */
+    --action-primary: linear-gradient(135deg, #00d9ff 0%, #0099ff 100%);
+    --action-primary-hover: linear-gradient(135deg, #00f0ff 0%, #00b3ff 100%);
+    --action-secondary: rgba(0, 217, 255, 0.15);
+    --action-secondary-hover: rgba(0, 217, 255, 0.25);
     
     /* Text */
     --text-primary: #e8eef5;
@@ -42,11 +50,23 @@
     --glass-border: rgba(0, 217, 255, 0.2);
     --glass-border-strong: rgba(0, 217, 255, 0.4);
     
-    /* Glows */
+    /* Glows - Enhanced for priority actions */
     --glow-cyan: 0 0 20px rgba(0, 217, 255, 0.4);
     --glow-cyan-strong: 0 0 30px rgba(0, 217, 255, 0.6);
+    --glow-cyan-intense: 0 0 40px rgba(0, 217, 255, 0.8), 0 0 80px rgba(0, 217, 255, 0.4);
     --glow-purple: 0 0 20px rgba(99, 102, 241, 0.4);
     --glow-green: 0 0 20px rgba(0, 255, 136, 0.4);
+    
+    /* Spacing system - 8px grid */
+    --space-xs: 0.25rem;  /* 4px */
+    --space-sm: 0.5rem;   /* 8px */
+    --space-md: 1rem;     /* 16px */
+    --space-lg: 1.5rem;   /* 24px */
+    --space-xl: 2rem;     /* 32px */
+    --space-2xl: 3rem;    /* 48px */
+    
+    /* Touch targets */
+    --touch-min: 44px;
     
     /* Legacy Support (for gradual migration) */
     --primary-color: var(--accent-cyan);
@@ -106,6 +126,7 @@ body {
     flex-direction: column;
     color: var(--text-primary);
     text-rendering: optimizeLegibility;
+    padding-top: 56px;
 }
 
 .app-shell-main {
@@ -113,14 +134,14 @@ body {
     width: 100%;
     max-width: 1120px;
     margin: 0 auto;
-    padding: 1.75rem clamp(1rem, 3vw, 2.5rem) 6rem;
+    padding: 0 clamp(1rem, 3vw, 2.5rem) 6rem;
     display: flex;
     flex-direction: column;
     gap: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 .app-shell-main.has-user {
-    padding-top: 2.35rem;
+    padding-top: 0;
 }
 
 @media (max-width: 1024px) {

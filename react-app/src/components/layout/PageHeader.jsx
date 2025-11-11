@@ -1,6 +1,6 @@
 import './PageHeader.css'
 
-function PageHeader({ title, subtitle, actions, status }) {
+function PageHeader({ title = '⏱️ Smart Metronome', subtitle, actions, status = 'All systems synced' }) {
   return (
     <header className="page-header">
       <div className="page-header-main">

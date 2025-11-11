@@ -21,38 +21,38 @@ import StageModeView from './views/StageModeView'
 
 const NAV_GROUPS = [
   {
-    icon: '🛰️',
+    icon: '🏠',
     label: 'Overview',
-    helper: 'Check system status and quick stats',
+    helper: 'System status & quick actions',
     tabs: [
-      { id: 'dashboard', icon: '🏠', label: 'Dashboard', description: 'Mission control for Smart Metronome' }
+      { id: 'dashboard', icon: '⚡', label: 'Control Center', description: 'Mission control hub' }
     ]
   },
   {
-    icon: '🎚️',
-    label: 'Live Performance',
-    helper: 'On-stage and rehearsal tools',
+    icon: '🎭',
+    label: 'Perform',
+    helper: 'Live & rehearsal tools',
     tabs: [
-      { id: 'performance', icon: '🎛️', label: 'Performance', description: 'Rehearsal workstation', priority: 'primary', actionLabel: 'Open Performance' },
-      { id: 'stage', icon: '🎤', label: 'Live Stage', description: 'Minimal live view', actionLabel: 'Launch Live Stage' }
+      { id: 'performance', icon: '🎛️', label: 'Rehearse', description: 'Full workstation', priority: 'primary', actionLabel: '▶ Start Session' },
+      { id: 'stage', icon: '🎤', label: 'Go Live', description: 'Stage mode', actionLabel: '🚀 Launch' }
     ]
   },
   {
-    icon: '🧭',
-    label: 'Preparation',
-    helper: 'Program sets and adjust tempo',
+    icon: '🛠️',
+    label: 'Prepare',
+    helper: 'Build sets & configure tempo',
     tabs: [
-      { id: 'metronome', icon: '⏱️', label: 'Metronome', description: 'Dial in tempo, accents & presets' },
-      { id: 'setlists', icon: '📋', label: 'Set Lists', description: 'Plan, reorder and save shows', actionLabel: 'Create Set List' },
-      { id: 'songs', icon: '📚', label: 'Songs', description: 'Manage song BPM, lyrics & presets' }
+      { id: 'metronome', icon: '⏱️', label: 'Tempo', description: 'Adjust BPM & accents' },
+      { id: 'setlists', icon: '📋', label: 'Set Lists', description: 'Plan your shows', actionLabel: '➕ New Set' },
+      { id: 'songs', icon: '🎵', label: 'Library', description: 'Manage songs & presets' }
     ]
   },
   {
-    icon: '✨',
-    label: 'Control Center',
-    helper: 'Automation & lighting cues',
+    icon: '💡',
+    label: 'Control',
+    helper: 'Automation & lighting',
     tabs: [
-      { id: 'lights', icon: '🌈', label: 'Lights', description: 'Program MIDI lighting cues' }
+      { id: 'lights', icon: '🌈', label: 'Lights', description: 'MIDI lighting cues' }
     ]
   }
 ]
@@ -213,7 +213,7 @@ function AppContent() {
         <div className="app-shell">
       <AuthBanner />
 
-      {/* Global Top Navigation */}
+      {/* Minimal Top Bar - Menu + Auth */}
       <AppHeader
         tabs={TABS}
         groups={NAV_GROUPS}
@@ -221,23 +221,25 @@ function AppContent() {
         onSelect={setCurrentView}
       />
 
+      {/* Main Branded Page Header - Appears on every page */}
+      <PageHeader
+        title="⏱️ Smart Metronome"
+        subtitle={activeTabMeta?.label || 'Control Center'}
+        status={statusText}
+        actions={
+          <button
+            type="button"
+            className="btn btn-secondary btn-small page-header-settings"
+            onClick={handleOpenSettings}
+            title="Open Smart Metronome settings"
+          >
+            <span aria-hidden="true" className="page-header-settings-icon">⚙</span>
+            <span className="page-header-settings-label">Settings</span>
+          </button>
+        }
+      />
+
         <main className={`app-shell-main ${user ? 'has-user' : ''}`}>
-        <PageHeader
-          title="⏱️ Smart Metronome"
-          subtitle={activeTabMeta?.label || 'Control Center'}
-          status={statusText}
-          actions={
-            <button
-              type="button"
-              className="btn btn-secondary btn-small page-header-settings"
-              onClick={handleOpenSettings}
-              title="Open Smart Metronome settings"
-            >
-              <span aria-hidden="true" className="page-header-settings-icon">⚙</span>
-              <span className="page-header-settings-label">Settings</span>
-            </button>
-          }
-        />
         {activeView}
       </main>
 

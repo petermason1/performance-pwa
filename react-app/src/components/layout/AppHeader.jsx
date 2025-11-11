@@ -4,7 +4,6 @@ import { useSupabase } from '../../context/SupabaseContext'
 import { useApp } from '../../hooks/useApp'
 import { useRealtimeSession } from '../../hooks/useRealtimeSession'
 import RealtimeSessionModal from '../RealtimeSessionModal'
-import MainNav from './MainNav'
 import './AppHeader.css'
 
 function AppHeader({ tabs = [], groups = [], currentView, onSelect }) {
@@ -13,6 +12,7 @@ function AppHeader({ tabs = [], groups = [], currentView, onSelect }) {
   const realtimeSession = useRealtimeSession(metronome)
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showRealtimeModal, setShowRealtimeModal] = useState(false)
+  const [showNavMenu, setShowNavMenu] = useState(false)
 
   const handleAuthAction = async () => {
     if (user) {
@@ -28,18 +28,19 @@ function AppHeader({ tabs = [], groups = [], currentView, onSelect }) {
 
   return (
     <>
-      <header className="app-header md:ml-[240px]">
+      <header className="app-header">
         <div className="app-header-content">
-          <div className="app-header-title">
-            <span className="app-header-subtitle">
-              ⏱️ Smart Metronome
-            </span>
-            <span className="app-header-main-title">
-              {activeTab ? activeTab.label : 'Live Performance Control'}
-            </span>
-          </div>
-          
           <div className="app-header-actions">
+            {/* Navigation Menu Button */}
+            <button
+              onClick={() => setShowNavMenu(!showNavMenu)}
+              className="app-header-menu-button"
+              aria-label="Open navigation menu"
+              aria-expanded={showNavMenu}
+            >
+              <span className="app-header-menu-icon" aria-hidden="true">☰</span>
+              <span className="app-header-menu-label">Menu</span>
+            </button>
             {/* Session Status Indicator */}
             {realtimeSession.connectionStatus === 'connected' && (
               <button
@@ -88,21 +89,60 @@ function AppHeader({ tabs = [], groups = [], currentView, onSelect }) {
             </button>
           </div>
         </div>
+      </header>
 
-        {tabs.length > 0 && (
-          <div className="app-header-nav-section" aria-label="Primary">
-            <div className="app-header-nav-shell">
-              <MainNav
-                tabs={tabs}
-                groups={groups}
-                currentView={currentView}
-                onSelect={onSelect}
-                variant="header"
-              />
+      {/* Dropdown Navigation Menu */}
+      {showNavMenu && (
+        <div className="nav-menu-overlay" onClick={() => setShowNavMenu(false)}>
+          <div className="nav-menu-dropdown" onClick={(e) => e.stopPropagation()}>
+            <div className="nav-menu-header">
+              <h3 className="nav-menu-title">Navigation</h3>
+              <button
+                onClick={() => setShowNavMenu(false)}
+                className="nav-menu-close"
+                aria-label="Close menu"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="nav-menu-content">
+              {groups.map((group) => (
+                <div key={group.label} className="nav-menu-group">
+                  <div className="nav-menu-group-header">
+                    <span className="nav-menu-group-icon" aria-hidden="true">{group.icon}</span>
+                    <div className="nav-menu-group-text">
+                      <span className="nav-menu-group-label">{group.label}</span>
+                      <span className="nav-menu-group-helper">{group.helper}</span>
+                    </div>
+                  </div>
+                  <div className="nav-menu-group-items">
+                    {group.tabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => {
+                          onSelect(tab.id)
+                          setShowNavMenu(false)
+                        }}
+                        className={`nav-menu-item ${currentView === tab.id ? 'active' : ''} ${tab.priority === 'primary' ? 'primary' : ''}`}
+                        aria-current={currentView === tab.id ? 'page' : undefined}
+                      >
+                        <span className="nav-menu-item-icon" aria-hidden="true">{tab.icon}</span>
+                        <div className="nav-menu-item-text">
+                          <span className="nav-menu-item-label">{tab.label}</span>
+                          <span className="nav-menu-item-description">{tab.description}</span>
+                        </div>
+                        {tab.actionLabel && (
+                          <span className="nav-menu-item-action">{tab.actionLabel}</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        )}
-      </header>
+        </div>
+      )}
 
       {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
       {showRealtimeModal && (

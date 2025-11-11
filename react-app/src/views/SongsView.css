@@ -9,27 +9,47 @@
 }
 
 .song-card {
-  background: linear-gradient(135deg, rgba(26, 35, 50, 0.4), rgba(26, 35, 50, 0.6));
+  background: linear-gradient(135deg, rgba(26, 35, 50, 0.6), rgba(26, 35, 50, 0.8));
   border-radius: 1rem;
-  border: 2px solid rgba(0, 217, 255, 0.2);
+  border: 2px solid rgba(0, 217, 255, 0.25);
   backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .song-card:hover {
-  border-color: rgba(0, 217, 255, 0.4);
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 217, 255, 0.2);
+  border-color: var(--accent-cyan-bold);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 217, 255, 0.25), var(--glow-cyan);
 }
 
 .song-card .card-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-lg);
   border-bottom: 2px solid rgba(0, 217, 255, 0.2);
-  background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(99, 102, 241, 0.1));
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.08), rgba(99, 102, 241, 0.08));
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .song-card .card-header {
+    padding: var(--space-md);
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .song-card .card-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .song-card .card-actions .btn {
+    flex: 1 1 auto;
+  }
 }
 
 .song-card .card-header h3 {
@@ -48,7 +68,27 @@
 
 .song-card .card-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.song-card .card-actions .btn {
+  min-height: var(--touch-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.song-card .card-actions .btn-small {
+  min-height: 40px;
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.8rem;
 }
 
 .song-card .card-body {

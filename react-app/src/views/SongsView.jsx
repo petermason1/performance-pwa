@@ -267,6 +267,13 @@ export default function SongsView() {
                       </h3>
                       <div className="card-actions">
                         <button 
+                          className="btn btn-secondary btn-small"
+                          onClick={() => { setEditingSong(song); setShowSongModal(true) }}
+                          title="View song details"
+                        >
+                          ✏️ View
+                        </button>
+                        <button 
                           className="btn btn-primary btn-small"
                           onClick={async () => {
                             if (!currentBand) return
@@ -277,7 +284,6 @@ export default function SongsView() {
                               alert(`❌ Failed to copy song: ${error.message}`)
                             }
                           }}
-                          style={{ fontSize: '0.85rem', padding: '6px 12px' }}
                           disabled={!currentBand}
                           title={currentBand ? 'Copy this example into your band' : 'Join a band to copy this example'}
                         >
