@@ -329,9 +329,9 @@ export default function StageModeView() {
         </div>
 
         <div className="stage-header-actions">
-          <button
-            type="button"
-            className={`stage-live-toggle ${isLiveLocked ? 'locked' : ''}`}
+        <button
+          type="button"
+          className={`stage-live-toggle ${isLiveLocked ? 'locked' : ''}`}
           onClick={handleLiveToggle}
           onMouseDown={isLiveLocked ? handleUnlockStart : undefined}
           onMouseUp={isLiveLocked ? handleUnlockEnd : undefined}

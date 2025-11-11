@@ -25,33 +25,33 @@ function formatTimeSignature(value) {
 }
 
 function calculateSetListDuration(listSongs) {
-  let totalSeconds = 0
-
+    let totalSeconds = 0
+    
   listSongs.forEach(song => {
     if (!song) return
-    if (song.duration) {
-      totalSeconds += song.duration * 60
-    } else if (song.lyrics && song.lyrics.length > 0) {
-      const lastLyric = song.lyrics[song.lyrics.length - 1]
-      totalSeconds += lastLyric.time || 0
-    } else {
-      totalSeconds += 180
-    }
-  })
-
-  return totalSeconds
-}
+      if (song.duration) {
+        totalSeconds += song.duration * 60
+      } else if (song.lyrics && song.lyrics.length > 0) {
+        const lastLyric = song.lyrics[song.lyrics.length - 1]
+        totalSeconds += lastLyric.time || 0
+      } else {
+        totalSeconds += 180
+      }
+    })
+    
+    return totalSeconds
+  }
 
 function formatDuration(totalSeconds) {
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = Math.floor(totalSeconds % 60)
-
-  if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    const hours = Math.floor(totalSeconds / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const seconds = Math.floor(totalSeconds % 60)
+    
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    }
+    return `${minutes}:${String(seconds).padStart(2, '0')}`
   }
-  return `${minutes}:${String(seconds).padStart(2, '0')}`
-}
 
 function SongQuickEditDrawer({ song, open, onClose, onSave, saving, error }) {
   const [form, setForm] = useState({ bpm: '', timeSignature: '4', metronomePresetName: '' })
@@ -253,14 +253,14 @@ export default function SetListsView() {
     <div className="setlists-view">
       <header>
         <div>
-          <h1>Set Lists</h1>
+        <h1>Set Lists</h1>
           <p className="header-subtitle">{setLists.length} lists • {totalSongs} songs in library</p>
         </div>
         <button className="btn btn-primary" onClick={handleNewSetList}>
           New Set List
         </button>
       </header>
-
+      
       <div className="setlists-container">
         {setLists.length === 0 ? (
           <div className="empty-state" role="status">
@@ -300,7 +300,7 @@ export default function SetListsView() {
               <div key={setList.id} className="setlist-card">
                 <div className="card-header">
                   <div className="card-heading">
-                    <h3>{setList.name}</h3>
+                  <h3>{setList.name}</h3>
                     <p className="card-meta">
                       {setListSongs.length} songs • {formatDuration(totalDuration)}
                       {avgBPM > 0 ? ` • Avg ${avgBPM} BPM` : ''}
