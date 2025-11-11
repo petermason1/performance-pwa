@@ -76,7 +76,10 @@ export default function PresetSelector({
             background: 'var(--surface-light)',
             color: 'var(--text)',
             fontSize: '0.9rem',
-            minWidth: '200px'
+            boxSizing: 'border-box',
+            width: '100%',
+            flex: '1 1 180px',
+            minWidth: 0
           }}
           aria-label="Select accent pattern preset"
         >
@@ -99,7 +102,7 @@ export default function PresetSelector({
                 💾 Save Current as Preset
               </button>
             ) : (
-              <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <input
                   type="text"
                   value={presetName}
@@ -112,7 +115,10 @@ export default function PresetSelector({
                     background: 'var(--surface-light)',
                     color: 'var(--text)',
                     fontSize: '0.9rem',
-                    minWidth: '150px'
+                    boxSizing: 'border-box',
+                    width: '100%',
+                    flex: '1 1 160px',
+                    minWidth: 0
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {

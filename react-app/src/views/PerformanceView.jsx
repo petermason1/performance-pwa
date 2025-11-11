@@ -1304,7 +1304,6 @@ export default function PerformanceView() {
                 className="btn btn-secondary" 
                 onClick={() => setShowRealtimeSession(true)}
                 aria-label="Open live session sync"
-                style={{ marginLeft: '10px' }}
               >
                 🔴 Live Sync
               </button>
