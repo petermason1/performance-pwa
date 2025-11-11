@@ -136,6 +136,7 @@ react-app/
 - **IndexedDB Storage**: Songs and set lists persist locally with migration support
 - **PWA Support**: Install as standalone app, offline-capable (service worker disabled in dev)
 - **Responsive Design**: Mobile-first layout with desktop enhancements
+- **320px Layout Ready**: Components clamp and center automatically for legacy iPhones and compact Android devices
 
 ### 🔧 Known Issues
 - Stage mode UI not yet implemented (large controls for live performance)
