@@ -47,9 +47,11 @@ function MainNav({ tabs, currentView, onSelect, variant = 'desktop', className =
     extraTabs = []
   }
 
+  const navVariantClass = `main-nav--${variant}`
+
   return (
     <nav
-      className={`main-nav ${navClass} ${className}`.trim()}
+      className={`main-nav ${navVariantClass} ${navClass} ${className}`.trim()}
       style={{ ...navStyle, ...style }}
       role="tablist"
       aria-label="Main navigation"
@@ -65,7 +67,7 @@ function MainNav({ tabs, currentView, onSelect, variant = 'desktop', className =
                 onSelect(tab.id)
                 setShowMore(false)
               }}
-              className={`main-nav-button ${isActive ? 'active' : 'inactive'}`}
+              className={`main-nav-button main-nav-button--${variant} ${isActive ? 'active' : 'inactive'}`}
               aria-label={tab.label}
               aria-current={isActive ? 'page' : undefined}
               role="tab"

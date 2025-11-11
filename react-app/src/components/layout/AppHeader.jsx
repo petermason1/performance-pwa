@@ -4,6 +4,7 @@ import { useSupabase } from '../../context/SupabaseContext'
 import { useApp } from '../../hooks/useApp'
 import { useRealtimeSession } from '../../hooks/useRealtimeSession'
 import RealtimeSessionModal from '../RealtimeSessionModal'
+import MainNav from './MainNav'
 import './AppHeader.css'
 
 function AppHeader({ tabs = [], currentView, onSelect }) {
@@ -89,32 +90,14 @@ function AppHeader({ tabs = [], currentView, onSelect }) {
         </div>
 
         {tabs.length > 0 && (
-          <nav className="app-header-nav-section" aria-label="Primary">
-            <div className="app-header-nav-container">
-              {tabs.map(tab => {
-                const isActive = tab.id === currentView
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    className={[
-                      'app-header-nav-item',
-                      isActive ? 'is-active' : ''
-                    ].join(' ')}
-                    onClick={() => onSelect?.(tab.id)}
-                    aria-current={isActive ? 'page' : undefined}
-                  >
-                    {tab.icon && (
-                      <span className="app-header-nav-icon" aria-hidden="true">
-                        {tab.icon}
-                      </span>
-                    )}
-                    <span className="app-header-nav-label">{tab.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </nav>
+          <div className="app-header-nav-section" aria-label="Primary">
+            <MainNav
+              tabs={tabs}
+              currentView={currentView}
+              onSelect={onSelect}
+              variant="header"
+            />
+          </div>
         )}
       </header>
 
