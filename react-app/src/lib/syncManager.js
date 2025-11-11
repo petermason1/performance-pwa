@@ -12,6 +12,45 @@ class SyncManager {
   // SONGS SYNC
   // ============================================
 
+  // Fetch example songs from the Example Songs Library band
+  async fetchExampleSongs() {
+    if (!supabase) {
+      console.log('⏭️ Skipping example songs fetch (offline)')
+      return { success: false }
+    }
+
+    const EXAMPLE_BAND_ID = '00000000-0000-0000-0000-000000000001'
+
+    try {
+      console.log('📚 Fetching example songs from Supabase')
+
+      const { data: exampleSongs, error } = await supabase
+        .from('songs')
+        .select('*')
+        .eq('band_id', EXAMPLE_BAND_ID)
+
+      if (error) throw error
+
+      console.log('📥 Fetched', exampleSongs.length, 'example songs from Supabase')
+
+      // Store example songs in IndexedDB with a special prefix to distinguish them
+      for (const remoteSong of exampleSongs) {
+        const localSong = {
+          ...this.mapRemoteToLocal(remoteSong),
+          _isExample: true, // Mark as example song
+          _exampleBandId: EXAMPLE_BAND_ID
+        }
+        await db.songs.put(localSong)
+      }
+
+      console.log('✅ Example songs loaded')
+      return { success: true, count: exampleSongs.length }
+    } catch (error) {
+      console.error('❌ Failed to fetch example songs:', error)
+      return { success: false, error }
+    }
+  }
+
   async syncSongs(bandId) {
     if (!bandId || !supabase) {
       console.log('⏭️ Skipping song sync (no band or offline)')
@@ -89,6 +128,7 @@ class SyncManager {
       artist: remoteSong.artist,
       bpm: remoteSong.bpm,
       timeSignature: remoteSong.time_signature,
+      key: remoteSong.key, // Add key field
       lyrics: remoteSong.notes,
       helixPreset: remoteSong.midi_preset,
       accentPattern: remoteSong.accent_pattern,

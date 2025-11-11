@@ -65,7 +65,8 @@ export function AppProvider({ children }) {
   const metronomeHook = useMetronome(120);
 
   // Band management
-  const { currentBand } = useBand();
+  const bandHook = useBand();
+  const { currentBand } = bandHook;
 
   // Initialize database and run migrations
   useEffect(() => {
@@ -134,6 +135,19 @@ export function AppProvider({ children }) {
       console.error('Failed to load data:', error);
     }
   }, []);
+
+  // Fetch example songs on app load (once)
+  useEffect(() => {
+    if (!dbInitialized) return;
+
+    const fetchExamples = async () => {
+      console.log('📚 Fetching example songs...');
+      await syncManager.fetchExampleSongs();
+      await loadData(); // Reload to include example songs
+    };
+
+    fetchExamples();
+  }, [dbInitialized, loadData]);
 
   // Sync with Supabase when band changes
   useEffect(() => {
@@ -235,6 +249,40 @@ export function AppProvider({ children }) {
       return null;
     }
   }, []);
+
+  // Copy an example song into the user's band
+  const copyExampleSong = useCallback(async (exampleSong) => {
+    if (!currentBand) {
+      throw new Error('You must be in a band to copy songs');
+    }
+
+    try {
+      // Create a new song based on the example, but remove the example markers
+      const newSong = {
+        name: exampleSong.name,
+        artist: exampleSong.artist,
+        bpm: exampleSong.bpm,
+        timeSignature: exampleSong.timeSignature || 4,
+        helixPreset: exampleSong.helixPreset,
+        lyrics: exampleSong.lyrics,
+        accentPattern: exampleSong.accentPattern,
+        // Don't copy _isExample or _exampleBandId
+      };
+
+      // Add to local DB
+      const addedSong = await dbAddSong(newSong);
+      
+      // Push to Supabase
+      await syncManager.pushSong(addedSong, currentBand.id);
+      
+      await refreshSongs();
+      
+      return addedSong;
+    } catch (error) {
+      console.error('Failed to copy example song:', error);
+      throw error;
+    }
+  }, [currentBand, refreshSongs]);
 
   // Set list operations
   const addSetList = useCallback(async (setList) => {
@@ -338,6 +386,7 @@ export function AppProvider({ children }) {
     updateSong,
     deleteSong,
     getSong,
+    copyExampleSong,
     // Set list operations
     addSetList,
     updateSetList,
@@ -347,6 +396,8 @@ export function AppProvider({ children }) {
     refreshSongs,
     exportData,
     importData: importDataFromFile,
+    // Band management
+    currentBand,
     // Global metronome that persists across views
     metronome: metronomeHook
   };

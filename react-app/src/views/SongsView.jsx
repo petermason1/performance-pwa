@@ -7,14 +7,34 @@ import { exampleSongsData, parseExampleSongs } from '../utils/exampleSongs'
 import './SongsView.css'
 
 export default function SongsView() {
-  const { songs, deleteSong, addSong, refreshData } = useApp()
+  const { songs, deleteSong, addSong, refreshData, copyExampleSong, currentBand } = useApp()
   const [showSongModal, setShowSongModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
   const [editingSong, setEditingSong] = useState(null)
   const [sortBy, setSortBy] = useState(() => localStorage.getItem('songSortBy') || 'artist')
 
-  const sortedSongs = [...songs].sort((a, b) => {
+  // Separate example songs from user's songs
+  const exampleSongs = songs.filter(s => s._isExample)
+  const userSongs = songs.filter(s => !s._isExample)
+  
+  const sortedUserSongs = [...userSongs].sort((a, b) => {
+    const nameA = (a.name || '').toLowerCase().trim()
+    const nameB = (b.name || '').toLowerCase().trim()
+    const artistA = (a.artist || '').toLowerCase().trim()
+    const artistB = (b.artist || '').toLowerCase().trim()
+    
+    if (sortBy === 'title') {
+      const nameCompare = nameA.localeCompare(nameB)
+      if (nameCompare !== 0) return nameCompare
+      return artistA.localeCompare(artistB)
+    } else {
+      if (artistA !== artistB) return artistA.localeCompare(artistB)
+      return nameA.localeCompare(nameB)
+    }
+  })
+
+  const sortedExampleSongs = [...exampleSongs].sort((a, b) => {
     const nameA = (a.name || '').toLowerCase().trim()
     const nameB = (b.name || '').toLowerCase().trim()
     const artistA = (a.artist || '').toLowerCase().trim()
@@ -106,7 +126,7 @@ export default function SongsView() {
       </header>
       
       <div className="songs-container" id="songs-container">
-        {sortedSongs.length === 0 ? (
+        {sortedUserSongs.length === 0 && sortedExampleSongs.length === 0 ? (
           <div className="empty-state" style={{ textAlign: 'center', padding: '40px 20px' }}>
             <p style={{ marginBottom: '20px', fontSize: '1.1rem' }}>No songs yet.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', maxWidth: '400px', margin: '0 auto' }}>
@@ -119,37 +139,106 @@ export default function SongsView() {
             </div>
           </div>
         ) : (
-          sortedSongs.map(song => (
-            <div key={song.id} className="song-card">
-              <div className="card-header">
-                <h3>{song.name}{song.artist ? <span className="song-artist"> ({song.artist})</span> : ''}</h3>
-                <div className="card-actions">
-                  <button 
-                    className="btn-icon edit-song" 
-                    onClick={() => { setEditingSong(song); setShowSongModal(true) }}
-                  >
-                    ✏️
-                  </button>
-                  <button 
-                    className="btn-icon delete-song"
-                    onClick={() => {
-                      if (confirm('Delete this song?')) {
-                        deleteSong(song.id)
-                      }
-                    }}
-                  >
-                    🗑️
-                  </button>
-                </div>
+          <>
+            {/* User's Songs */}
+            {sortedUserSongs.length > 0 && (
+              <div style={{ marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>
+                  Your Songs ({sortedUserSongs.length})
+                </h2>
+                {sortedUserSongs.map(song => (
+                  <div key={song.id} className="song-card">
+                    <div className="card-header">
+                      <h3>{song.name}{song.artist ? <span className="song-artist"> ({song.artist})</span> : ''}</h3>
+                      <div className="card-actions">
+                        <button 
+                          className="btn-icon edit-song" 
+                          onClick={() => { setEditingSong(song); setShowSongModal(true) }}
+                        >
+                          ✏️
+                        </button>
+                        <button 
+                          className="btn-icon delete-song"
+                          onClick={() => {
+                            if (confirm('Delete this song?')) {
+                              deleteSong(song.id)
+                            }
+                          }}
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                    <div className="card-body">
+                      <p><strong>BPM:</strong> {song.bpm}</p>
+                      <p><strong>Time Signature:</strong> {song.timeSignature || 4}/4</p>
+                      <p><strong>Helix Preset:</strong> {song.helixPreset || 'None'}</p>
+                      <p><strong>Lyrics:</strong> {song.lyrics ? song.lyrics.length + ' lines' : 'None'}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="card-body">
-                <p><strong>BPM:</strong> {song.bpm}</p>
-                <p><strong>Time Signature:</strong> {song.timeSignature || 4}/4</p>
-                <p><strong>Helix Preset:</strong> {song.helixPreset || 'None'}</p>
-                <p><strong>Lyrics:</strong> {song.lyrics ? song.lyrics.length + ' lines' : 'None'}</p>
+            )}
+
+            {/* Example Songs */}
+            {sortedExampleSongs.length > 0 && (
+              <div>
+                <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>
+                  📚 Example Songs ({sortedExampleSongs.length})
+                </h2>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                  Copy these example songs into your band to get started
+                </p>
+                {sortedExampleSongs.map(song => (
+                  <div key={song.id} className="song-card" style={{ border: '2px solid var(--accent-purple)', opacity: 0.95 }}>
+                    <div className="card-header">
+                      <h3>
+                        {song.name}{song.artist ? <span className="song-artist"> ({song.artist})</span> : ''}
+                        <span style={{ 
+                          fontSize: '0.75rem', 
+                          marginLeft: '8px', 
+                          padding: '2px 6px', 
+                          background: 'var(--accent-purple)', 
+                          color: 'white',
+                          borderRadius: '4px'
+                        }}>
+                          Example
+                        </span>
+                      </h3>
+                      <div className="card-actions">
+                        {currentBand ? (
+                          <button 
+                            className="btn btn-primary btn-small"
+                            onClick={async () => {
+                              try {
+                                await copyExampleSong(song)
+                                alert(`✅ Copied "${song.name}" to your band!`)
+                              } catch (error) {
+                                alert(`❌ Failed to copy song: ${error.message}`)
+                              }
+                            }}
+                            style={{ fontSize: '0.85rem', padding: '6px 12px' }}
+                          >
+                            📋 Copy to Band
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                            Join a band to copy
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="card-body">
+                      <p><strong>BPM:</strong> {song.bpm}</p>
+                      <p><strong>Time Signature:</strong> {song.timeSignature || 4}/4</p>
+                      <p><strong>Key:</strong> {song.key || 'None'}</p>
+                      <p><strong>Helix Preset:</strong> {song.helixPreset || 'None'}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))
+            )}
+          </>
         )}
       </div>
 
