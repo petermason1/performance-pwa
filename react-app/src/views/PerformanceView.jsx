@@ -653,7 +653,107 @@ export default function PerformanceView() {
         />
       )}
 
-      <ModeToggle mode={performanceMode} onChange={setPerformanceMode} />
+      {/* Early ModeToggle removed in favor of later not-focusMode wrapper */}
+      {false && <ModeToggle mode={performanceMode} onChange={setPerformanceMode} />}
+
+      {false && (
+        <div className="performance-mode active setup-mode-container">
+          <div className="setlist-section" role="region" aria-label="Set list selection">
+            <select 
+              className="setlist-select"
+              value={selectedSetListId}
+              onChange={(e) => {
+                setSelectedSetListId(e.target.value)
+                if (e.target.value) loadSetList(e.target.value)
+              }}
+              aria-label="Select a set list"
+              aria-describedby="setlist-help"
+            >
+              <option value="">Select a Set List</option>
+              {setLists.map(setList => (
+                <option key={setList.id} value={setList.id}>{setList.name}</option>
+              ))}
+            </select>
+            <button 
+              className="setlist-button" 
+              onClick={() => {
+                if (selectedSetListId) loadSetList(selectedSetListId)
+              }}
+              aria-label="Load selected set list"
+              disabled={!selectedSetListId}
+            >
+              Load
+            </button>
+            {currentSetList && (
+              <button 
+                className="setlist-button" 
+                onClick={() => {
+                  if (confirm('Unload this set list?')) {
+                    setCurrentSetList(null)
+                    setCurrentSong(null)
+                    setSelectedSetListId('')
+                    setCurrentSongIndex(0)
+                    localStorage.removeItem('currentSetListId')
+                    localStorage.removeItem('currentSongIndex')
+                  }
+                }}
+                aria-label={`Unload set list: ${currentSetList?.name || ''}`}
+              >
+                Unload
+              </button>
+            )}
+            <span id="setlist-help" className="sr-only">Select and load a set list to begin performance</span>
+          </div>
+        </div>
+      )}
+
+      {false && (
+        <LiveView 
+          bpm={bpm}
+          timeSignature={timeSignature}
+          isPlaying={isPlaying}
+          soundEnabled={soundEnabled}
+          visualEnabled={visualEnabled}
+          rotation={rotation}
+          wheelRef={wheelRef}
+          tapTempoMessage={tapTempoMessage}
+          currentSong={currentSong}
+          setListSongs={setListSongs}
+          currentSongIndex={currentSongIndex}
+          isBeatFlashing={isBeatFlashing}
+          isAccentBeat={isAccentBeat}
+          currentBeatInMeasure={currentBeatInMeasure}
+          showBeatNumber={showBeatNumber}
+          accentPattern={accentPattern}
+          onToggleMetronome={toggle}
+          onSoundToggle={setSoundEnabled}
+          onVisualToggle={setVisualEnabled}
+          onTimeSignatureChange={handleTimeSignatureChange}
+          onTapTempo={tapTempo}
+          onPreviousSong={previousSong}
+          onNextSong={nextSong}
+          soundPreset={soundPreset}
+          subdivision={subdivision}
+          countInBeats={countInBeats}
+          accentVolume={accentVolume}
+          regularVolume={regularVolume}
+          subdivisionVolume={subdivisionVolume}
+          masterVolume={masterVolume}
+          onSoundPresetChange={setSoundPreset}
+          onSubdivisionChange={setSubdivision}
+          onCountInChange={setCountInBeats}
+          onAccentVolumeChange={setAccentVolume}
+          onRegularVolumeChange={setRegularVolume}
+          onSubdivisionVolumeChange={setSubdivisionVolume}
+          onMasterVolumeChange={setMasterVolume}
+        />
+      )}
+
+      {false && (
+        <div className="performance-controls">
+          {/* duplicate controls removed; canonical version exists later in not-focusMode */}
+        </div>
+      )}
 
       {performanceMode === 'setup' && (
         <div className="performance-mode active setup-mode-container">

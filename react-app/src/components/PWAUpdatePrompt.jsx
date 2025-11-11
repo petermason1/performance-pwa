@@ -176,6 +176,7 @@ export default function PWAUpdatePrompt() {
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
           }}
           title="Check for updates"
+          className="pwa-update-button"
         >
           🔄
         </button>
