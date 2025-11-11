@@ -5,8 +5,9 @@ import './SidebarNav.css'
 // Group tabs logically
 const NAV_GROUPS = [
   {
-    label: 'Performance',
+    label: 'Overview',
     tabs: [
+      { id: 'dashboard', icon: '🏠', label: 'Dashboard' },
       { id: 'performance', icon: '🎭', label: 'Performance' },
       { id: 'stage', icon: '🎤', label: 'Stage Mode' }
     ]

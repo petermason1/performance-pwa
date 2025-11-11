@@ -227,11 +227,13 @@ export default function SongsView() {
                         </button>
                       </div>
                     </div>
-                    <div className="card-body">
-                      <p><strong>BPM:</strong> {song.bpm}</p>
-                      <p><strong>Time Signature:</strong> {song.timeSignature || 4}/4</p>
-                      <p><strong>Helix Preset:</strong> {song.helixPreset || 'None'}</p>
-                      <p><strong>Lyrics:</strong> {song.lyrics ? song.lyrics.length + ' lines' : 'None'}</p>
+                    <div className="card-body compact">
+                      <p>
+                        <strong>BPM:</strong> {song.bpm || '—'} • <strong>Time Sig:</strong> {song.timeSignature || '4/4'} • <strong>Key:</strong> {song.key || 'None'}
+                      </p>
+                      <p>
+                        <strong>Helix:</strong> {song.helixPreset || 'None'}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -264,33 +266,32 @@ export default function SongsView() {
                         </span>
                       </h3>
                       <div className="card-actions">
-                        {currentBand ? (
-                          <button 
-                            className="btn btn-primary btn-small"
-                            onClick={async () => {
-                              try {
-                                await copyExampleSong(song)
-                                alert(`✅ Copied "${song.name}" to your band!`)
-                              } catch (error) {
-                                alert(`❌ Failed to copy song: ${error.message}`)
-                              }
-                            }}
-                            style={{ fontSize: '0.85rem', padding: '6px 12px' }}
-                          >
-                            📋 Copy to Band
-                          </button>
-                        ) : (
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                            Join a band to copy
-                          </span>
-                        )}
+                        <button 
+                          className="btn btn-primary btn-small"
+                          onClick={async () => {
+                            if (!currentBand) return
+                            try {
+                              await copyExampleSong(song)
+                              alert(`✅ Copied "${song.name}" to your band!`)
+                            } catch (error) {
+                              alert(`❌ Failed to copy song: ${error.message}`)
+                            }
+                          }}
+                          style={{ fontSize: '0.85rem', padding: '6px 12px' }}
+                          disabled={!currentBand}
+                          title={currentBand ? 'Copy this example into your band' : 'Join a band to copy this example'}
+                        >
+                          📋 Copy to Band
+                        </button>
                       </div>
                     </div>
-                    <div className="card-body">
-                      <p><strong>BPM:</strong> {song.bpm}</p>
-                      <p><strong>Time Signature:</strong> {song.timeSignature || 4}/4</p>
-                      <p><strong>Key:</strong> {song.key || 'None'}</p>
-                      <p><strong>Helix Preset:</strong> {song.helixPreset || 'None'}</p>
+                    <div className="card-body compact">
+                      <p>
+                        <strong>BPM:</strong> {song.bpm || '—'} • <strong>Time Sig:</strong> {song.timeSignature || '4/4'} • <strong>Key:</strong> {song.key || 'None'}
+                      </p>
+                      <p>
+                        <strong>Helix:</strong> {song.helixPreset || 'None'}
+                      </p>
                     </div>
                   </div>
                 ))}

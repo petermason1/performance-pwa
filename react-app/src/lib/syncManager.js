@@ -1,6 +1,48 @@
 import { supabase } from './supabase'
 import db from '../utils/db'
 
+const sanitizeInteger = (value, { min, max, fallback }) => {
+  const parsed = typeof value === 'number' ? value : Number.parseInt(value, 10)
+  if (!Number.isFinite(parsed)) {
+    return fallback
+  }
+
+  let next = parsed
+
+  if (typeof min === 'number') {
+    next = Math.max(next, min)
+  }
+
+  if (typeof max === 'number') {
+    next = Math.min(next, max)
+  }
+
+  return next
+}
+
+const normalizeTimeSignature = (value) => {
+  if (Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const parts = value.split(/[\\/]/).map(segment => Number.parseInt(segment, 10))
+    if (parts.length > 0 && Number.isFinite(parts[0])) {
+      return parts[0]
+    }
+  }
+
+  return 4
+}
+
+const coerceAccentPattern = (pattern) => {
+  if (!Array.isArray(pattern)) {
+    return null
+  }
+
+  return pattern.map(Boolean)
+}
+
 class SyncManager {
   constructor() {
     this.syncQueue = []
@@ -122,31 +164,51 @@ class SyncManager {
   }
 
   mapRemoteToLocal(remoteSong) {
+    const safeName = (remoteSong.name || '').trim() || 'Untitled Song'
+    const safeArtist = (remoteSong.artist || '').trim() || 'Unknown Artist'
+    const safeBpm = sanitizeInteger(remoteSong.bpm, { min: 40, max: 300, fallback: 120 })
+    const safeTimeSignature = normalizeTimeSignature(remoteSong.time_signature)
+    const safeLyrics = typeof remoteSong.notes === 'string' ? remoteSong.notes : ''
+    const safeHelixPresetNumber = sanitizeInteger(remoteSong.midi_preset, { min: 0, max: 127, fallback: null })
+    const accentPattern = coerceAccentPattern(remoteSong.accent_pattern)
+
     return {
       id: remoteSong.id,
-      name: remoteSong.name,
-      artist: remoteSong.artist,
-      bpm: remoteSong.bpm,
-      timeSignature: remoteSong.time_signature,
-      key: remoteSong.key, // Add key field
-      lyrics: remoteSong.notes,
-      helixPreset: remoteSong.midi_preset,
-      accentPattern: remoteSong.accent_pattern,
-      updatedAt: remoteSong.updated_at
+      name: safeName,
+      title: safeName,
+      artist: safeArtist,
+      bpm: safeBpm,
+      timeSignature: safeTimeSignature,
+      key: remoteSong.key || null,
+      lyrics: safeLyrics,
+      notes: safeLyrics,
+      helixPreset: remoteSong.helix_preset_name || remoteSong.helix_preset || null,
+      helixPresetNumber: safeHelixPresetNumber,
+      accentPattern,
+      updatedAt: remoteSong.updated_at || new Date().toISOString(),
+      createdAt: remoteSong.created_at || new Date().toISOString()
     }
   }
 
   mapLocalToRemote(song, bandId) {
+    const safeBpm = sanitizeInteger(song.bpm, { min: 40, max: 300, fallback: 120 })
+    const safeTimeSignature = normalizeTimeSignature(song.timeSignature)
+    const safeHelixPresetNumber = song.helixPresetNumber === null || song.helixPresetNumber === ''
+      ? null
+      : sanitizeInteger(song.helixPresetNumber, { min: 0, max: 127, fallback: null })
+    const safeAccentPattern = coerceAccentPattern(song.accentPattern)
+
     return {
       id: song.id,
       band_id: bandId,
-      name: song.name,
-      artist: song.artist,
-      bpm: song.bpm,
-      time_signature: song.timeSignature,
-      notes: song.lyrics,
-      midi_preset: song.helixPreset,
-      accent_pattern: song.accentPattern,
+      name: song.name || song.title || 'Untitled Song',
+      artist: song.artist || 'Unknown Artist',
+      bpm: safeBpm,
+      time_signature: safeTimeSignature,
+      notes: typeof song.lyrics === 'string' ? song.lyrics : '',
+      helix_preset_name: song.helixPreset ?? null,
+      midi_preset: safeHelixPresetNumber,
+      accent_pattern: safeAccentPattern,
       updated_at: new Date().toISOString()
     }
   }

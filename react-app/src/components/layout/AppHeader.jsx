@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import LoginModal from '../Auth/LoginModal'
 import { useSupabase } from '../../context/SupabaseContext'
 import { useApp } from '../../hooks/useApp'
@@ -6,7 +6,7 @@ import { useRealtimeSession } from '../../hooks/useRealtimeSession'
 import RealtimeSessionModal from '../RealtimeSessionModal'
 import './AppHeader.css'
 
-function AppHeader() {
+function AppHeader({ tabs = [], currentView, onSelect }) {
   const { user, signOut, loading } = useSupabase()
   const { metronome } = useApp()
   const realtimeSession = useRealtimeSession(metronome)
@@ -21,13 +21,21 @@ function AppHeader() {
     }
   }
 
+  const activeTab = useMemo(() => {
+    return tabs.find(tab => tab.id === currentView) || tabs[0] || null
+  }, [tabs, currentView])
+
   return (
     <>
-      <header className="app-header hidden md:block md:ml-[240px]">
+      <header className="app-header md:ml-[240px]">
         <div className="app-header-content">
           <div className="app-header-title">
-            <span className="app-header-subtitle">Metronome Suite</span>
-            <span className="app-header-main-title">Live Performance Control</span>
+            <span className="app-header-subtitle">
+              Metronome Suite
+            </span>
+            <span className="app-header-main-title">
+              {activeTab ? activeTab.label : 'Live Performance Control'}
+            </span>
           </div>
           
           <div className="app-header-actions">
@@ -79,6 +87,35 @@ function AppHeader() {
             </button>
           </div>
         </div>
+
+        {tabs.length > 0 && (
+          <nav className="app-header-nav-section" aria-label="Primary">
+            <div className="app-header-nav-container">
+              {tabs.map(tab => {
+                const isActive = tab.id === currentView
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={[
+                      'app-header-nav-item',
+                      isActive ? 'is-active' : ''
+                    ].join(' ')}
+                    onClick={() => onSelect?.(tab.id)}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    {tab.icon && (
+                      <span className="app-header-nav-icon" aria-hidden="true">
+                        {tab.icon}
+                      </span>
+                    )}
+                    <span className="app-header-nav-label">{tab.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </nav>
+        )}
       </header>
 
       {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}

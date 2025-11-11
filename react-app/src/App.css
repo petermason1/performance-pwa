@@ -975,12 +975,15 @@ h2, h3 {
     gap: 10px;
     margin-top: 10px;
     justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
 }
 
 .accent-controls .btn {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     padding: 10px 20px;
     font-size: 0.9rem;
+    min-width: 140px;
 }
 
 /* Save Changes Section */
@@ -3031,12 +3034,16 @@ footer {
 
     .accent-controls {
         gap: 6px;
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .accent-controls .btn {
-        flex: 1 1 100%;
+        flex: 1 1 auto;
         font-size: 0.85rem;
         padding: 0.5rem 0.75rem;
+        min-width: 0;
+        width: 100%;
     }
 
     .tempo-wheel {

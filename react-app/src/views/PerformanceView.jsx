@@ -14,8 +14,20 @@ import KeyboardShortcutsModal from '../components/KeyboardShortcutsModal'
 import RealtimeSessionModal from '../components/RealtimeSessionModal'
 import './PerformanceView.css'
 
+function patternsEqual(a, b) {
+  if (a === b) return true
+  if (!Array.isArray(a) || !Array.isArray(b)) return false
+  if (a.length !== b.length) return false
+  for (let index = 0; index < a.length; index += 1) {
+    if (Boolean(a[index]) !== Boolean(b[index])) {
+      return false
+    }
+  }
+  return true
+}
+
 export default function PerformanceView() {
-  const { songs, setLists, getSetList, getSong, updateSong, addSetList, metronome: metronomeHook, setCurrentView, ui, dispatchUi, focusMode } = useApp()
+  const { songs, setLists, getSetList, getSong, updateSong, updateSetList, addSetList, metronome: metronomeHook, setCurrentView, ui, dispatchUi, focusMode } = useApp()
   const [currentSetList, setCurrentSetList] = useState(null)
   const [currentSongIndex, setCurrentSongIndex] = useState(0)
   const [currentSong, setCurrentSong] = useState(null)
@@ -155,21 +167,24 @@ export default function PerformanceView() {
 
   // Initialize accent pattern based on time signature - default to no accent
   useEffect(() => {
-    if (accentPattern.length !== timeSignature) {
-      const newPattern = new Array(timeSignature).fill(false)
-      setAccentPatternState(newPattern)
-      setMetronomeAccentPattern(null) // null = no accent (uniform clicks)
+    if (timeSignature <= 0) {
+      setAccentPatternState(prev => (prev.length === 0 ? prev : []))
+      setMetronomeAccentPattern(null)
+      return
     }
-  }, [timeSignature, accentPattern.length, setMetronomeAccentPattern])
-  
-  // Set no accent by default on initial load
-  useEffect(() => {
-    if (accentPattern.length === 0 && timeSignature > 0) {
-      const newPattern = new Array(timeSignature).fill(false)
-      setAccentPatternState(newPattern)
-      setMetronomeAccentPattern(null) // No accent by default
+
+    const nextPattern =
+      accentPattern.length === timeSignature
+        ? accentPattern
+        : new Array(timeSignature).fill(false)
+
+    if (!patternsEqual(accentPattern, nextPattern)) {
+      setAccentPatternState(nextPattern)
     }
-  }, [accentPattern.length, timeSignature, setMetronomeAccentPattern]) // Run when needed
+
+    const shouldAccent = nextPattern.some(Boolean)
+    setMetronomeAccentPattern(shouldAccent ? nextPattern : null)
+  }, [timeSignature, accentPattern, setMetronomeAccentPattern])
 
   // Update metronome when song changes
   useEffect(() => {
@@ -207,10 +222,6 @@ export default function PerformanceView() {
         metronome.currentLyricIndex = 0
       }
       
-      // Send Helix preset change if configured
-      if (currentSong.helixPresetNumber !== undefined && currentSong.helixPresetNumber !== null) {
-        midiController.sendProgramChange(currentSong.helixPresetNumber, 0, true)
-      }
     }
   }, [currentSong, setMetronomeTimeSignature, setMetronomeAccentPattern, setMetronomePolyrhythm, metronome, updateBPM, updateBeatPatternSelector, timeSignature])
 
@@ -450,9 +461,127 @@ export default function PerformanceView() {
   }, [isPlaying, toggle])
 
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
-  const [presetFeedback, setPresetFeedback] = useState('')
+  const [presetFeedback, setPresetFeedback] = useState(null)
   const [showRealtimeSession, setShowRealtimeSession] = useState(false)
   const [showLyrics, setShowLyrics] = useState(() => localStorage.getItem('performanceShowLyrics') === 'true')
+  const presetFeedbackTimeoutRef = useRef(null)
+  const lastSentHelixPresetRef = useRef({ songId: null, presetNumber: null })
+
+  const showPresetFeedback = useCallback((payload) => {
+    if (!payload) {
+      setPresetFeedback(null)
+      if (presetFeedbackTimeoutRef.current) {
+        clearTimeout(presetFeedbackTimeoutRef.current)
+        presetFeedbackTimeoutRef.current = null
+      }
+      return
+    }
+
+    setPresetFeedback(payload)
+    if (presetFeedbackTimeoutRef.current) {
+      clearTimeout(presetFeedbackTimeoutRef.current)
+    }
+    const duration = payload.duration ?? 4000
+    presetFeedbackTimeoutRef.current = setTimeout(() => {
+      setPresetFeedback(null)
+      presetFeedbackTimeoutRef.current = null
+    }, duration)
+  }, [setPresetFeedback])
+
+  const handleSendHelixPreset = useCallback(async (program, { source = 'manual', label } = {}) => {
+    if (program === undefined || program === null) {
+      showPresetFeedback({
+        message: 'No Helix preset assigned to this song.',
+        variant: 'warning'
+      })
+      return false
+    }
+
+    const programNumber = Number(program)
+    if (!Number.isInteger(programNumber) || programNumber < 0 || programNumber > 127) {
+      showPresetFeedback({
+        message: 'Helix preset number must be between 0 and 127.',
+        variant: 'error'
+      })
+      return false
+    }
+
+    if (!midiController.isSupported) {
+      showPresetFeedback({
+        message: 'Web MIDI is not supported in this browser. Try Chrome or Edge on desktop.',
+        variant: 'error'
+      })
+      return false
+    }
+
+    if (!midiController.outputs.length) {
+      const initialized = await midiController.initialize()
+      if (!initialized || !midiController.outputs.length) {
+        showPresetFeedback({
+          message: source === 'auto'
+            ? 'Connect your Helix and enable MIDI access to auto-switch presets.'
+            : 'No MIDI outputs available. Check that your Helix is connected and MIDI is enabled.',
+          variant: 'warning'
+        })
+        return false
+      }
+    }
+
+    const ok = midiController.sendProgramChange(programNumber, 0, true)
+    if (ok) {
+      const labelText = label ? `${programNumber} (${label})` : `#${programNumber}`
+      showPresetFeedback({
+        message: source === 'auto'
+          ? `🎛️ Auto-sent Helix preset ${labelText}`
+          : `🎛️ Sent Helix preset ${labelText}`,
+        variant: 'success'
+      })
+    } else {
+      showPresetFeedback({
+        message: 'Failed to send Helix preset. Verify the Helix output in MIDI settings.',
+        variant: 'error'
+      })
+    }
+
+    return ok
+  }, [showPresetFeedback])
+
+  useEffect(() => {
+    return () => {
+      if (presetFeedbackTimeoutRef.current) {
+        clearTimeout(presetFeedbackTimeoutRef.current)
+        presetFeedbackTimeoutRef.current = null
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!currentSong || !currentSong.id) {
+      return
+    }
+
+    if (currentSong.helixPresetNumber === undefined || currentSong.helixPresetNumber === null) {
+      lastSentHelixPresetRef.current = { songId: currentSong.id, presetNumber: null }
+      return
+    }
+
+    if (
+      lastSentHelixPresetRef.current.songId === currentSong.id &&
+      lastSentHelixPresetRef.current.presetNumber === currentSong.helixPresetNumber
+    ) {
+      return
+    }
+
+    lastSentHelixPresetRef.current = {
+      songId: currentSong.id,
+      presetNumber: currentSong.helixPresetNumber
+    }
+
+    void handleSendHelixPreset(currentSong.helixPresetNumber, {
+      source: 'auto',
+      label: currentSong.helixPreset
+    })
+  }, [currentSong, handleSendHelixPreset])
 
   useKeyboardShortcuts({
     onToggleMetronome: toggle,
@@ -609,6 +738,31 @@ export default function PerformanceView() {
     }, 1500)
   }
 
+  const handleReorderSetListSongs = useCallback(async (updatedSongs) => {
+    if (!currentSetList) return
+
+    const updatedIds = updatedSongs
+      .map(song => song?.id)
+      .filter(Boolean)
+
+    if (!updatedIds.length) return
+
+    const updatedSetList = { ...currentSetList, songIds: updatedIds }
+    setCurrentSetList(updatedSetList)
+
+    try {
+      await updateSetList(currentSetList.id, { songIds: updatedIds })
+    } catch (error) {
+      console.error('Failed to persist reordered set list:', error)
+      setCurrentSetList(currentSetList)
+      showPresetFeedback({
+        message: 'Set list order failed to save. Check the console for details.',
+        variant: 'error',
+        duration: 6000
+      })
+    }
+  }, [currentSetList, updateSetList, showPresetFeedback])
+
   const saveSongChanges = () => {
     if (!currentSong) return
     
@@ -720,6 +874,7 @@ export default function PerformanceView() {
           currentSong={currentSong}
           setListSongs={setListSongs}
           currentSongIndex={currentSongIndex}
+          currentSetList={currentSetList}
           isBeatFlashing={isBeatFlashing}
           isAccentBeat={isAccentBeat}
           currentBeatInMeasure={currentBeatInMeasure}
@@ -732,6 +887,7 @@ export default function PerformanceView() {
           onTapTempo={tapTempo}
           onPreviousSong={previousSong}
           onNextSong={nextSong}
+          onSelectSong={selectSong}
           soundPreset={soundPreset}
           subdivision={subdivision}
           countInBeats={countInBeats}
@@ -747,6 +903,9 @@ export default function PerformanceView() {
           onSubdivisionVolumeChange={setSubdivisionVolume}
           onMasterVolumeChange={setMasterVolume}
           onToggleAccent={(beatNumber) => toggleBeatAccent(beatNumber - 1)}
+          presetFeedback={presetFeedback}
+          onSendHelixPreset={handleSendHelixPreset}
+          onReorderSetList={handleReorderSetListSongs}
         />
       )}
 
@@ -756,7 +915,7 @@ export default function PerformanceView() {
         </div>
       )}
 
-      {performanceMode === 'setup' && (
+      {false && performanceMode === 'setup' && (
         <div className="performance-mode active setup-mode-container">
           <div className="setlist-section" role="region" aria-label="Set list selection">
             <select 
@@ -924,7 +1083,7 @@ export default function PerformanceView() {
         </div>
       )}
 
-      {performanceMode === 'live' && (
+      {false && performanceMode === 'live' && (
         <LiveView 
           bpm={bpm}
           timeSignature={timeSignature}
@@ -937,6 +1096,7 @@ export default function PerformanceView() {
           currentSong={currentSong}
           setListSongs={setListSongs}
           currentSongIndex={currentSongIndex}
+          currentSetList={currentSetList}
           isBeatFlashing={isBeatFlashing}
           isAccentBeat={isAccentBeat}
           currentBeatInMeasure={currentBeatInMeasure}
@@ -949,6 +1109,7 @@ export default function PerformanceView() {
           onTapTempo={tapTempo}
           onPreviousSong={previousSong}
           onNextSong={nextSong}
+          onSelectSong={selectSong}
           soundPreset={soundPreset}
           subdivision={subdivision}
           countInBeats={countInBeats}
@@ -964,6 +1125,9 @@ export default function PerformanceView() {
           onSubdivisionVolumeChange={setSubdivisionVolume}
           onMasterVolumeChange={setMasterVolume}
           onToggleAccent={(beatNumber) => toggleBeatAccent(beatNumber - 1)}
+          presetFeedback={presetFeedback}
+          onSendHelixPreset={handleSendHelixPreset}
+          onReorderSetList={handleReorderSetListSongs}
         />
       )}
 
@@ -1698,6 +1862,7 @@ export default function PerformanceView() {
               currentSong={currentSong}
               setListSongs={setListSongs}
               currentSongIndex={currentSongIndex}
+              currentSetList={currentSetList}
               isBeatFlashing={isBeatFlashing}
               isAccentBeat={isAccentBeat}
               currentBeatInMeasure={currentBeatInMeasure}
@@ -1710,6 +1875,7 @@ export default function PerformanceView() {
               onTapTempo={tapTempo}
               onPreviousSong={previousSong}
               onNextSong={nextSong}
+              onSelectSong={selectSong}
               soundPreset={soundPreset}
               subdivision={subdivision}
               countInBeats={countInBeats}
@@ -1725,6 +1891,9 @@ export default function PerformanceView() {
               onSubdivisionVolumeChange={setSubdivisionVolume}
               onMasterVolumeChange={setMasterVolume}
               onToggleAccent={(beatNumber) => toggleBeatAccent(beatNumber - 1)}
+              presetFeedback={presetFeedback}
+              onSendHelixPreset={handleSendHelixPreset}
+              onReorderSetList={handleReorderSetListSongs}
             />
           )}
 

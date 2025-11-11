@@ -176,6 +176,15 @@ export default function SetListsView() {
   const [drawerError, setDrawerError] = useState('')
 
   const totalSongs = useMemo(() => songs.length, [songs])
+  const songsById = useMemo(() => {
+    const map = new Map()
+    songs.forEach(song => {
+      if (song?.id) {
+        map.set(song.id, song)
+      }
+    })
+    return map
+  }, [songs])
 
   const handleEdit = (setList) => {
     setEditingSetList(setList)
@@ -291,7 +300,12 @@ export default function SetListsView() {
           </div>
         ) : (
           setLists.map(setList => {
-            const setListSongs = setList.songIds.map(id => getSong(id)).filter(Boolean)
+            const displaySongs = setList.songIds
+              .map(id => songsById.get(id))
+              .filter(Boolean)
+            const missingSongCount = setList.songIds.length - displaySongs.length
+            const isLoadingSongs = setList.songIds.length > 0 && songsById.size === 0
+            const setListSongs = displaySongs
             const totalDuration = calculateSetListDuration(setListSongs)
             const avgBPM = setListSongs.length > 0 ?
               Math.round(setListSongs.reduce((sum, song) => sum + (song?.bpm || 0), 0) / setListSongs.length) : 0
@@ -302,7 +316,10 @@ export default function SetListsView() {
                   <div className="card-heading">
                   <h3>{setList.name}</h3>
                     <p className="card-meta">
-                      {setListSongs.length} songs • {formatDuration(totalDuration)}
+                      {isLoadingSongs
+                        ? 'Loading…'
+                        : `${setListSongs.length} song${setListSongs.length === 1 ? '' : 's'}${missingSongCount > 0 ? ` (${missingSongCount} missing)` : ''} • ${formatDuration(totalDuration)}`
+                      }
                       {avgBPM > 0 ? ` • Avg ${avgBPM} BPM` : ''}
                     </p>
                   </div>
@@ -311,6 +328,7 @@ export default function SetListsView() {
                       className="btn-icon view-setlist"
                       onClick={() => handleLoadSetList(setList, 'performance')}
                       title="Load in Performance"
+                      disabled={isLoadingSongs}
                     >
                       🚀
                     </button>
@@ -333,16 +351,23 @@ export default function SetListsView() {
 
                 <div className="card-body">
                   <div className="setlist-summary">
-                    <div className="summary-chip">{setListSongs.length} songs</div>
-                    <div className="summary-chip">{formatDuration(totalDuration)}</div>
-                    <div className="summary-chip">{avgBPM > 0 ? `${avgBPM} Avg BPM` : '— Avg BPM'}</div>
+                    <div className="summary-chip">{isLoadingSongs ? 'Loading…' : `${setListSongs.length} songs`}</div>
+                    <div className="summary-chip">{isLoadingSongs ? '…' : formatDuration(totalDuration)}</div>
+                    <div className="summary-chip">{isLoadingSongs ? '— Avg BPM' : (avgBPM > 0 ? `${avgBPM} Avg BPM` : '— Avg BPM')}</div>
                   </div>
+
+                  {(!isLoadingSongs && missingSongCount > 0) && (
+                    <div className="setlist-warning" role="status">
+                      ⚠ Missing {missingSongCount} song{missingSongCount === 1 ? '' : 's'} from your library.
+                    </div>
+                  )}
 
                   <div className="setlist-quick-actions">
                     <button
                       type="button"
                       className="btn btn-primary"
                       onClick={() => handleLoadSetList(setList, 'performance')}
+                      disabled={isLoadingSongs}
                     >
                       Performance View
                     </button>
@@ -350,26 +375,29 @@ export default function SetListsView() {
                       type="button"
                       className="btn btn-secondary"
                       onClick={() => handleLoadSetList(setList, 'stage')}
+                      disabled={isLoadingSongs}
                     >
                       Launch Stage Mode
                     </button>
                   </div>
 
                   <div className="setlist-song-table" role="list">
-                    {setListSongs.length === 0 ? (
+                    {isLoadingSongs ? (
+                      <div className="song-row empty">Loading songs…</div>
+                    ) : setListSongs.length === 0 ? (
                       <div className="song-row empty">Add songs to this set list to prepare it for performance.</div>
                     ) : (
                       setListSongs.map((song, index) => (
-                        <div key={song.id} className="song-row" role="listitem">
+                        <div key={song.id || `${index}`} className="song-row" role="listitem">
                           <div className="song-index">{index + 1}</div>
                           <div className="song-title">
-                            <span className="song-name">{song.name}</span>
-                            {song.artist ? <span className="song-artist">{song.artist}</span> : null}
+                            <span className="song-name">{song?.name || 'Untitled song'}</span>
+                            {song?.artist ? <span className="song-artist">{song.artist}</span> : null}
                           </div>
                           <div className="song-metrics">
-                            <span className="metric-tag">{song.bpm ? `${song.bpm} BPM` : '— BPM'}</span>
-                            <span className="metric-tag">{formatTimeSignature(song.timeSignature)}</span>
-                            <span className="metric-tag muted">{song.metronomePresetName || song.metronomePreset || song.helixPreset || 'Manual'}</span>
+                            <span className="metric-tag">{song?.bpm ? `${song.bpm} BPM` : '— BPM'}</span>
+                            <span className="metric-tag">{formatTimeSignature(song?.timeSignature)}</span>
+                            <span className="metric-tag muted">{song?.metronomePresetName || song?.metronomePreset || song?.helixPreset || 'Manual'}</span>
                           </div>
                           <div className="song-actions">
                             <button

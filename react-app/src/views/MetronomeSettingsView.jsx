@@ -45,6 +45,18 @@ function buildAccentPattern(length, existing = []) {
   return pattern
 }
 
+function patternsEqual(a, b) {
+  if (a === b) return true
+  if (!Array.isArray(a) || !Array.isArray(b)) return false
+  if (a.length !== b.length) return false
+  for (let index = 0; index < a.length; index += 1) {
+    if (Boolean(a[index]) !== Boolean(b[index])) {
+      return false
+    }
+  }
+  return true
+}
+
 export default function MetronomeSettingsView() {
   const { metronome: metronomeHook, songs, setLists, updateSong } = useApp()
   const {
@@ -81,9 +93,12 @@ export default function MetronomeSettingsView() {
   }, [accentPattern])
 
   useEffect(() => {
-    if (metronome?.accentPattern) {
-      setAccentPatternState(buildAccentPattern(timeSignature, metronome.accentPattern))
+    if (!Array.isArray(metronome?.accentPattern)) {
+      return
     }
+
+    const nextPattern = buildAccentPattern(timeSignature, metronome.accentPattern)
+    setAccentPatternState(prev => (patternsEqual(prev, nextPattern) ? prev : nextPattern))
   }, [metronome?.accentPattern, timeSignature])
 
   useEffect(() => {

@@ -11,6 +11,7 @@ import SidebarNav from './components/layout/SidebarNav'
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal'
 
 // Import views
+import DashboardView from './views/DashboardView'
 import PerformanceView from './views/PerformanceView'
 import SetListsView from './views/SetListsView'
 import SongsView from './views/SongsView'
@@ -19,6 +20,7 @@ import MetronomeSettingsView from './views/MetronomeSettingsView'
 import StageModeView from './views/StageModeView'
 
 const TABS = [
+  { id: 'dashboard', icon: '🏠', label: 'Dashboard' },
   { id: 'performance', icon: '🎭', label: 'Performance' },
   { id: 'stage', icon: '🎤', label: 'Stage Mode' },
   { id: 'metronome', icon: '🎛️', label: 'Metronome' },
@@ -35,7 +37,7 @@ function AppContent() {
   // Persist and restore currentView
   useEffect(() => {
     const saved = localStorage.getItem('appCurrentView')
-    if (saved && ['performance', 'stage', 'metronome', 'setlists', 'songs', 'lights'].includes(saved)) {
+    if (saved && ['dashboard', 'performance', 'stage', 'metronome', 'setlists', 'songs', 'lights'].includes(saved)) {
       setCurrentView(saved)
     }
   }, [setCurrentView])
@@ -129,7 +131,7 @@ function AppContent() {
   useEffect(() => {
     const handleNavigate = (event) => {
       const desiredView = event?.detail?.view
-      if (desiredView && ['performance', 'stage', 'metronome', 'setlists', 'songs', 'lights'].includes(desiredView)) {
+      if (desiredView && ['dashboard', 'performance', 'stage', 'metronome', 'setlists', 'songs', 'lights'].includes(desiredView)) {
         setCurrentView(desiredView)
       }
     }
@@ -139,6 +141,7 @@ function AppContent() {
   }, [setCurrentView])
 
   const views = useMemo(() => ({
+    dashboard: <DashboardView />,
     performance: <PerformanceView />,
     stage: <StageModeView />,
     metronome: <MetronomeSettingsView />,
@@ -147,7 +150,7 @@ function AppContent() {
     lights: <MIDILightsView />
   }), [])
 
-  const activeView = views[currentView] || views.performance
+  const activeView = views[currentView] || views.dashboard
 
     return (
       <>
@@ -162,8 +165,12 @@ function AppContent() {
         onSelect={setCurrentView}
       />
       
-      {/* Desktop Header (without nav) */}
-      <AppHeader />
+      {/* Global Top Navigation */}
+      <AppHeader
+        tabs={TABS}
+        currentView={currentView}
+        onSelect={setCurrentView}
+      />
 
         <main className={`flex-1 w-full max-w-5xl mx-auto pb-24 md:pb-12 md:ml-[240px] ${user ? 'pt-20 md:pt-24' : 'pt-6 md:pt-12'}`}>
         {activeView}

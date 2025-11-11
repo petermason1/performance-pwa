@@ -1,6 +1,25 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../hooks/useApp'
 
+function sanitizeInteger(value, { min, max, fallback }) {
+  const parsed = typeof value === 'number' ? value : Number.parseInt(value, 10)
+  if (!Number.isFinite(parsed)) {
+    return fallback
+  }
+
+  let next = parsed
+
+  if (typeof min === 'number') {
+    next = Math.max(next, min)
+  }
+
+  if (typeof max === 'number') {
+    next = Math.min(next, max)
+  }
+
+  return next
+}
+
 export default function SongModal({ song, onClose }) {
   const { addSong, updateSong } = useApp()
   
@@ -19,12 +38,19 @@ export default function SongModal({ song, onClose }) {
 
   useEffect(() => {
     if (song) {
+      const safeBpm = sanitizeInteger(song.bpm, { min: 40, max: 300, fallback: 120 })
+      const safeTimeSignature = sanitizeInteger(song.timeSignature, { min: 1, max: 16, fallback: 4 })
+      const presetNumberRaw = song.helixPresetNumber
+      const safePresetNumber = Number.isFinite(presetNumberRaw)
+        ? sanitizeInteger(presetNumberRaw, { min: 0, max: 127, fallback: null })
+        : ''
+
       setFormData({
-        name: song.name || '',
-        bpm: song.bpm || 120,
-        timeSignature: song.timeSignature || 4,
+        name: song.name || song.title || '',
+        bpm: safeBpm,
+        timeSignature: safeTimeSignature,
         helixPreset: song.helixPreset || '',
-        helixPresetNumber: song.helixPresetNumber !== undefined ? song.helixPresetNumber : '',
+        helixPresetNumber: safePresetNumber ?? '',
         duration: song.duration ? song.duration.toString() : '',
         lyrics: song.lyrics || '',
         midiNotes: song.midiNotes ? song.midiNotes.join(',') : '',
@@ -50,12 +76,46 @@ export default function SongModal({ song, onClose }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'bpm' || name === 'timeSignature' ? parseInt(value) || 0 :
-              name === 'helixPresetNumber' || name === 'duration' ? value :
-              value
-    }))
+
+    setFormData(prev => {
+      if (name === 'bpm' || name === 'timeSignature') {
+        if (value === '') {
+          return { ...prev, [name]: '' }
+        }
+
+        const parsed = Number.parseInt(value, 10)
+        return Number.isFinite(parsed)
+          ? { ...prev, [name]: parsed }
+          : prev
+      }
+
+      if (name === 'helixPresetNumber') {
+        if (value === '') {
+          return { ...prev, helixPresetNumber: '' }
+        }
+
+        const parsed = Number.parseInt(value, 10)
+        return Number.isFinite(parsed)
+          ? { ...prev, helixPresetNumber: parsed }
+          : prev
+      }
+
+      if (name === 'duration') {
+        if (value === '') {
+          return { ...prev, duration: '' }
+        }
+
+        const parsed = Number.parseFloat(value)
+        return Number.isFinite(parsed)
+          ? { ...prev, duration: value }
+          : prev
+      }
+
+      return {
+        ...prev,
+        [name]: value
+      }
+    })
   }
 
   const handleSubmit = (e) => {
@@ -63,21 +123,33 @@ export default function SongModal({ song, onClose }) {
     
     const midiNotes = formData.midiNotes
       .split(',')
-      .map(n => parseInt(n.trim()))
-      .filter(n => !isNaN(n))
+      .map(n => Number.parseInt(n.trim(), 10))
+      .filter(n => !Number.isNaN(n))
+
+    const bpmValue = sanitizeInteger(formData.bpm, { min: 40, max: 300, fallback: 120 })
+    const timeSignatureValue = sanitizeInteger(formData.timeSignature, { min: 1, max: 16, fallback: 4 })
+    const helixPresetNumberValue = formData.helixPresetNumber !== ''
+      ? sanitizeInteger(formData.helixPresetNumber, { min: 0, max: 127, fallback: null })
+      : null
+    const parsedDuration = formData.duration === '' ? null : Number.parseFloat(formData.duration)
+    const durationValue = parsedDuration !== null && Number.isFinite(parsedDuration) && parsedDuration >= 0 && parsedDuration <= 60
+      ? parsedDuration
+      : null
+    const trimmedName = formData.name.trim()
     
     const songData = {
-      name: formData.name,
-      bpm: formData.bpm,
-      timeSignature: formData.timeSignature,
+      name: trimmedName,
+      title: trimmedName,
+      bpm: bpmValue,
+      timeSignature: timeSignatureValue,
       helixPreset: formData.helixPreset || null,
-      helixPresetNumber: formData.helixPresetNumber !== '' ? parseInt(formData.helixPresetNumber) : null,
+      helixPresetNumber: helixPresetNumberValue,
       lyrics: formData.lyrics.trim() || null,
       lyricsFormat: 'plain',
       midiNotes,
       accentPattern: formData.accentPattern,
       polyrhythm: formData.polyrhythm,
-      duration: formData.duration ? parseFloat(formData.duration) : null
+      duration: durationValue
     }
 
     if (song?.id) {

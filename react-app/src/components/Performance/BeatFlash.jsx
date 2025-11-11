@@ -26,7 +26,9 @@ export default function BeatFlash({
   }
   
   // Calculate progress percentage through the measure
-  const progressPercentage = timeSignature > 0 ? ((currentBeat - 1) / timeSignature) * 100 : 0
+  const progressPercentage = timeSignature > 0
+    ? Math.min(100, Math.max(0, (currentBeat / timeSignature) * 100))
+    : 0
 
   // Determine beat color type for color-coded mode
   const getBeatColorType = () => {

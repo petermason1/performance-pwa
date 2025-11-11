@@ -1,0 +1,75 @@
+.dashboard-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1.25rem 1.4rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(0, 217, 255, 0.12);
+  background: rgba(12, 20, 34, 0.85);
+  box-shadow: 0 12px 24px rgba(3, 12, 28, 0.3);
+  color: #deecff;
+  min-height: 160px;
+}
+
+.dashboard-status-card.tone-success {
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.dashboard-status-card.tone-warning {
+  border-color: rgba(254, 214, 76, 0.35);
+}
+
+.dashboard-status-card.tone-muted {
+  border-color: rgba(118, 132, 160, 0.18);
+}
+
+.dashboard-status-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.dashboard-status-value {
+  font-size: clamp(1.5rem, 3vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #f7fbff;
+}
+
+.dashboard-status-title {
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(175, 210, 255, 0.76);
+}
+
+.dashboard-status-meta {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: rgba(203, 220, 247, 0.78);
+  flex: 1;
+}
+
+.dashboard-status-button {
+  align-self: flex-start;
+  padding: 0.55rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 217, 255, 0.22);
+  background: rgba(0, 217, 255, 0.08);
+  color: rgba(0, 217, 255, 0.95);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: all 0.18s ease;
+}
+
+.dashboard-status-button:hover {
+  background: rgba(0, 217, 255, 0.18);
+  border-color: rgba(0, 217, 255, 0.45);
+}
+
+.dashboard-status-button:active {
+  transform: scale(0.97);
+}
+
