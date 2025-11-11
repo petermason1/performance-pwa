@@ -3116,3 +3116,25 @@ button {
     z-index: 30; /* below .more-drawer (z:50) and nav (z:40) */
   }
 }
+
+.pwa-update-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 8px 12px;
+  background: var(--surface-light);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  z-index: 35;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+@media (max-width: 480px) {
+  .pwa-update-button {
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    right: 12px;
+    z-index: 30; /* below .more-drawer (z:50) and nav (z:40) */
+  }
+}

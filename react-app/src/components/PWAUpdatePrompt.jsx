@@ -160,23 +160,10 @@ export default function PWAUpdatePrompt() {
       
       {/* Always-visible manual check button (small, bottom right) */}
       {'serviceWorker' in navigator && (
-        <button
-          onClick={handleManualCheck}
-          style={{
-            position: 'fixed',
-            bottom: showPrompt ? '200px' : '20px',
-            right: '20px',
-            padding: '8px 12px',
-            background: 'var(--surface-light)',
-            border: '1px solid var(--border)',
-            borderRadius: '8px',
-            fontSize: '0.75rem',
-            cursor: 'pointer',
-            zIndex: 9999,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
-          }}
+        <button 
           title="Check for updates"
           className="pwa-update-button"
+          onClick={handleManualCheck}
         >
           🔄
         </button>
