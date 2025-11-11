@@ -32,6 +32,34 @@ export function AppProvider({ children }) {
   const [dbInitialized, setDbInitialized] = useState(false);
   const [migrationStatus, setMigrationStatus] = useState(null);
   const [migrationProgress, setMigrationProgress] = useState(null);
+  const [focusMode, setFocusMode] = useState(() => localStorage.getItem('focusMode') === 'true');
+  const [ui, setUi] = useState({ openRealtime: false, openShortcuts: false });
+
+  useEffect(() => {
+    localStorage.setItem('focusMode', focusMode ? 'true' : 'false');
+  }, [focusMode]);
+
+  const dispatchUi = useCallback((action) => {
+    switch (action?.type) {
+      case 'OPEN_REALTIME':
+        setUi(prev => ({ ...prev, openRealtime: true }));
+        break;
+      case 'CLOSE_REALTIME':
+        setUi(prev => ({ ...prev, openRealtime: false }));
+        break;
+      case 'OPEN_SHORTCUTS':
+        setUi(prev => ({ ...prev, openShortcuts: true }));
+        break;
+      case 'CLOSE_SHORTCUTS':
+        setUi(prev => ({ ...prev, openShortcuts: false }));
+        break;
+      case 'TOGGLE_FOCUS_MODE':
+        setFocusMode(v => !v);
+        break;
+      default:
+        break;
+    }
+  }, []);
 
   // Global metronome that persists across views
   const metronomeHook = useMetronome(120);
@@ -301,6 +329,10 @@ export function AppProvider({ children }) {
     dbInitialized,
     migrationStatus,
     migrationProgress,
+    // UI
+    focusMode,
+    ui,
+    dispatchUi,
     // Song operations
     addSong,
     updateSong,

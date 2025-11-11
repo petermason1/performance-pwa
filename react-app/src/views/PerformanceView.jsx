@@ -15,7 +15,7 @@ import RealtimeSessionModal from '../components/RealtimeSessionModal'
 import './PerformanceView.css'
 
 export default function PerformanceView() {
-  const { songs, setLists, getSetList, getSong, updateSong, addSetList, metronome: metronomeHook, setCurrentView } = useApp()
+  const { songs, setLists, getSetList, getSong, updateSong, addSetList, metronome: metronomeHook, setCurrentView, ui, dispatchUi, focusMode } = useApp()
   const [currentSetList, setCurrentSetList] = useState(null)
   const [currentSongIndex, setCurrentSongIndex] = useState(0)
   const [currentSong, setCurrentSong] = useState(null)
@@ -478,6 +478,18 @@ export default function PerformanceView() {
     return () => document.removeEventListener('keydown', handleHelpKey)
   }, [isEditingBPM])
 
+  useEffect(() => {
+    if (ui.openRealtime && !showRealtimeSession) {
+      setShowRealtimeSession(true)
+    }
+  }, [ui.openRealtime, showRealtimeSession])
+
+  useEffect(() => {
+    if (ui.openShortcuts && !showKeyboardShortcuts) {
+      setShowKeyboardShortcuts(true)
+    }
+  }, [ui.openShortcuts, showKeyboardShortcuts])
+
   const toggleBeatAccent = (index) => {
     const newPattern = [...accentPattern]
     newPattern[index] = !newPattern[index]
@@ -623,7 +635,6 @@ export default function PerformanceView() {
     <div role="main" aria-label="Performance View">
       <header className="performance-view-header">
         <h1>Performance</h1>
-      
         <button
           className="btn btn-secondary btn-small"
           onClick={() => setShowKeyboardShortcuts(true)}
@@ -1184,6 +1195,10 @@ export default function PerformanceView() {
                 </button>
               </div>
               <small id="accent-pattern-help">Click beats to toggle accent on/off</small>
+            </div>
+
+            <details className="advanced-section">
+              <summary>Advanced</summary>
               <PresetSelector
                 timeSignature={timeSignature}
                 currentPattern={accentPattern}
@@ -1194,85 +1209,40 @@ export default function PerformanceView() {
                   setPresetFeedback(`✅ Applied preset: ${presetName || 'Custom'}`)
                   setTimeout(() => setPresetFeedback(''), 2000)
                 }}
-                onSaveAsPreset={(pattern) => {
-                  // Handled by PresetSelector
-                }}
+                onSaveAsPreset={(pattern) => {}}
               />
-              {presetFeedback && (
-                <div 
-                  className="preset-feedback" 
-                  role="status" 
-                  aria-live="polite"
-                  style={{
-                    marginTop: '10px',
-                    padding: '8px 12px',
-                    background: 'var(--accent-green)',
-                    color: 'white',
-                    borderRadius: '6px',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
-                    textAlign: 'center'
-                  }}
+              <div className="control-group">
+                <label htmlFor="polyrhythm-select">Polyrhythm</label>
+                <select 
+                  id="polyrhythm-select"
+                  value={polyrhythm?.name || ''}
+                  onChange={(e) => handlePolyrhythmChange(e.target.value)}
+                  aria-label="Select polyrhythm pattern"
+                  aria-describedby="polyrhythm-help"
                 >
-                  {presetFeedback}
+                  <option value="">None (Standard)</option>
+                  <option value="3:2">3:2 (Three over Two)</option>
+                  <option value="4:3">4:3 (Four over Three)</option>
+                  <option value="5:4">5:4 (Five over Four)</option>
+                  <option value="custom">Custom Pattern</option>
+                </select>
+                <small id="polyrhythm-help">Advanced rhythm patterns for complex time signatures</small>
+              </div>
+              {showCustomPolyrhythm && (
+                <div className="control-group">
+                  <label htmlFor="custom-polyrhythm">Custom Pattern</label>
+                  <input 
+                    type="text" 
+                    id="custom-polyrhythm" 
+                    placeholder="e.g., 1,0,0,1,0,0" 
+                    pattern="[01,]+"
+                    value={customPolyrhythmValue}
+                    onChange={(e) => handleCustomPolyrhythm(e.target.value)}
+                  />
+                  <small>1 = accent, 0 = normal. Example: 1,0,0,1,0,0 creates a 3:2 pattern</small>
                 </div>
               )}
-              <div style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                {isPlaying && currentBeatInMeasure > 0 ? (
-                  <>
-                    Current beat: <strong style={{ color: 'var(--primary)' }}>{currentBeatInMeasure}</strong>
-                    {metronome && metronome.getAccentBeats().length > 0 && (
-                      <> • Accent on: <strong>{metronome.getAccentBeats().join(', ')}</strong></>
-                    )}
-                    {metronome && metronome.getAccentBeats().length === 0 && (
-                      <> • <em>No accent</em></>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {metronome && metronome.getAccentBeats().length > 0 && (
-                      <>Accent set on: <strong>{metronome.getAccentBeats().join(', ')}</strong></>
-                    )}
-                    {metronome && metronome.getAccentBeats().length === 0 && (
-                      <><em>No accent (uniform click)</em></>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-            
-            <div className="control-group">
-              <label htmlFor="polyrhythm-select">Polyrhythm</label>
-              <select 
-                id="polyrhythm-select"
-                value={polyrhythm?.name || ''}
-                onChange={(e) => handlePolyrhythmChange(e.target.value)}
-                aria-label="Select polyrhythm pattern"
-                aria-describedby="polyrhythm-help"
-              >
-                <option value="">None (Standard)</option>
-                <option value="3:2">3:2 (Three over Two)</option>
-                <option value="4:3">4:3 (Four over Three)</option>
-                <option value="5:4">5:4 (Five over Four)</option>
-                <option value="custom">Custom Pattern</option>
-              </select>
-              <small id="polyrhythm-help">Advanced rhythm patterns for complex time signatures</small>
-            </div>
-            
-            {showCustomPolyrhythm && (
-              <div className="control-group">
-                <label htmlFor="custom-polyrhythm">Custom Pattern</label>
-                <input 
-                  type="text" 
-                  id="custom-polyrhythm" 
-                  placeholder="e.g., 1,0,0,1,0,0" 
-                  pattern="[01,]+"
-                  value={customPolyrhythmValue}
-                  onChange={(e) => handleCustomPolyrhythm(e.target.value)}
-                />
-                <small>1 = accent, 0 = normal. Example: 1,0,0,1,0,0 creates a 3:2 pattern</small>
-              </div>
-            )}
+            </details>
             
             <div className="button-group" role="group" aria-label="Metronome and song controls">
               <button 
@@ -1410,12 +1380,804 @@ export default function PerformanceView() {
       </div>
       )}
 
+      {/* Focus Mode - minimal mobile-first surface */}
+      {focusMode && (
+        <div className="performance-controls" style={{ textAlign: 'center' }}>
+          <div className="current-song-display" role="region" aria-label="Current song information">
+            <h2 aria-live="polite">{currentSong ? currentSong.name : '--'}</h2>
+            <div className="bpm-display" role="group" aria-label="Tempo and time signature">
+              <span id="bpm-value" title="Click to edit tempo" role="button" tabIndex={0} aria-label={`Current tempo: ${bpm} BPM.`}>{bpm}</span>
+              <span className="bpm-label" aria-hidden="true">BPM</span>
+              <span className="time-signature-display" aria-label={`Time signature: ${timeSignature} over 4`}>{timeSignature}/4</span>
+            </div>
+          </div>
+          <div className="visual-beat" role="img" aria-label="Visual beat indicator" style={{ opacity: visualEnabled ? 1 : 0.3 }}>
+            <div className={`beat-indicator ${isBeatFlashing ? 'active' : ''} ${isAccentBeat ? 'accent' : ''}`} aria-live="off">
+              {showBeatNumber && (
+                isPlaying && currentBeatInMeasure > 0 ? (
+                  <span style={{ fontSize: '3rem', fontWeight: 700 }}>{currentBeatInMeasure}</span>
+                ) : (
+                  <span style={{ fontSize: '1.2rem', fontWeight: 500, opacity: 0.6 }}>Ready</span>
+                )
+              )}
+            </div>
+          </div>
+          <div className="song-navigation-container" style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '12px' }}>
+            <button className="btn btn-secondary" onClick={previousSong} disabled={currentSongIndex === 0}>◀ Prev</button>
+            <button className={`btn btn-primary ${isPlaying ? 'playing' : ''}`} onClick={toggle} aria-pressed={isPlaying}>{isPlaying ? '⏸ Stop' : '▶ Start'}</button>
+            <button className="btn btn-secondary" onClick={nextSong} disabled={!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1}>Next ▶</button>
+          </div>
+        </div>
+      )}
+
+      {/* Setup Mode stack (hidden in focus mode) */}
+      {!focusMode && (
+        <>
+          <ModeToggle mode={performanceMode} onChange={setPerformanceMode} />
+
+          {performanceMode === 'setup' && (
+            <div className="performance-mode active setup-mode-container">
+              <div className="setlist-section" role="region" aria-label="Set list selection">
+                <select 
+                  className="setlist-select"
+                  value={selectedSetListId}
+                  onChange={(e) => {
+                    setSelectedSetListId(e.target.value)
+                    if (e.target.value) loadSetList(e.target.value)
+                  }}
+                  aria-label="Select a set list"
+                  aria-describedby="setlist-help"
+                >
+                  <option value="">Select a Set List</option>
+                  {setLists.map(setList => (
+                    <option key={setList.id} value={setList.id}>{setList.name}</option>
+                  ))}
+                </select>
+                <button 
+                  className="setlist-button" 
+                  onClick={() => {
+                    if (selectedSetListId) loadSetList(selectedSetListId)
+                  }}
+                  aria-label="Load selected set list"
+                  disabled={!selectedSetListId}
+                >
+                  Load
+                </button>
+                {currentSetList && (
+                  <button 
+                    className="setlist-button" 
+                    onClick={() => {
+                      if (confirm('Unload this set list?')) {
+                        setCurrentSetList(null)
+                        setCurrentSong(null)
+                        setSelectedSetListId('')
+                        setCurrentSongIndex(0)
+                        localStorage.removeItem('currentSetListId')
+                        localStorage.removeItem('currentSongIndex')
+                      }
+                    }}
+                    aria-label={`Unload set list: ${currentSetList.name}`}
+                  >
+                    Unload
+                  </button>
+                )}
+                <span id="setlist-help" className="sr-only">Select and load a set list to begin performance</span>
+              </div>
+
+              <div className="song-list-section">
+                <div className="song-list-header">
+                  <h3>Set List Songs</h3>
+                  {currentSetList && (
+                    <button 
+                      className="setlist-button"
+                      onClick={() => {
+                        setCurrentView('setlists')
+                      }}
+                      title="Go to Set Lists to edit song order"
+                    >
+                      ✏️ Edit Order
+                    </button>
+                  )}
+                </div>
+                {currentSetList && (
+                  <div className="song-list-tip">
+                    💡 Click a song to load it. To reorder songs, go to <strong>Set Lists</strong> view and edit this set list.
+                  </div>
+                )}
+                <div className="song-list-container" role="list" aria-label="Set list songs">
+                  {setListSongs.length === 0 ? (
+                    <div className="song-list-empty" role="status">
+                      <p className="empty-message">
+                        {currentSetList ? '📋 No songs in this set list' : '🎼 Load a set list to begin performing'}
+                      </p>
+                      {!currentSetList && (
+                        <div className="empty-tips">
+                          <p className="tip-title">💡 Quick Start Guide:</p>
+                          <ul className="tip-list">
+                            <li>
+                              <button 
+                                className="link-button"
+                                onClick={() => setCurrentView('setlists')}
+                                aria-label="Go to Set Lists view"
+                              >
+                                <strong>Create a Set List</strong>
+                              </button> to organize your songs
+                            </li>
+                            <li>
+                              <button 
+                                className="link-button"
+                                onClick={() => setCurrentView('songs')}
+                                aria-label="Go to Songs library"
+                              >
+                                <strong>Add Songs</strong>
+                              </button> to your library
+                            </li>
+                            <li>Import example songs to explore features</li>
+                          </ul>
+                          <div className="empty-actions" style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
+                            <div style={{ 
+                              background: 'var(--surface-light)', 
+                              padding: '20px', 
+                              borderRadius: '12px',
+                              border: '2px solid var(--primary-color)',
+                              width: '100%',
+                              maxWidth: '500px'
+                            }}>
+                              <h4 style={{ marginBottom: '10px', color: 'var(--primary-color)' }}>
+                                🎵 Quick Start with Example Set Lists
+                              </h4>
+                              <p style={{ marginBottom: '15px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                                Try one of our pre-built set lists to see how it works!
+                              </p>
+                              <button
+                                className="btn btn-primary"
+                                onClick={() => setShowExampleSetListsModal(true)}
+                                aria-label="Browse and import example set lists"
+                                style={{ width: '100%' }}
+                              >
+                                📋 Browse Example Set Lists
+                              </button>
+                            </div>
+                            <button
+                              className="btn btn-secondary"
+                              onClick={() => setCurrentView('setlists')}
+                              aria-label="Create your first set list"
+                            >
+                              ➕ Or Create Your Own Set List
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {currentSetList && (
+                        <div className="empty-actions">
+                          <button
+                            className="btn btn-primary"
+                            onClick={() => setCurrentView('setlists')}
+                            aria-label="Add songs to this set list"
+                          >
+                            ➕ Add Songs to Set List
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    setListSongs.map((song, index) => (
+                      <div
+                        key={song.id}
+                        className={`song-item-card ${index === currentSongIndex ? 'active' : ''}`}
+                        onClick={() => selectSong(index)}
+                      >
+                        <span className="song-number">{index + 1}</span>
+                        <div className="song-name-display">
+                          <span className="song-name">
+                            {song.name}
+                            {song.artist && <span className="song-artist-small"> ({song.artist})</span>}
+                          </span>
+                          <span className="song-bpm-display">{song.bpm} BPM</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {performanceMode === 'live' && (
+            <LiveView 
+              bpm={bpm}
+              timeSignature={timeSignature}
+              isPlaying={isPlaying}
+              soundEnabled={soundEnabled}
+              visualEnabled={visualEnabled}
+              rotation={rotation}
+              wheelRef={wheelRef}
+              tapTempoMessage={tapTempoMessage}
+              currentSong={currentSong}
+              setListSongs={setListSongs}
+              currentSongIndex={currentSongIndex}
+              isBeatFlashing={isBeatFlashing}
+              isAccentBeat={isAccentBeat}
+              currentBeatInMeasure={currentBeatInMeasure}
+              showBeatNumber={showBeatNumber}
+              accentPattern={accentPattern}
+              onToggleMetronome={toggle}
+              onSoundToggle={setSoundEnabled}
+              onVisualToggle={setVisualEnabled}
+              onTimeSignatureChange={handleTimeSignatureChange}
+              onTapTempo={tapTempo}
+              onPreviousSong={previousSong}
+              onNextSong={nextSong}
+              soundPreset={soundPreset}
+              subdivision={subdivision}
+              countInBeats={countInBeats}
+              accentVolume={accentVolume}
+              regularVolume={regularVolume}
+              subdivisionVolume={subdivisionVolume}
+              masterVolume={masterVolume}
+              onSoundPresetChange={setSoundPreset}
+              onSubdivisionChange={setSubdivision}
+              onCountInChange={setCountInBeats}
+              onAccentVolumeChange={setAccentVolume}
+              onRegularVolumeChange={setRegularVolume}
+              onSubdivisionVolumeChange={setSubdivisionVolume}
+              onMasterVolumeChange={setMasterVolume}
+            />
+          )}
+
+          {performanceMode === 'setup' && (
+            <div className="performance-controls">
+            <div className="current-song-display" role="region" aria-label="Current song information">
+              <h2 aria-live="polite">{currentSong ? currentSong.name : '--'}</h2>
+              <div className="bpm-display" role="group" aria-label="Tempo and time signature">
+                {isEditingBPM ? (
+                  <input
+                    type="number"
+                    className="bpm-input"
+                    value={bpmInputValue}
+                    onChange={handleBPMInputChange}
+                    onBlur={handleBPMInputBlur}
+                    onKeyDown={handleBPMInputKeyDown}
+                    min="40"
+                    max="300"
+                    autoFocus
+                    aria-label="Edit tempo in BPM"
+                    aria-describedby="bpm-help"
+                    style={{
+                      fontSize: 'inherit',
+                      fontWeight: 'inherit',
+                      width: '80px',
+                      textAlign: 'center',
+                      background: 'var(--surface-light)',
+                      border: '2px solid var(--primary-color)',
+                      borderRadius: '8px',
+                      padding: '4px 8px',
+                      color: 'var(--text)',
+                      outline: 'none'
+                    }}
+                  />
+                ) : (
+                  <span 
+                    id="bpm-value" 
+                    onClick={handleBPMClick}
+                    style={{ cursor: 'pointer', userSelect: 'none' }}
+                    title="Click to edit tempo"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Current tempo: ${bpm} BPM. Click to edit.`}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleBPMClick()
+                      }
+                    }}
+                  >
+                    {bpm}
+                  </span>
+                )}
+                <span className="bpm-label" aria-hidden="true">BPM</span>
+                <span className="time-signature-display" aria-label={`Time signature: ${timeSignature} over 4`}>{timeSignature}/4</span>
+                <span id="bpm-help" className="sr-only">Enter a tempo between 40 and 300 BPM</span>
+              </div>
+            </div>
+
+            <div className="tempo-wheel-container">
+              <div className="tempo-wheel" ref={wheelRef}>
+                <div 
+                  className="wheel-background"
+                  style={{ transform: `rotate(${rotation}deg)` }}
+                >
+                  <div className="wheel-mark wheel-mark-1"></div>
+                  <div className="wheel-mark wheel-mark-2"></div>
+                  <div className="wheel-mark wheel-mark-3"></div>
+                  <div className="wheel-mark wheel-mark-4"></div>
+                </div>
+                <div className="wheel-inner">
+                  <button 
+                    className={`wheel-play-btn ${isPlaying ? 'playing' : ''}`}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      toggle()
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                  >
+                    <span className="wheel-play-icon" style={{ display: isPlaying ? 'none' : 'inline' }}>▶</span>
+                    <span className="wheel-pause-icon" style={{ display: isPlaying ? 'inline' : 'none' }}>⏸</span>
+                    <div className="wheel-bpm-value">{bpm}</div>
+                    <div className="wheel-label">BPM</div>
+                  </button>
+                </div>
+                <div className="wheel-handle"></div>
+              </div>
+              <div className="tempo-wheel-controls">
+                {setListSongs.length > 0 && (
+                  <div className="song-navigation-container" role="navigation" aria-label="Song navigation">
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={previousSong}
+                      disabled={currentSongIndex === 0}
+                      aria-label="Previous song in set list"
+                      aria-disabled={currentSongIndex === 0}
+                      style={{ 
+                        opacity: currentSongIndex === 0 ? 0.5 : 1, 
+                        cursor: currentSongIndex === 0 ? 'not-allowed' : 'pointer',
+                        minWidth: '110px',
+                        flexShrink: 0
+                      }}
+                    >
+                      ◀ Prev Song
+                    </button>
+                    <span 
+                      className="current-song-title" 
+                      title={currentSong ? `${currentSong.name}${currentSong.artist ? ` - ${currentSong.artist}` : ''}` : 'No Song'}
+                      aria-label={`Current song: ${currentSong ? `${currentSong.name}${currentSong.artist ? ` by ${currentSong.artist}` : ''}` : 'No Song'}`}
+                      role="status"
+                      aria-live="polite"
+                    >
+                      {currentSong ? `${currentSong.name}${currentSong.artist ? ` - ${currentSong.artist}` : ''}` : 'No Song'}
+                    </span>
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={nextSong}
+                      disabled={!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1}
+                      aria-label="Next song in set list"
+                      aria-disabled={!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1}
+                      style={{ 
+                        opacity: (!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1) ? 0.5 : 1, 
+                        cursor: (!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1) ? 'not-allowed' : 'pointer',
+                        minWidth: '110px',
+                        flexShrink: 0
+                      }}
+                    >
+                      Next Song ▶
+                    </button>
+                  </div>
+                )}
+                <div className="tap-tempo-container" role="region" aria-label="Tap tempo">
+                  <button 
+                    className="btn btn-secondary tap-tempo-btn" 
+                    onClick={tapTempo}
+                    aria-label="Tap to set tempo"
+                    aria-describedby="tap-tempo-help"
+                  >
+                    Tap Tempo
+                  </button>
+                  <span 
+                    className="tap-tempo-message" 
+                    role="status" 
+                    aria-live="polite"
+                    aria-atomic="true"
+                  >
+                    {tapTempoMessage || '\u00A0'}
+                  </span>
+                  <span id="tap-tempo-help" className="sr-only">Tap this button repeatedly at the desired tempo</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="lyrics-container" role="region" aria-label="Song lyrics">
+              <div className="lyrics-display">
+                {!currentSong || !currentSong.lyrics || currentSong.lyrics.length === 0 ? (
+                  <div className="lyrics-empty-state">
+                    <p className="lyrics-placeholder">🎵 No lyrics for this song</p>
+                    <div className="empty-state-help">
+                      <p className="help-text">Add synchronized lyrics to follow along with your performance</p>
+                      <div className="help-actions">
+                        <button 
+                          className="btn btn-secondary btn-small"
+                          onClick={() => setCurrentView('songs')}
+                          aria-label="Go to songs view to add lyrics"
+                        >
+                          ✏️ Edit Song
+                        </button>
+                      </div>
+                      <details className="help-details">
+                        <summary>How to add lyrics</summary>
+                        <ol>
+                          <li>Go to the <strong>Songs</strong> view</li>
+                          <li>Click <strong>Edit</strong> on your song</li>
+                          <li>Add synchronized lyrics in LRC format</li>
+                          <li>Format: <code>[MM:SS.CC] Lyric text</code></li>
+                        </ol>
+                      </details>
+                    </div>
+                  </div>
+                ) : lyricsToShow.length === 0 ? (
+                  <p className="lyrics-placeholder">Ready to start...</p>
+                ) : (
+                  lyricsToShow.map((lyric) => {
+                    const actualIndex = currentSong.lyrics.indexOf(lyric)
+                    const isCurrent = actualIndex === currentLyricIndex
+                    return (
+                      <p key={actualIndex} className={`lyric-line ${isCurrent ? 'current' : ''}`}>
+                        {lyric.text}
+                      </p>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="metronome-section" role="region" aria-label="Metronome controls and display">
+              <div className="visual-beat" style={{ opacity: visualEnabled ? 1 : 0.3 }} role="img" aria-label="Visual beat indicator">
+                <div 
+                  className={`beat-indicator ${isBeatFlashing ? 'active' : ''} ${isAccentBeat ? 'accent' : ''}`}
+                  aria-live="off"
+                >
+                  {showBeatNumber && (
+                    isPlaying && currentBeatInMeasure > 0 ? (
+                      <span style={{ 
+                        fontSize: '2.5rem', 
+                        fontWeight: 700, 
+                        color: 'var(--text)',
+                        textShadow: isBeatFlashing ? (isAccentBeat ? '0 0 10px rgba(255, 68, 68, 0.8)' : '0 0 10px rgba(76, 175, 80, 0.8)') : 'none',
+                        transition: 'text-shadow 0.15s ease'
+                      }}>
+                        {currentBeatInMeasure}
+                      </span>
+                    ) : (
+                      <span style={{ 
+                        fontSize: '1.2rem', 
+                        fontWeight: 500, 
+                        color: 'var(--text-secondary)',
+                        opacity: 0.6
+                      }}>
+                        Ready
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
+              
+              <div className="metronome-settings" role="group" aria-label="Metronome settings">
+                <div className="settings-grid">
+                  <label className="settings-checkbox">
+                    <input 
+                      type="checkbox" 
+                      checked={soundEnabled}
+                      onChange={(e) => setSoundEnabled(e.target.checked)}
+                      aria-label="Enable metronome sound"
+                      aria-describedby="sound-setting-help"
+                    />
+                    <span className="settings-icon" aria-hidden="true">🔊</span>
+                    <span className="settings-label">Sound</span>
+                  </label>
+                  <span id="sound-setting-help" className="sr-only">Toggle audio clicks for the metronome</span>
+                  
+                  <label className="settings-checkbox">
+                    <input 
+                      type="checkbox" 
+                      checked={visualEnabled}
+                      onChange={(e) => setVisualEnabled(e.target.checked)}
+                      aria-label="Enable visual beat indicator"
+                      aria-describedby="visual-setting-help"
+                    />
+                    <span className="settings-icon" aria-hidden="true">💡</span>
+                    <span className="settings-label">Visual Flash</span>
+                  </label>
+                  <span id="visual-setting-help" className="sr-only">Toggle visual flashing indicator for beats</span>
+                  
+                  {visualEnabled && (
+                    <>
+                      <label className="settings-checkbox">
+                        <input 
+                          type="checkbox" 
+                          checked={showBeatNumber}
+                          onChange={(e) => setShowBeatNumber(e.target.checked)}
+                          aria-label="Show beat numbers in visual indicator"
+                          aria-describedby="beat-number-help"
+                        />
+                        <span className="settings-icon" aria-hidden="true">🔢</span>
+                        <span className="settings-label">Show No.</span>
+                      </label>
+                      <span id="beat-number-help" className="sr-only">Display the current beat number in the visual indicator</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              <div className="controls">
+                <div className="control-group">
+                  <label htmlFor="time-signature-select">Time Signature</label>
+                  <select 
+                    id="time-signature-select"
+                    value={timeSignature}
+                    onChange={(e) => handleTimeSignatureChange(parseInt(e.target.value))}
+                    aria-label="Select time signature"
+                    aria-describedby="time-sig-help"
+                  >
+                    <option value="2">2/4</option>
+                    <option value="3">3/4</option>
+                    <option value="4">4/4 (Common Time)</option>
+                    <option value="5">5/4</option>
+                    <option value="6">6/8</option>
+                    <option value="7">7/8</option>
+                    <option value="9">9/8</option>
+                    <option value="12">12/8</option>
+                  </select>
+                  <small id="time-sig-help">Beats per measure</small>
+                </div>
+                
+                <div className="control-group" role="group" aria-labelledby="accent-pattern-label">
+                  <label id="accent-pattern-label">Accent Pattern</label>
+                  <div className="beat-pattern-selector" role="toolbar" aria-label="Accent pattern selector">
+                    {accentPattern.map((accented, index) => (
+                      <button
+                        key={index}
+                        className={`beat-btn ${accented ? 'accented' : ''}`}
+                        data-beat-index={index}
+                        onClick={() => toggleBeatAccent(index)}
+                        aria-label={`Beat ${index + 1}, ${accented ? 'accented' : 'not accented'}. Click to toggle.`}
+                        aria-pressed={accented}
+                      >
+                        {index + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="accent-controls" role="group" aria-label="Accent pattern presets">
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary" 
+                      onClick={clearAllAccents}
+                      aria-label="Clear all accent patterns"
+                    >
+                      Clear All
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary" 
+                      onClick={setNoAccent}
+                      aria-label="Set no accent (uniform beats)"
+                    >
+                      No Accent
+                    </button>
+                  </div>
+                  <small id="accent-pattern-help">Click beats to toggle accent on/off</small>
+                </div>
+
+                <details className="advanced-section">
+                  <summary>Advanced</summary>
+                  <PresetSelector
+                    timeSignature={timeSignature}
+                    currentPattern={accentPattern}
+                    onApplyPreset={(pattern, presetName) => {
+                      setAccentPatternState(pattern)
+                      setMetronomeAccentPattern(pattern)
+                      if (currentSong) setSongHasChanges(true)
+                      setPresetFeedback(`✅ Applied preset: ${presetName || 'Custom'}`)
+                      setTimeout(() => setPresetFeedback(''), 2000)
+                    }}
+                    onSaveAsPreset={(pattern) => {}}
+                  />
+                  <div className="control-group">
+                    <label htmlFor="polyrhythm-select">Polyrhythm</label>
+                    <select 
+                      id="polyrhythm-select"
+                      value={polyrhythm?.name || ''}
+                      onChange={(e) => handlePolyrhythmChange(e.target.value)}
+                      aria-label="Select polyrhythm pattern"
+                      aria-describedby="polyrhythm-help"
+                    >
+                      <option value="">None (Standard)</option>
+                      <option value="3:2">3:2 (Three over Two)</option>
+                      <option value="4:3">4:3 (Four over Three)</option>
+                      <option value="5:4">5:4 (Five over Four)</option>
+                      <option value="custom">Custom Pattern</option>
+                    </select>
+                    <small id="polyrhythm-help">Advanced rhythm patterns for complex time signatures</small>
+                  </div>
+                  {showCustomPolyrhythm && (
+                    <div className="control-group">
+                      <label htmlFor="custom-polyrhythm">Custom Pattern</label>
+                      <input 
+                        type="text" 
+                        id="custom-polyrhythm" 
+                        placeholder="e.g., 1,0,0,1,0,0" 
+                        pattern="[01,]+"
+                        value={customPolyrhythmValue}
+                        onChange={(e) => handleCustomPolyrhythm(e.target.value)}
+                      />
+                      <small>1 = accent, 0 = normal. Example: 1,0,0,1,0,0 creates a 3:2 pattern</small>
+                    </div>
+                  )}
+                </details>
+                
+                <div className="button-group" role="group" aria-label="Metronome and song controls">
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={previousSong}
+                    aria-label="Go to previous song"
+                    disabled={currentSongIndex === 0}
+                  >
+                    ◀ Prev
+                  </button>
+                  <button 
+                    className={`btn btn-primary ${isPlaying ? 'playing' : ''}`}
+                    onClick={toggle}
+                    aria-label={isPlaying ? 'Stop metronome' : 'Start metronome'}
+                    aria-pressed={isPlaying}
+                  >
+                    <span aria-hidden="true">{isPlaying ? '⏸' : '▶'}</span>
+                    <span>{isPlaying ? 'Stop' : 'Start'}</span>
+                  </button>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={nextSong}
+                    aria-label="Go to next song"
+                    disabled={!currentSetList || !currentSetList.songIds || currentSongIndex >= currentSetList.songIds.length - 1}
+                  >
+                    Next ▶
+                  </button>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => setShowRealtimeSession(true)}
+                    aria-label="Open live session sync"
+                  >
+                    🔴 Live Sync
+                  </button>
+                </div>
+                
+                {songHasChanges && currentSong && (
+                  <div className="save-changes-section">
+                    <div className="unsaved-indicator">
+                      <span className="unsaved-dot"></span>
+                      <span>Settings changed</span>
+                    </div>
+                    <button className="btn btn-primary save-btn" onClick={() => saveSongChanges()}>
+                      <span>💾</span>
+                      <span>Save Changes</span>
+                    </button>
+                    <button 
+                      className="btn btn-secondary overwrite-btn" 
+                      title="Hold to overwrite song"
+                      onMouseDown={() => {
+                        setTimeout(() => {
+                          if (confirm('Overwrite saved song with current settings?')) {
+                            saveSongChanges(true)
+                          }
+                        }, 1000)
+                      }}
+                    >
+                      <span>Hold to Overwrite</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Lyrics Panel */}
+                {currentSong && (
+                  <div className="lyrics-section" style={{ marginTop: '20px' }}>
+                    <button 
+                      className="btn btn-secondary btn-small lyrics-toggle"
+                      onClick={() => {
+                        const newValue = !showLyrics
+                        setShowLyrics(newValue)
+                        localStorage.setItem('performanceShowLyrics', newValue.toString())
+                      }}
+                      aria-expanded={showLyrics}
+                      aria-controls="lyrics-panel"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: showLyrics ? '12px' : '0'
+                      }}
+                    >
+                      <span aria-hidden="true">{showLyrics ? '▼' : '▶'}</span>
+                      <span>Lyrics</span>
+                    </button>
+                    
+                    {showLyrics && (
+                      <div 
+                        id="lyrics-panel"
+                        className="lyrics-panel"
+                        role="region"
+                        aria-label="Song lyrics"
+                        style={{
+                          padding: '16px',
+                          background: 'var(--surface-light)',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border)',
+                          maxHeight: '300px',
+                          overflowY: 'auto'
+                        }}
+                      >
+                        {currentSong.lyrics ? (
+                          <pre style={{
+                            fontFamily: 'inherit',
+                            fontSize: '1rem',
+                            lineHeight: '1.6',
+                            margin: 0,
+                            whiteSpace: 'pre-wrap',
+                            wordWrap: 'break-word',
+                            color: 'var(--text-primary)'
+                          }}>
+                            {currentSong.lyrics}
+                          </pre>
+                        ) : (
+                          <p style={{ 
+                            color: 'var(--text-secondary)',
+                            fontStyle: 'italic',
+                            margin: 0
+                          }}>
+                            No lyrics for this song. Add lyrics in the Songs view.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {currentSong && (
+              <div className="helix-info">
+                <p>Helix Preset: <span>{currentSong.helixPreset || '--'}</span></p>
+                <p className="helix-status">MIDI: {midiController.getHelixOutput() ? 'Connected' : 'Not connected'}</p>
+              </div>
+            )}
+          </div>
+          )}
+
+          {showRealtimeSession && (
+            <RealtimeSessionModal 
+              onClose={() => { setShowRealtimeSession(false); dispatchUi({ type: 'CLOSE_REALTIME' }) }} 
+              metronomeHook={metronomeHook}
+            />
+          )}
+
+          {showKeyboardShortcuts && (
+            <KeyboardShortcutsModal onClose={() => { setShowKeyboardShortcuts(false); dispatchUi({ type: 'CLOSE_SHORTCUTS' }) }} />
+          )}
+        </>
+      )}
+
       {showRealtimeSession && (
         <RealtimeSessionModal 
-          onClose={() => setShowRealtimeSession(false)} 
+          onClose={() => { setShowRealtimeSession(false); dispatchUi({ type: 'CLOSE_REALTIME' }) }} 
           metronomeHook={metronomeHook}
         />
       )}
+
+      {showKeyboardShortcuts && (
+        <KeyboardShortcutsModal onClose={() => { setShowKeyboardShortcuts(false); dispatchUi({ type: 'CLOSE_SHORTCUTS' }) }} />
+      )}
+
+      {/* Mobile sticky status + FAB */}
+      <div className="mini-status" role="status" aria-live="polite">
+        <span>{bpm} BPM</span>
+        <span>•</span>
+        <span>{isPlaying ? 'Playing' : 'Stopped'}</span>
+      </div>
+      <button
+        className={`fab-play ${isPlaying ? 'playing' : ''}`}
+        onClick={toggle}
+        aria-label={isPlaying ? 'Stop metronome' : 'Start metronome'}
+        aria-pressed={isPlaying}
+      >
+        {isPlaying ? '⏸' : '▶'}
+      </button>
     </div>
   )
 }
