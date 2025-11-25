@@ -1,6 +1,7 @@
 // Metronome Class with accurate timing and polyrhythm support
 
 import { MetronomeSoundEngine, SoundPreset } from './utils/metronomeSounds';
+import { logger } from './utils/logger';
 
 export interface Lyric {
   time: number;
@@ -106,15 +107,15 @@ export class Metronome {
 
       this.audioContext.addEventListener('statechange', () => {
         if (this.audioContext?.state === 'suspended' && this.isPlaying) {
-          console.warn('Audio context was suspended during playback');
+          logger.warn('Audio context was suspended during playback');
           // Auto-resume if suspended during playback
           this.audioContext?.resume().catch(err => {
-            console.error('Failed to auto-resume audio context:', err);
+            logger.error('Failed to auto-resume audio context:', err);
           });
         }
       });
     } catch (e) {
-      console.error('Failed to initialize audio context:', e);
+      logger.error('Failed to initialize audio context:', e);
       this.audioContext = null;
     }
   }
@@ -295,14 +296,14 @@ export class Metronome {
     if (!this.audioContext) {
       this.initAudioContext();
       if (!this.audioContext) {
-        console.error('Failed to initialize audio context');
+        logger.error('Failed to initialize audio context');
         return;
       }
     }
 
     if (this.audioContext.state === 'suspended') {
       this.audioContext.resume().catch(err => {
-        console.error('Failed to resume audio context:', err);
+        logger.error('Failed to resume audio context:', err);
       });
     }
 
@@ -328,7 +329,7 @@ export class Metronome {
     this.currentLyricIndex = 0;
 
     const beatsPerSecond = 1 / beatDuration;
-    console.log(`Metronome starting: ${this.bpm} BPM = ${beatDuration.toFixed(3)}s per beat = ${beatsPerSecond.toFixed(2)} beats/sec`);
+    logger.log(`Metronome starting: ${this.bpm} BPM = ${beatDuration.toFixed(3)}s per beat = ${beatsPerSecond.toFixed(2)} beats/sec`);
 
     this.scheduleBeats();
 
@@ -339,7 +340,7 @@ export class Metronome {
       if (this.isPlaying && this.audioContext) {
         if (this.audioContext.state === 'suspended') {
           this.audioContext.resume().catch(err => {
-            console.warn('Audio context suspended during playback:', err);
+            logger.warn('Audio context suspended during playback:', err);
             this.stop();
           });
         }
@@ -487,7 +488,7 @@ export class Metronome {
       // Use professional sound engine
       this.soundEngine.playBeat(time, isAccent, isSubdivision);
     } catch (e) {
-      console.error('Error playing beat:', e);
+      logger.error('Error playing beat:', e);
       // Fallback to legacy oscillator if sound engine fails
       if (this.gainNode) {
         try {
@@ -507,7 +508,7 @@ export class Metronome {
           oscillator.start(time);
           oscillator.stop(time + 0.1);
         } catch (fallbackError) {
-          console.error('Fallback sound also failed:', fallbackError);
+          logger.error('Fallback sound also failed:', fallbackError);
         }
       }
     }

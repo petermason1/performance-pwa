@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Metronome, Subdivision } from '../metronome';
 import { SoundPreset } from '../utils/metronomeSounds.js';
+import { logger } from '../utils/logger';
 
 export function useMetronome(initialBPM: number = 120) {
   const [bpm, setBPM] = useState(initialBPM);
@@ -57,7 +58,7 @@ export function useMetronome(initialBPM: number = 120) {
       // Ensure audio context is resumed (required by browser autoplay policies)
       if (metronomeRef.current.audioContext && metronomeRef.current.audioContext.state === 'suspended') {
         metronomeRef.current.audioContext.resume().catch(err => {
-          console.error('Failed to resume audio context:', err);
+          logger.error('Failed to resume audio context:', err);
         });
       }
       metronomeRef.current.play();
