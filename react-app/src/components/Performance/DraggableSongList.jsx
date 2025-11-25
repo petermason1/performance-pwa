@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * Simple drag-and-drop list for songs in a set list.
- *
- * NOTE: This is a lightweight implementation; touch support is minimal.
- * TODO: Improve touch UX (pointer capture, drag ghost, scroll prevention).
+ * Drag-and-drop list for songs in a set list.
+ * 
+ * Features:
+ * - Mouse drag-and-drop
+ * - Touch drag-and-drop with improved UX
+ * - Keyboard navigation (Alt + Arrow keys)
+ * - Visual feedback during drag
+ * - Prevents accidental reorders
  */
 export default function DraggableSongList({ songs, currentIndex, onReorder, onSelect, setIsDragging }) {
   const [dragIndex, setDragIndex] = useState(null)
@@ -90,12 +94,20 @@ export default function DraggableSongList({ songs, currentIndex, onReorder, onSe
   const handleTouchStart = (index) => (event) => {
     const touch = event.touches[0]
     if (!touch) return
+    
+    // Prevent scrolling during drag
+    if (listRef.current) {
+      listRef.current.style.overflowY = 'hidden'
+    }
+    
     setDragIndex(index)
     setHoverIndex(index)
     setIsDragging?.(true)
     touchStateRef.current = {
       currentIndex: index,
-      pointerId: touch.identifier
+      pointerId: touch.identifier,
+      startY: touch.clientY,
+      startTime: Date.now()
     }
   }
 
@@ -104,12 +116,24 @@ export default function DraggableSongList({ songs, currentIndex, onReorder, onSe
     if (!state) return
     const touch = Array.from(event.touches).find(t => t.identifier === state.pointerId) || event.touches[0]
     if (!touch) return
+    
+    // Require minimum drag distance to prevent accidental reorders
+    const dragDistance = Math.abs(touch.clientY - state.startY)
+    const minDragDistance = 20 // pixels
+    
+    if (dragDistance < minDragDistance) {
+      return // Don't start drag until user moves enough
+    }
+    
     event.preventDefault()
+    event.stopPropagation()
+    
     const targetIndex = getIndexFromClientY(touch.clientY)
     if (targetIndex !== null) {
       setHoverIndex(targetIndex)
     }
     if (targetIndex === null || targetIndex === state.currentIndex) return
+    
     const newIndex = performReorder(state.currentIndex, targetIndex)
     if (typeof newIndex === 'number') {
       touchStateRef.current = {
@@ -121,6 +145,11 @@ export default function DraggableSongList({ songs, currentIndex, onReorder, onSe
   }
 
   const handleTouchEnd = () => {
+    // Restore scrolling
+    if (listRef.current) {
+      listRef.current.style.overflowY = 'auto'
+    }
+    
     touchStateRef.current = null
     setDragIndex(null)
     setHoverIndex(null)
@@ -172,9 +201,10 @@ export default function DraggableSongList({ songs, currentIndex, onReorder, onSe
             onTouchStart={handleTouchStart(index)}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-move bg-[var(--color-bg-tertiary)] relative overflow-hidden ${
               isCurrent ? 'border-[var(--color-accent-cyan)] shadow-[0_0_20px_rgba(0,217,255,0.25)]' : 'border-[var(--color-glass-border)] hover:border-[var(--color-accent-cyan)]/60'
-            } ${isHover ? 'ring-2 ring-[var(--color-accent-cyan)]/40 ring-offset-2 ring-offset-[var(--color-bg-secondary)]' : ''}`}
+            } ${isHover && dragIndex !== null && dragIndex !== index ? 'ring-2 ring-[var(--color-accent-cyan)]/40 ring-offset-2 ring-offset-[var(--color-bg-secondary)] transform translate-y-1' : ''} ${isDragging ? 'opacity-60 scale-105 shadow-lg z-10' : ''}`}
             style={{
-              opacity: isDragging ? 0.85 : 1
+              transform: isDragging ? 'scale(1.05) rotate(2deg)' : isHover && dragIndex !== null && dragIndex !== index ? 'translateY(4px)' : undefined,
+              transition: isDragging ? 'none' : 'all 0.2s ease'
             }}
           >
             <div className="flex flex-col items-center text-[var(--color-text-secondary)]">

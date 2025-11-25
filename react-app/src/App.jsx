@@ -9,6 +9,8 @@ import AppHeader from './components/layout/AppHeader'
 import AppFooter from './components/layout/AppFooter'
 import PageHeader from './components/layout/PageHeader'
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal'
+import ErrorBoundary from './components/ErrorBoundary'
+import OfflineQueueIndicator from './components/OfflineQueueIndicator'
 
 // Import views
 import DashboardView from './views/DashboardView'
@@ -253,9 +255,14 @@ function AppContent() {
 
 function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <ErrorBoundary>
+          <AppContent />
+          <OfflineQueueIndicator />
+        </ErrorBoundary>
+      </AppProvider>
+    </ErrorBoundary>
   )
 }
 
