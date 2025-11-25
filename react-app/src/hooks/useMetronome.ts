@@ -53,16 +53,24 @@ export function useMetronome(initialBPM: number = 120) {
     }
   }, [bpm]);
 
-  const play = useCallback(() => {
+  const play = useCallback(async () => {
     if (metronomeRef.current) {
       // Ensure audio context is resumed (required by browser autoplay policies)
-      if (metronomeRef.current.audioContext && metronomeRef.current.audioContext.state === 'suspended') {
-        metronomeRef.current.audioContext.resume().catch(err => {
-          logger.error('Failed to resume audio context:', err);
-        });
+      if (metronomeRef.current.audioContext) {
+        if (metronomeRef.current.audioContext.state === 'suspended') {
+          try {
+            await metronomeRef.current.audioContext.resume();
+            logger.log('Audio context resumed successfully');
+          } catch (err) {
+            logger.error('Failed to resume audio context:', err);
+            // Still try to play - some browsers allow it
+          }
+        }
       }
+      
       metronomeRef.current.play();
       setIsPlaying(true);
+      
       // Sync state after a brief delay to ensure metronome is actually playing
       setTimeout(() => {
         if (metronomeRef.current && metronomeRef.current.isPlaying) {

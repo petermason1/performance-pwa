@@ -301,10 +301,25 @@ export class Metronome {
       }
     }
 
+    // Resume audio context if suspended (required by browser autoplay policies)
     if (this.audioContext.state === 'suspended') {
-      this.audioContext.resume().catch(err => {
+      this.audioContext.resume().then(() => {
+        logger.log('Audio context resumed successfully');
+        this.startPlayback();
+      }).catch(err => {
         logger.error('Failed to resume audio context:', err);
+        // Try to start anyway - some browsers allow it
+        this.startPlayback();
       });
+    } else {
+      this.startPlayback();
+    }
+  }
+
+  private startPlayback(): void {
+    if (!this.audioContext || this.audioContext.state === 'closed') {
+      logger.error('Cannot start playback: audio context unavailable or closed');
+      return;
     }
 
     // Initialize timing and beat count
