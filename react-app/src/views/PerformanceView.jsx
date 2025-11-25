@@ -1671,12 +1671,6 @@ export default function PerformanceView() {
           </div>
         </div>
 
-        {currentSong && (
-          <div className="helix-info">
-            <p>Helix Preset: <span>{currentSong.helixPreset || '--'}</span></p>
-            <p className="helix-status">MIDI: {midiController.getHelixOutput() ? 'Connected' : 'Not connected'}</p>
-          </div>
-        )}
       </div>
       )}
 
@@ -2437,12 +2431,6 @@ export default function PerformanceView() {
               </div>
             </div>
 
-            {currentSong && (
-              <div className="helix-info">
-                <p>Helix Preset: <span>{currentSong.helixPreset || '--'}</span></p>
-                <p className="helix-status">MIDI: {midiController.getHelixOutput() ? 'Connected' : 'Not connected'}</p>
-              </div>
-            )}
           </div>
           )}
 
@@ -2456,25 +2444,14 @@ export default function PerformanceView() {
           {showKeyboardShortcuts && (
             <KeyboardShortcutsModal onClose={() => { setShowKeyboardShortcuts(false); dispatchUi({ type: 'CLOSE_SHORTCUTS' }) }} />
           )}
+
+          {showMIDIControl && (
+            <MIDIControlModal
+              currentSong={currentSong}
+              onClose={() => setShowMIDIControl(false)}
+            />
+          )}
         </>
-      )}
-
-      {showRealtimeSession && (
-        <RealtimeSessionModal 
-          onClose={() => { setShowRealtimeSession(false); dispatchUi({ type: 'CLOSE_REALTIME' }) }} 
-          metronomeHook={metronomeHook}
-        />
-      )}
-
-      {showKeyboardShortcuts && (
-        <KeyboardShortcutsModal onClose={() => { setShowKeyboardShortcuts(false); dispatchUi({ type: 'CLOSE_SHORTCUTS' }) }} />
-      )}
-
-      {showMIDIControl && (
-        <MIDIControlModal
-          currentSong={currentSong}
-          onClose={() => setShowMIDIControl(false)}
-        />
       )}
 
       {/* Mobile sticky status + FAB */}
