@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../hooks/useApp'
+import { getGenres } from '../utils/genres'
 
 function sanitizeInteger(value, { min, max, fallback }) {
   const parsed = typeof value === 'number' ? value : Number.parseInt(value, 10)
@@ -28,6 +29,7 @@ export default function SongModal({ song, onClose }) {
     bpm: 120,
     timeSignature: 4,
     helixPreset: '',
+    genre: '',
     helixPresetNumber: '',
     duration: '',
     lyrics: '',
@@ -287,6 +289,34 @@ export default function SongModal({ song, onClose }) {
                 </small>
               </div>
             </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="song-genre">
+              <span>🎵</span>
+              <span>Genre</span>
+            </label>
+            <select
+              id="song-genre"
+              name="genre"
+              value={formData.genre}
+              onChange={handleChange}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '8px',
+                border: '2px solid var(--border)',
+                fontSize: '1rem'
+              }}
+            >
+              <option value="">No genre</option>
+              {availableGenres.map(genre => (
+                <option key={genre} value={genre}>{genre}</option>
+              ))}
+            </select>
+            <small style={{ display: 'block', marginTop: '4px', color: 'var(--color-text-secondary)' }}>
+              Optional: Categorize songs for easier filtering
+            </small>
           </div>
 
           <div className="form-group">
