@@ -37,7 +37,7 @@ class ErrorBoundary extends React.Component {
             <p className="text-[var(--color-text-secondary)] mb-4">
               An error occurred while rendering this component. The app is still functional - try refreshing or navigating to a different view.
             </p>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {(import.meta.env.DEV || import.meta.env.MODE === 'development') && this.state.error && (
               <details className="mb-4">
                 <summary className="cursor-pointer text-sm text-[var(--color-text-secondary)] mb-2">
                   Error details (development only)
