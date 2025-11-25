@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { midiController } from '../midi'
 import PresetNamesModal from '../components/PresetNamesModal'
+import TimelineEditor from '../components/TimelineEditor'
 import './MIDILightsView.css'
+
+const TIMELINE_STORAGE_KEY = 'lightsTimelineEvents'
 
 export default function MIDILightsView() {
   const [outputs, setOutputs] = useState([])
@@ -14,11 +17,40 @@ export default function MIDILightsView() {
   const [isInitialized, setIsInitialized] = useState(false)
   const [midiSupported, setMidiSupported] = useState(false)
   const [showPresetNamesModal, setShowPresetNamesModal] = useState(false)
+  const [timelineEvents, setTimelineEvents] = useState(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const stored = localStorage.getItem(TIMELINE_STORAGE_KEY)
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      return []
+    }
+  })
+  const [isTimelinePlaying, setIsTimelinePlaying] = useState(false)
+  const timelineTimeoutsRef = useRef([])
 
   // Initialize MIDI on mount
   useEffect(() => {
     checkMIDISupport()
     initializeMIDI()
+  }, [])
+
+  // Persist timeline events
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.setItem(TIMELINE_STORAGE_KEY, JSON.stringify(timelineEvents))
+    } catch (error) {
+      console.error('Failed to persist timeline events:', error)
+    }
+  }, [timelineEvents])
+
+  // Cleanup scheduled timeouts on unmount
+  useEffect(() => {
+    return () => {
+      timelineTimeoutsRef.current.forEach(clearTimeout)
+      timelineTimeoutsRef.current = []
+    }
   }, [])
 
   const checkMIDISupport = () => {
@@ -146,6 +178,60 @@ export default function MIDILightsView() {
   }
 
   const noteGrid = generateNoteGrid()
+
+  const createEventId = () => (
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  )
+
+  const handleAddTimelineEvent = (event) => {
+    setTimelineEvents(prev => {
+      const next = [...prev, { ...event, id: createEventId() }]
+      return next.sort((a, b) => a.time - b.time)
+    })
+  }
+
+  const handleRemoveTimelineEvent = (id) => {
+    setTimelineEvents(prev => prev.filter(event => event.id !== id))
+  }
+
+  const handleClearTimelineEvents = () => {
+    if (!timelineEvents.length) return
+    if (confirm('Clear all timeline events?')) {
+      handleStopTimeline()
+      setTimelineEvents([])
+    }
+  }
+
+  const handleStopTimeline = () => {
+    timelineTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId))
+    timelineTimeoutsRef.current = []
+    setIsTimelinePlaying(false)
+    setDeviceFeedback('⏹ Timeline stopped')
+    setTimeout(() => setDeviceFeedback(''), 1500)
+  }
+
+  const handlePlayTimeline = () => {
+    if (!timelineEvents.length) return
+    if (!isInitialized) {
+      setDeviceFeedback('⚠️ Enable MIDI and select outputs before playing timeline')
+      setTimeout(() => setDeviceFeedback(''), 2000)
+      return
+    }
+    handleStopTimeline()
+    setIsTimelinePlaying(true)
+    const timeouts = timelineEvents.map(event => {
+      const timeoutId = setTimeout(() => {
+        midiController.sendNoteOnToLights(event.note, 110, 0)
+        setTimeout(() => midiController.sendNoteOffToLights(event.note, 0), event.duration * 1000)
+      }, event.time * 1000)
+      return timeoutId
+    })
+    timelineTimeoutsRef.current = timeouts
+    setDeviceFeedback('🎬 Timeline playing')
+    setTimeout(() => setDeviceFeedback(''), 2000)
+  }
 
   return (
     <>
@@ -380,6 +466,16 @@ export default function MIDILightsView() {
             <small>Timeline editor coming in future update</small>
           </div>
         </div>
+
+        <TimelineEditor
+          events={timelineEvents}
+          onAddEvent={handleAddTimelineEvent}
+          onRemoveEvent={handleRemoveTimelineEvent}
+          onClear={handleClearTimelineEvents}
+          onPlay={handlePlayTimeline}
+          onStop={handleStopTimeline}
+          isPlaying={isTimelinePlaying}
+        />
       </div>
 
       {showPresetNamesModal && (
