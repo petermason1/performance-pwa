@@ -252,6 +252,19 @@ export default function SongModal({ song, onClose }) {
                 <small style={{ display: 'block', marginTop: '4px', color: 'var(--color-text-secondary)' }}>
                   Program number (0-127) to auto-send when song loads
                 </small>
+                {formData.helixPresetNumber !== '' && formData.helixPresetNumber !== null && (() => {
+                  try {
+                    const { getPresetName } = require('../utils/presetNames')
+                    const name = getPresetName(Number.parseInt(formData.helixPresetNumber, 10))
+                    return name ? (
+                      <small style={{ display: 'block', marginTop: '2px', color: 'var(--color-accent-cyan)', fontStyle: 'italic' }}>
+                        Named: {name}
+                      </small>
+                    ) : null
+                  } catch {
+                    return null
+                  }
+                })()}
               </div>
               <div style={{ flex: '1' }}>
                 <input

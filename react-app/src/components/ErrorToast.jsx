@@ -104,3 +104,4 @@ export default function ErrorToast({ message, variant = 'error', duration = 5000
   )
 }
 
+

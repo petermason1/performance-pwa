@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { midiController } from '../midi'
+import { getPresetName, getPresetDisplay } from '../utils/presetNames'
 
 export default function MIDIControlModal({ currentSong, onClose }) {
   const [selectedPreset, setSelectedPreset] = useState(currentSong?.helixPresetNumber ?? '')
@@ -102,8 +103,8 @@ export default function MIDIControlModal({ currentSong, onClose }) {
               <strong>Current Song:</strong> {currentSong.name}
               {currentSong.helixPresetNumber !== null && currentSong.helixPresetNumber !== undefined && (
                 <div style={{ marginTop: '4px', fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>
-                  Assigned Preset: {currentSong.helixPresetNumber}
-                  {currentSong.helixPreset && ` (${currentSong.helixPreset})`}
+                  Assigned Preset: {getPresetDisplay(currentSong.helixPresetNumber)}
+                  {currentSong.helixPreset && !getPresetName(currentSong.helixPresetNumber) && ` (${currentSong.helixPreset})`}
                 </div>
               )}
             </div>
@@ -168,4 +169,5 @@ export default function MIDIControlModal({ currentSong, onClose }) {
     </div>
   )
 }
+
 

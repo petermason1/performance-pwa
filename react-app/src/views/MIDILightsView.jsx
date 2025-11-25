@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { midiController } from '../midi'
+import PresetNamesModal from '../components/PresetNamesModal'
 import './MIDILightsView.css'
 
 export default function MIDILightsView() {
@@ -12,6 +13,7 @@ export default function MIDILightsView() {
   const [selectedLightsOutput, setSelectedLightsOutput] = useState(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [midiSupported, setMidiSupported] = useState(false)
+  const [showPresetNamesModal, setShowPresetNamesModal] = useState(false)
 
   // Initialize MIDI on mount
   useEffect(() => {
@@ -227,7 +229,8 @@ export default function MIDILightsView() {
               borderRadius: '8px',
               border: '1px solid var(--border-color)',
               background: 'var(--surface-light)',
-              color: 'var(--text)'
+              color: 'var(--text)',
+              marginBottom: '10px'
             }}
           >
             <option value="">Auto-detect or use default</option>
@@ -237,6 +240,14 @@ export default function MIDILightsView() {
               </option>
             ))}
           </select>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setShowPresetNamesModal(true)}
+            style={{ width: '100%', marginBottom: '8px' }}
+          >
+            🎹 Manage Preset Names
+          </button>
           <small style={{ display: 'block', marginTop: '8px', color: 'var(--text-secondary)' }}>
             Select specific device for Helix preset changes. Leave empty to use default.
           </small>
@@ -370,6 +381,10 @@ export default function MIDILightsView() {
           </div>
         </div>
       </div>
+
+      {showPresetNamesModal && (
+        <PresetNamesModal onClose={() => setShowPresetNamesModal(false)} />
+      )}
     </>
   )
 }
