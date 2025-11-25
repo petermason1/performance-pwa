@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import db from '../utils/db'
+import { logger } from '../utils/logger'
 
 const sanitizeInteger = (value, { min, max, fallback }) => {
   const parsed = typeof value === 'number' ? value : Number.parseInt(value, 10)
@@ -85,22 +86,22 @@ class SyncManager {
         await db.songs.put(localSong)
       }
 
-      console.log('✅ Example songs loaded')
+      logger.log('✅ Example songs loaded')
       return { success: true, count: exampleSongs.length }
     } catch (error) {
-      console.error('❌ Failed to fetch example songs:', error)
+      logger.error('❌ Failed to fetch example songs:', error)
       return { success: false, error }
     }
   }
 
   async syncSongs(bandId) {
     if (!bandId || !supabase) {
-      console.log('⏭️ Skipping song sync (no band or offline)')
+      logger.log('⏭️ Skipping song sync (no band or offline)')
       return { success: false }
     }
 
     try {
-      console.log('🔄 Syncing songs for band:', bandId)
+      logger.log('🔄 Syncing songs for band:', bandId)
 
       // 1. Fetch remote songs from Supabase
       const { data: remoteSongs, error } = await supabase
@@ -110,11 +111,11 @@ class SyncManager {
 
       if (error) throw error
 
-      console.log('📥 Fetched', remoteSongs.length, 'songs from Supabase')
+      logger.log('📥 Fetched', remoteSongs.length, 'songs from Supabase')
 
       // 2. Get local songs from IndexedDB
       const localSongs = await db.songs.toArray()
-      console.log('💾 Found', localSongs.length, 'local songs')
+      logger.log('💾 Found', localSongs.length, 'local songs')
 
       // 3. Merge: remote songs take priority (update local)
       for (const remoteSong of remoteSongs) {
@@ -131,16 +132,21 @@ class SyncManager {
         }
       }
 
-      console.log('✅ Song sync complete')
+      logger.log('✅ Song sync complete')
       return { success: true }
     } catch (error) {
-      console.error('❌ Song sync failed:', error)
+      logger.error('❌ Song sync failed:', error)
       return { success: false, error }
     }
   }
 
-  async pushSong(song, bandId) {
-    if (!supabase) return { error: 'Offline' }
+  async pushSong(song, bandId, retryCount = 0) {
+    if (!supabase) {
+      // Mark for retry when online
+      song._pendingSync = true
+      await db.songs.put(song)
+      return { error: 'Offline - will sync when connection restored' }
+    }
 
     try {
       const remoteSong = this.mapLocalToRemote(song, bandId)
@@ -153,12 +159,27 @@ class SyncManager {
         // Remove sync flag
         delete song._pendingSync
         await db.songs.put(song)
-        console.log('✅ Pushed song:', song.name)
+        logger.log('✅ Pushed song:', song.name)
+        return { success: true }
+      }
+
+      // Retry on network errors
+      if (retryCount < 2 && (error.message?.includes('fetch') || error.message?.includes('network'))) {
+        logger.log(`Retrying song push (attempt ${retryCount + 1})...`)
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+        return this.pushSong(song, bandId, retryCount + 1)
       }
 
       return { error }
     } catch (error) {
-      console.error('❌ Failed to push song:', error)
+      logger.error('❌ Failed to push song:', error)
+      
+      // Mark for retry if it's a network error
+      if (error.message?.includes('fetch') || error.message?.includes('network')) {
+        song._pendingSync = true
+        await db.songs.put(song)
+      }
+      
       return { error }
     }
   }
@@ -219,12 +240,12 @@ class SyncManager {
 
   async syncSetLists(bandId) {
     if (!bandId || !supabase) {
-      console.log('⏭️ Skipping setlist sync (no band or offline)')
+      logger.log('⏭️ Skipping setlist sync (no band or offline)')
       return { success: false }
     }
 
     try {
-      console.log('🔄 Syncing setlists for band:', bandId)
+      logger.log('🔄 Syncing setlists for band:', bandId)
 
       // 1. Fetch remote setlists
       const { data: remoteSetLists, error: setlistsError } = await supabase
@@ -234,11 +255,11 @@ class SyncManager {
 
       if (setlistsError) throw setlistsError
 
-      console.log('📥 Fetched', remoteSetLists.length, 'setlists from Supabase')
+      logger.log('📥 Fetched', remoteSetLists.length, 'setlists from Supabase')
 
       // 2. Get local setlists
       const localSetLists = await db.setLists.toArray()
-      console.log('💾 Found', localSetLists.length, 'local setlists')
+      logger.log('💾 Found', localSetLists.length, 'local setlists')
 
       // 3. Merge: remote takes priority
       for (const remoteSetList of remoteSetLists) {
@@ -254,16 +275,21 @@ class SyncManager {
         }
       }
 
-      console.log('✅ Setlist sync complete')
+      logger.log('✅ Setlist sync complete')
       return { success: true }
     } catch (error) {
-      console.error('❌ Setlist sync failed:', error)
+      logger.error('❌ Setlist sync failed:', error)
       return { success: false, error }
     }
   }
 
-  async pushSetList(setList, bandId) {
-    if (!supabase) return { error: 'Offline' }
+  async pushSetList(setList, bandId, retryCount = 0) {
+    if (!supabase) {
+      // Mark for retry when online
+      setList._pendingSync = true
+      await db.setLists.put(setList)
+      return { error: 'Offline - will sync when connection restored' }
+    }
 
     try {
       // 1. Insert/update setlist
@@ -305,11 +331,25 @@ class SyncManager {
       // Remove sync flag
       delete setList._pendingSync
       await db.setLists.put(setList)
-      console.log('✅ Pushed setlist:', setList.name)
+      logger.log('✅ Pushed setlist:', setList.name)
 
       return { success: true }
     } catch (error) {
-      console.error('❌ Failed to push setlist:', error)
+      logger.error('❌ Failed to push setlist:', error)
+      
+      // Retry on network errors
+      if (retryCount < 2 && (error.message?.includes('fetch') || error.message?.includes('network'))) {
+        logger.log(`Retrying setlist push (attempt ${retryCount + 1})...`)
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+        return this.pushSetList(setList, bandId, retryCount + 1)
+      }
+      
+      // Mark for retry if it's a network error
+      if (error.message?.includes('fetch') || error.message?.includes('network')) {
+        setList._pendingSync = true
+        await db.setLists.put(setList)
+      }
+      
       return { error }
     }
   }
@@ -348,7 +388,7 @@ class SyncManager {
           filter: `band_id=eq.${bandId}`
         },
         async (payload) => {
-          console.log('🔔 Song changed:', payload.eventType, payload.new?.name || payload.old?.id)
+          logger.log('🔔 Song changed:', payload.eventType, payload.new?.name || payload.old?.id)
           
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             await db.songs.put(this.mapRemoteToLocal(payload.new))
@@ -362,7 +402,7 @@ class SyncManager {
       .subscribe()
 
     this.realtimeSubscriptions.push(subscription)
-    console.log('👂 Subscribed to song changes')
+    logger.log('👂 Subscribed to song changes')
     return subscription
   }
 
@@ -380,7 +420,7 @@ class SyncManager {
           filter: `band_id=eq.${bandId}`
         },
         async (payload) => {
-          console.log('🔔 Setlist changed:', payload.eventType, payload.new?.name || payload.old?.id)
+          logger.log('🔔 Setlist changed:', payload.eventType, payload.new?.name || payload.old?.id)
           
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             // Fetch full setlist with songs
@@ -403,7 +443,7 @@ class SyncManager {
       .subscribe()
 
     this.realtimeSubscriptions.push(subscription)
-    console.log('👂 Subscribed to setlist changes')
+    logger.log('👂 Subscribed to setlist changes')
     return subscription
   }
 
@@ -412,7 +452,7 @@ class SyncManager {
       sub.unsubscribe()
     })
     this.realtimeSubscriptions = []
-    console.log('🔇 Unsubscribed from all realtime channels')
+    logger.log('🔇 Unsubscribed from all realtime channels')
   }
 }
 

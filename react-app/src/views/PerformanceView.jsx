@@ -12,6 +12,8 @@ import PresetSelector from '../components/PresetSelector'
 import { initPresets } from '../utils/presets'
 import KeyboardShortcutsModal from '../components/KeyboardShortcutsModal'
 import RealtimeSessionModal from '../components/RealtimeSessionModal'
+import MIDIStatusIndicator from '../components/MIDIStatusIndicator'
+import MIDIControlModal from '../components/MIDIControlModal'
 import './PerformanceView.css'
 
 function patternsEqual(a, b) {
@@ -464,6 +466,7 @@ export default function PerformanceView() {
   const [presetFeedback, setPresetFeedback] = useState(null)
   const [showRealtimeSession, setShowRealtimeSession] = useState(false)
   const [showLyrics, setShowLyrics] = useState(() => localStorage.getItem('performanceShowLyrics') === 'true')
+  const [showMIDIControl, setShowMIDIControl] = useState(false)
   const presetFeedbackTimeoutRef = useRef(null)
   const lastSentHelixPresetRef = useRef({ songId: null, presetNumber: null })
 
@@ -545,6 +548,34 @@ export default function PerformanceView() {
 
     return ok
   }, [showPresetFeedback])
+
+  // Auto-switch Helix preset when song changes
+  useEffect(() => {
+    if (!currentSong) return
+
+    const presetNumber = currentSong.helixPresetNumber
+    if (presetNumber === null || presetNumber === undefined) return
+
+    // Check if we already sent this preset for this song (avoid duplicate sends)
+    if (
+      lastSentHelixPresetRef.current.songId === currentSong.id &&
+      lastSentHelixPresetRef.current.presetNumber === presetNumber
+    ) {
+      return
+    }
+
+    // Send preset change
+    handleSendHelixPreset(presetNumber, {
+      source: 'auto',
+      label: currentSong.helixPreset || undefined
+    })
+
+    // Track that we sent this preset
+    lastSentHelixPresetRef.current = {
+      songId: currentSong.id,
+      presetNumber
+    }
+  }, [currentSong, handleSendHelixPreset])
 
   useEffect(() => {
     return () => {
@@ -789,15 +820,18 @@ export default function PerformanceView() {
     <div role="main" aria-label="Performance View">
       <header className="performance-view-header">
         <h1>Performance</h1>
-        <button
-          className="btn btn-secondary btn-small"
-          onClick={() => setShowKeyboardShortcuts(true)}
-          aria-label="Show keyboard shortcuts"
-          title="Keyboard shortcuts (press ?)"
-          style={{ marginLeft: 'auto' }}
-        >
-          ⌨️ Shortcuts
-        </button></header>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginLeft: 'auto' }}>
+          <MIDIStatusIndicator onClick={() => setShowMIDIControl(true)} />
+          <button
+            className="btn btn-secondary btn-small"
+            onClick={() => setShowKeyboardShortcuts(true)}
+            aria-label="Show keyboard shortcuts"
+            title="Keyboard shortcuts (press ?)"
+          >
+            ⌨️ Shortcuts
+          </button>
+        </div>
+      </header>
 
       {showExampleSetListsModal && (
         <ExampleSetListsModal
@@ -2434,6 +2468,13 @@ export default function PerformanceView() {
 
       {showKeyboardShortcuts && (
         <KeyboardShortcutsModal onClose={() => { setShowKeyboardShortcuts(false); dispatchUi({ type: 'CLOSE_SHORTCUTS' }) }} />
+      )}
+
+      {showMIDIControl && (
+        <MIDIControlModal
+          currentSong={currentSong}
+          onClose={() => setShowMIDIControl(false)}
+        />
       )}
 
       {/* Mobile sticky status + FAB */}

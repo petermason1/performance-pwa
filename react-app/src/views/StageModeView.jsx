@@ -2,8 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from '../hooks/useApp'
 import { useRealtimeSession } from '../hooks/useRealtimeSession'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
+import { midiController } from '../midi'
 import BeatFlash from '../components/Performance/BeatFlash'
 import RealtimeSessionModal from '../components/RealtimeSessionModal'
+import MIDIStatusIndicator from '../components/MIDIStatusIndicator'
+import MIDIControlModal from '../components/MIDIControlModal'
 import { announce } from '../utils/accessibility'
 import './StageModeView.css'
 
@@ -46,6 +49,8 @@ export default function StageModeView() {
   const [isHighContrast, setIsHighContrast] = useState(() => localStorage.getItem('stageModeHighContrast') === 'true')
   const [colorCodedBeats, setColorCodedBeats] = useState(() => localStorage.getItem('stageModeColorCoded') === 'true')
   const [showRealtimeModal, setShowRealtimeModal] = useState(false)
+  const [showMIDIControl, setShowMIDIControl] = useState(false)
+  const lastSentHelixPresetRef = useRef({ songId: null, presetNumber: null })
 
   // Realtime session hook
   const realtimeSession = useRealtimeSession(metronome)
@@ -122,6 +127,42 @@ export default function StageModeView() {
     setMetronomeAccentPattern,
     setMetronomePolyrhythm
   ])
+
+  // Auto-switch Helix preset when song changes in Stage Mode
+  useEffect(() => {
+    if (!activeSong) return
+
+    const presetNumber = activeSong.helixPresetNumber
+    if (presetNumber === null || presetNumber === undefined) {
+      lastSentHelixPresetRef.current = { songId: activeSong.id, presetNumber: null }
+      return
+    }
+
+    // Check if we already sent this preset for this song
+    if (
+      lastSentHelixPresetRef.current.songId === activeSong.id &&
+      lastSentHelixPresetRef.current.presetNumber === presetNumber
+    ) {
+      return
+    }
+
+    // Send preset change
+    if (midiController.isSupported && midiController.getHelixOutput()) {
+      const success = midiController.sendProgramChange(presetNumber, 0, true)
+      if (success) {
+        const labelText = activeSong.helixPreset 
+          ? `${presetNumber} (${activeSong.helixPreset})` 
+          : `#${presetNumber}`
+        announce(`Helix preset ${labelText} sent`, 'polite')
+      }
+    }
+
+    // Track that we sent this preset
+    lastSentHelixPresetRef.current = {
+      songId: activeSong.id,
+      presetNumber
+    }
+  }, [activeSong])
 
   useEffect(() => {
     if (!metronome) return
@@ -359,6 +400,15 @@ export default function StageModeView() {
         </div>
 
         <div className="stage-header-actions">
+          <MIDIStatusIndicator onClick={() => setShowMIDIControl(true)} />
+          <button
+            type="button"
+            className={`stage-sync-button ${realtimeSession.connectionStatus === 'connected' ? 'connected' : ''}`}
+            onClick={() => setShowRealtimeModal(true)}
+            aria-label="Open live session sync"
+          >
+            {realtimeSession.connectionStatus === 'connected' ? '✓ ' : ''}🔴 Sync
+          </button>
         <button
           type="button"
           className={`stage-live-toggle ${isLiveLocked ? 'locked' : ''}`}
@@ -377,14 +427,6 @@ export default function StageModeView() {
         >
           {isLiveLocked ? (unlockProgress > 0 ? `Unlocking... ${Math.round(unlockProgress * 100)}%` : 'Hold to Unlock') : 'Go Live'}
         </button>
-          <button
-            type="button"
-            className={`stage-sync-button ${realtimeSession.connectionStatus === 'connected' ? 'connected' : ''}`}
-            onClick={() => setShowRealtimeModal(true)}
-            aria-label="Open live session sync"
-          >
-            {realtimeSession.connectionStatus === 'connected' ? '✓ ' : ''}🔴 Sync
-          </button>
         </div>
       </header>
 
@@ -620,6 +662,14 @@ export default function StageModeView() {
         <RealtimeSessionModal
           onClose={() => setShowRealtimeModal(false)}
           metronomeHook={metronome}
+        />
+      )}
+
+      {/* MIDI Control Modal */}
+      {showMIDIControl && (
+        <MIDIControlModal
+          currentSong={activeSong}
+          onClose={() => setShowMIDIControl(false)}
         />
       )}
     </div>

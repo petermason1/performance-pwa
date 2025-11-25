@@ -226,30 +226,54 @@ export default function SongModal({ song, onClose }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="song-helix-preset">Helix Preset Name</label>
-            <input
-              type="text"
-              id="song-helix-preset"
-              name="helixPreset"
-              value={formData.helixPreset}
-              onChange={handleChange}
-              placeholder="e.g., Clean Chorus"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="song-helix-preset-number">Helix Preset Number (0-127)</label>
-            <input
-              type="number"
-              id="song-helix-preset-number"
-              name="helixPresetNumber"
-              min="0"
-              max="127"
-              value={formData.helixPresetNumber}
-              onChange={handleChange}
-              placeholder="Auto-send preset change via MIDI"
-            />
-            <small>Program number to send when song loads (via MIDI). Leave empty to disable auto-switching.</small>
+            <label htmlFor="song-helix-preset-number" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>🎹</span>
+              <span>Helix Preset</span>
+            </label>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+              <div style={{ flex: '1' }}>
+                <input
+                  type="number"
+                  id="song-helix-preset-number"
+                  name="helixPresetNumber"
+                  min="0"
+                  max="127"
+                  value={formData.helixPresetNumber}
+                  onChange={handleChange}
+                  placeholder="0-127"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '2px solid var(--border)',
+                    fontSize: '1rem'
+                  }}
+                />
+                <small style={{ display: 'block', marginTop: '4px', color: 'var(--color-text-secondary)' }}>
+                  Program number (0-127) to auto-send when song loads
+                </small>
+              </div>
+              <div style={{ flex: '1' }}>
+                <input
+                  type="text"
+                  id="song-helix-preset"
+                  name="helixPreset"
+                  value={formData.helixPreset}
+                  onChange={handleChange}
+                  placeholder="Preset name (optional)"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '2px solid var(--border)',
+                    fontSize: '1rem'
+                  }}
+                />
+                <small style={{ display: 'block', marginTop: '4px', color: 'var(--color-text-secondary)' }}>
+                  Optional: Name for this preset (e.g., "Clean Chorus")
+                </small>
+              </div>
+            </div>
           </div>
 
           <div className="form-group">

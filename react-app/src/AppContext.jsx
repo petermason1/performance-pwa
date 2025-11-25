@@ -20,6 +20,7 @@ import { runAllMigrations, getMigrationStatus } from './utils/migrations.js';
 import { syncManager } from './lib/syncManager';
 import { useBand } from './hooks/useBand';
 import { supabase } from './lib/supabase';
+import { logger } from './utils/logger';
 
 export function AppProvider({ children }) {
   const [songs, setSongs] = useState([]);
@@ -72,23 +73,23 @@ export function AppProvider({ children }) {
   useEffect(() => {
     const initDB = async () => {
       try {
-        console.log('Initializing database...');
+        logger.log('Initializing database...');
         
         // Check if migration is needed
         const status = await getMigrationStatus();
-        console.log('Migration status:', status);
+        logger.log('Migration status:', status);
         setMigrationStatus(status);
         
         if (status.needsMigration) {
-          console.log('Running migration from localStorage to IndexedDB...');
+          logger.log('Running migration from localStorage to IndexedDB...');
           setMigrationProgress({ step: 'starting', message: 'Starting migration...' });
           
           const result = await runAllMigrations((progress) => {
-            console.log('Migration progress:', progress);
+            logger.log('Migration progress:', progress);
             setMigrationProgress(progress);
           });
           
-          console.log('Migration result:', result);
+          logger.log('Migration result:', result);
           setMigrationProgress({ step: 'complete', message: 'Migration complete!' });
           
           // Refresh migration status
@@ -98,14 +99,14 @@ export function AppProvider({ children }) {
         
         // Initialize IndexedDB
         await initializeDB();
-        console.log('Database initialized');
+        logger.log('Database initialized');
         
         // Load initial data
         await loadData();
         
         setDbInitialized(true);
       } catch (error) {
-        console.error('Failed to initialize database:', error);
+        logger.error('Failed to initialize database:', error);
         setMigrationProgress({
           step: 'error',
           message: `Error: ${error.message}`
@@ -124,7 +125,7 @@ export function AppProvider({ children }) {
         getAllSetLists()
       ]);
       
-      console.log('Loaded data from IndexedDB:', {
+      logger.log('Loaded data from IndexedDB:', {
         songs: loadedSongs.length,
         setLists: loadedSetLists.length
       });
@@ -132,7 +133,7 @@ export function AppProvider({ children }) {
       setSongs(loadedSongs);
       setSetLists(loadedSetLists);
     } catch (error) {
-      console.error('Failed to load data:', error);
+      logger.error('Failed to load data:', error);
     }
   }, []);
 
@@ -141,7 +142,7 @@ export function AppProvider({ children }) {
     if (!dbInitialized) return;
 
     const fetchExamples = async () => {
-      console.log('📚 Fetching example songs...');
+      logger.log('📚 Fetching example songs...');
       await syncManager.fetchExampleSongs();
       await loadData(); // Reload to include example songs
     };
@@ -149,16 +150,67 @@ export function AppProvider({ children }) {
     fetchExamples();
   }, [dbInitialized, loadData]);
 
+  // Process pending syncs (offline queue)
+  const processPendingSyncs = useCallback(async (bandId) => {
+    if (!bandId) return;
+
+    try {
+      // Get all songs and setlists marked for sync
+      const allSongs = await getAllSongs();
+      const allSetLists = await getAllSetLists();
+      
+      const pendingSongs = allSongs.filter(s => s._pendingSync);
+      const pendingSetLists = allSetLists.filter(sl => sl._pendingSync);
+
+      if (pendingSongs.length === 0 && pendingSetLists.length === 0) {
+        return;
+      }
+
+      logger.log(`Processing ${pendingSongs.length} pending songs and ${pendingSetLists.length} pending setlists...`);
+
+      // Retry pending songs
+      for (const song of pendingSongs) {
+        try {
+          const result = await syncManager.pushSong(song, bandId);
+          if (result.error) {
+            logger.warn(`Failed to sync song "${song.name}":`, result.error);
+          }
+        } catch (error) {
+          logger.error(`Error syncing song "${song.name}":`, error);
+        }
+      }
+
+      // Retry pending setlists
+      for (const setList of pendingSetLists) {
+        try {
+          const result = await syncManager.pushSetList(setList, bandId);
+          if (result.error) {
+            logger.warn(`Failed to sync setlist "${setList.name}":`, result.error);
+          }
+        } catch (error) {
+          logger.error(`Error syncing setlist "${setList.name}":`, error);
+        }
+      }
+
+      logger.log('Pending syncs processed');
+    } catch (error) {
+      logger.error('Error processing pending syncs:', error);
+    }
+  }, []);
+
   // Sync with Supabase when band changes
   useEffect(() => {
     if (!dbInitialized || !currentBand) return;
 
     const syncData = async () => {
-      console.log('🔄 Starting sync for band:', currentBand.name);
+      logger.log('🔄 Starting sync for band:', currentBand.name);
       
       // Sync songs and setlists
       await syncManager.syncSongs(currentBand.id);
       await syncManager.syncSetLists(currentBand.id);
+      
+      // Process any pending syncs (offline queue)
+      await processPendingSyncs(currentBand.id);
       
       // Reload local data to reflect changes
       await loadData();
@@ -174,7 +226,20 @@ export function AppProvider({ children }) {
     return () => {
       syncManager.unsubscribeAll();
     };
-  }, [currentBand, dbInitialized, loadData]);
+  }, [currentBand, dbInitialized, loadData, processPendingSyncs]);
+
+  // Listen for online/offline events to retry syncs
+  useEffect(() => {
+    const handleOnline = () => {
+      if (currentBand) {
+        logger.log('Connection restored, processing pending syncs...');
+        processPendingSyncs(currentBand.id);
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [currentBand, processPendingSyncs]);
 
   // Save current view
   useEffect(() => {
@@ -199,7 +264,7 @@ export function AppProvider({ children }) {
       
       return newSong;
     } catch (error) {
-      console.error('Failed to add song:', error);
+      logger.error('Failed to add song:', error);
       throw error;
     }
   }, [refreshSongs, currentBand]);
@@ -216,7 +281,7 @@ export function AppProvider({ children }) {
       
       return updated;
     } catch (error) {
-      console.error('Failed to update song:', error);
+      logger.error('Failed to update song:', error);
       throw error;
     }
   }, [refreshSongs, currentBand]);
@@ -233,10 +298,10 @@ export function AppProvider({ children }) {
           .delete()
           .eq('id', id);
         
-        if (error) console.error('Failed to delete song from Supabase:', error);
+        if (error) logger.error('Failed to delete song from Supabase:', error);
       }
     } catch (error) {
-      console.error('Failed to delete song:', error);
+      logger.error('Failed to delete song:', error);
       throw error;
     }
   }, [refreshSongs, currentBand]);
@@ -245,7 +310,7 @@ export function AppProvider({ children }) {
     try {
       return await dbGetSong(id);
     } catch (error) {
-      console.error('Failed to get song:', error);
+      logger.error('Failed to get song:', error);
       return null;
     }
   }, []);
@@ -279,7 +344,7 @@ export function AppProvider({ children }) {
       
       return addedSong;
     } catch (error) {
-      console.error('Failed to copy example song:', error);
+      logger.error('Failed to copy example song:', error);
       throw error;
     }
   }, [currentBand, refreshSongs]);
@@ -297,7 +362,7 @@ export function AppProvider({ children }) {
       
       return newSetList;
     } catch (error) {
-      console.error('Failed to add set list:', error);
+      logger.error('Failed to add set list:', error);
       throw error;
     }
   }, [refreshSongs, currentBand]);
@@ -314,7 +379,7 @@ export function AppProvider({ children }) {
       
       return updated;
     } catch (error) {
-      console.error('Failed to update set list:', error);
+      logger.error('Failed to update set list:', error);
       throw error;
     }
   }, [refreshSongs, currentBand]);
@@ -331,10 +396,10 @@ export function AppProvider({ children }) {
           .delete()
           .eq('id', id);
         
-        if (error) console.error('Failed to delete setlist from Supabase:', error);
+        if (error) logger.error('Failed to delete setlist from Supabase:', error);
       }
     } catch (error) {
-      console.error('Failed to delete set list:', error);
+      logger.error('Failed to delete set list:', error);
       throw error;
     }
   }, [refreshSongs, currentBand]);
@@ -343,7 +408,7 @@ export function AppProvider({ children }) {
     try {
       return await dbGetSetList(id);
     } catch (error) {
-      console.error('Failed to get set list:', error);
+      logger.error('Failed to get set list:', error);
       return null;
     }
   }, []);
@@ -353,7 +418,7 @@ export function AppProvider({ children }) {
     try {
       return await exportAllData();
     } catch (error) {
-      console.error('Failed to export data:', error);
+      logger.error('Failed to export data:', error);
       throw error;
     }
   }, []);
@@ -364,7 +429,7 @@ export function AppProvider({ children }) {
       await refreshSongs();
       return result;
     } catch (error) {
-      console.error('Failed to import data:', error);
+      logger.error('Failed to import data:', error);
       throw error;
     }
   }, [refreshSongs]);

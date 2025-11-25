@@ -132,20 +132,24 @@ react-app/
 
 ### ✔ Working Features
 - **Live Performance View**: Glass-morphism UI with large tempo wheel, BPM display, time signature toggle
+- **Stage Mode**: Simplified live performance UI with lock mechanism, large controls, swipe gestures
 - **Smooth Tempo Changes**: Wheel adjustments don't interrupt playback; BPM updates take effect on next beat
 - **Beat Accents**: Per-beat accent patterns with visual and audio feedback
 - **MIDI Controller**: Send program changes to Helix, control lighting via MIDI notes
+- **MIDI Preset Automation**: Automatic Helix preset switching when songs change, manual override available
+- **MIDI Status Indicator**: Visual feedback for MIDI connection status
 - **IndexedDB Storage**: Songs and set lists persist locally with migration support
+- **Supabase Integration**: Authentication, band collaboration, realtime sync (when configured)
 - **PWA Support**: Install as standalone app, offline-capable (service worker disabled in dev)
 - **Responsive Design**: Mobile-first layout with desktop enhancements
 - **320px Layout Ready**: Components clamp and center automatically for legacy iPhones and compact Android devices
+- **Realtime Session Sync**: Sync metronome state across multiple devices during live sessions
 
 ### 🔧 Known Issues
-- Stage mode UI not yet implemented (large controls for live performance)
-- Supabase integration pending (auth, band collaboration, realtime sync)
 - Set list drag-and-drop needs refinement
 - No automated tests for metronome timing accuracy yet
-- MIDI preset mapping per song is manual (no UI for assignment)
+- Genre tagging system not yet implemented
+- Song search/filter not yet implemented
 
 ## 🗺 Roadmap
 
@@ -167,19 +171,19 @@ react-app/
 - [ ] Set up realtime subscriptions for live updates
 
 ### Phase 3: Set List & Song Features
-- [ ] Multiple set lists with drag-and-drop reordering
+- [x] Multiple set lists with drag-and-drop reordering
 - [ ] Song search bar to add from main library
 - [ ] Genre tagging and filtering
 - [ ] Set 1 / Set 2 / Additional Songs sections
-- [ ] MIDI preset mapping UI (assign Helix programs per song)
-- [ ] Automatic preset switching on song change
+- [x] MIDI preset mapping UI (assign Helix programs per song)
+- [x] Automatic preset switching on song change
 
 ### Phase 4: Stage Mode & Performance UX
-- [ ] Build stage mode view (large controls, high contrast)
-- [ ] Set list panel with current song highlight
-- [ ] Quick song navigation (prev/next with swipe gestures)
-- [ ] Tap tempo with visual feedback
-- [ ] BPM adjustment overlay (no accidental changes)
+- [x] Build stage mode view (large controls, high contrast)
+- [x] Set list panel with current song highlight
+- [x] Quick song navigation (prev/next with swipe gestures)
+- [x] Tap tempo with visual feedback
+- [x] BPM adjustment overlay (no accidental changes)
 
 ### Phase 5: Testing & Quality
 - [ ] Unit tests for hooks (useMetronome, useTempoWheel)
